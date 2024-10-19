@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { EntityShape } from 'oak-domain/lib/types';
-import { StorageDesc } from 'oak-domain/lib/types/Storage';
 import { join, dirname } from 'path';
 import fs from 'fs';
 import * as ts from 'typescript';
@@ -9,9 +8,10 @@ import { random } from 'lodash';
 import * as glob from 'glob';
 import { pathConfig } from '../utils/paths';
 import { toUpperFirst } from '../utils/stringUtils';
+import { EntityDesc } from '../types';
 
 export type EntityDict = {
-    [key: string]: StorageDesc<EntityShape>;
+    [key: string]: EntityDesc<EntityShape>;
 };
 
 // 发布订阅模式
@@ -249,7 +249,7 @@ function evaluateNode(
 function parseDescFile(
     filePath: string,
     program: ts.Program
-): StorageDesc<EntityShape> | null {
+): EntityDesc<EntityShape> | null {
     const sourceFile = program.getSourceFile(filePath);
     if (!sourceFile) {
         vscode.window.showWarningMessage(`无法解析文件: ${filePath}`);
@@ -257,7 +257,7 @@ function parseDescFile(
     }
 
     const typeChecker = program.getTypeChecker();
-    let descObject: StorageDesc<EntityShape> | null = null;
+    let descObject: EntityDesc<EntityShape> | null = null;
 
     ts.forEachChild(sourceFile, (node) => {
         if (ts.isVariableStatement(node)) {
@@ -281,6 +281,41 @@ function parseDescFile(
     });
 
     return descObject;
+}
+
+function parseSchemaFile(filePath: string, program: ts.Program): string[] {
+    const sourceFile = program.getSourceFile(filePath);
+    if (!sourceFile) {
+        vscode.window.showWarningMessage(`无法解析文件: ${filePath}`);
+        return [];
+    }
+
+    let projectionList: string[] = [];
+
+    ts.forEachChild(sourceFile, (node) => {
+        if (
+            ts.isTypeAliasDeclaration(node) &&
+            node.name.text === 'Projection'
+        ) {
+            if (ts.isIntersectionTypeNode(node.type)) {
+                // 我们只关心交叉类型的第一个成员
+                const firstMember = node.type.types[0];
+                if (ts.isTypeLiteralNode(firstMember)) {
+                    projectionList = firstMember.members
+                        .map((member) => {
+                            if (ts.isPropertySignature(member) && member.name) {
+                                return member.name
+                                    .getText(sourceFile)
+                                    .replace(/[?:]$/, '');
+                            }
+                            return '';
+                        })
+                        .filter(Boolean);
+                }
+            }
+        }
+    });
+    return projectionList;
 }
 
 /**
@@ -396,8 +431,19 @@ export const analyzeOakAppDomain = async (path: string) => {
                                     resolvedPath,
                                     program
                                 );
+                                const schemaFile = join(
+                                    resolvedPath,
+                                    '../Schema.ts'
+                                );
+                                const projectionList = parseSchemaFile(
+                                    schemaFile,
+                                    program
+                                );
                                 if (descObject) {
-                                    entityDict[entityName] = descObject;
+                                    entityDict[entityName] = {
+                                        ...descObject,
+                                        projectionList,
+                                    };
                                 }
                             } else {
                                 vscode.window.showWarningMessage(

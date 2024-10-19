@@ -1,3 +1,5 @@
+import { EntityShape, StorageDesc } from "oak-domain/lib/types";
+
 export type CreateComponentConfig = {
     folderName: string;
 	entityName: string;
@@ -32,4 +34,8 @@ export type CreateOakComponent = {
     webTsx: ComponentTemplate;
     localeZhCN: LocaleTemplate;
     styleLess: StyleLessTemplate;
+}
+
+export interface EntityDesc<SH extends EntityShape> extends StorageDesc<SH> {
+    projectionList: string[];
 }
