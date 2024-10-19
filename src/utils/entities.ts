@@ -18,14 +18,6 @@ const updateDeounced = debounce(() => {
     subscribers.forEach((callback) => callback());
 }, 100);
 
-const entityDict: EntityDict = new Proxy({} as EntityDict, {
-    set(target, key, value) {
-        target[key as string] = value;
-        updateDeounced();
-        return true;
-    },
-});
-
 export const subscribe = (callback: () => void) => {
     /**
      *  订阅
@@ -48,6 +40,14 @@ export const subscribe = (callback: () => void) => {
         subscribers.delete(key);
     };
 };
+
+const entityDict: EntityDict = new Proxy({} as EntityDict, {
+    set(target, key, value) {
+        target[key as string] = value;
+        updateDeounced();
+        return true;
+    },
+});
 
 const genEntityNameList = (): string[] => {
     return Object.keys(entityDict);
@@ -277,104 +277,127 @@ function parseDescFile(
     return descObject;
 }
 
-export const analyzeOakAppDomain = (path: string) => {
-    // 开始分析，先清空entityDict
-    Object.keys(entityDict).forEach((key) => {
-        delete entityDict[key];
-    });
+export const analyzeOakAppDomain = async (path: string) => {
+    await vscode.window.withProgress(
+        {
+            location: vscode.ProgressLocation.Notification,
+            title: '分析Entity定义',
+            cancellable: false,
+        },
+        () => {
+            return new Promise<void>((resolve, reject) => {
+                // 开始分析，先清空entityDict
+                Object.keys(entityDict).forEach((key) => {
+                    delete entityDict[key];
+                });
 
-    const storageFile = join(path, 'Storage.ts');
+                const storageFile = join(path, 'Storage.ts');
 
-    if (!fs.existsSync(storageFile)) {
-        vscode.window.showErrorMessage(
-            'Storage.ts文件不存在，请先尝试make:domain'
-        );
-        return;
-    }
+                if (!fs.existsSync(storageFile)) {
+                    vscode.window.showErrorMessage(
+                        'Storage.ts文件不存在，请先尝试make:domain'
+                    );
+                    return;
+                }
 
-    const program = ts.createProgram([storageFile], {});
-    const sourceFile = program.getSourceFile(storageFile);
+                const program = ts.createProgram([storageFile], {});
+                const sourceFile = program.getSourceFile(storageFile);
 
-    if (!sourceFile) {
-        vscode.window.showErrorMessage('无法解析Storage.ts文件');
-        return;
-    }
+                if (!sourceFile) {
+                    vscode.window.showErrorMessage('无法解析Storage.ts文件');
+                    return;
+                }
 
-    let storageSchemaNode: ts.Node | undefined;
+                let storageSchemaNode: ts.Node | undefined;
 
-    ts.forEachChild(sourceFile, (node) => {
-        if (ts.isVariableStatement(node)) {
-            const declaration = node.declarationList.declarations[0];
-            if (
-                ts.isIdentifier(declaration.name) &&
-                declaration.name.text === 'storageSchema'
-            ) {
-                storageSchemaNode = declaration.initializer;
-            }
-        }
-    });
-
-    if (
-        !storageSchemaNode ||
-        !ts.isObjectLiteralExpression(storageSchemaNode)
-    ) {
-        vscode.window.showErrorMessage('无法找到storageSchema或格式不正确');
-        return;
-    }
-
-    const importMap: { [key: string]: string } = {};
-
-    ts.forEachChild(sourceFile, (node) => {
-        if (ts.isImportDeclaration(node)) {
-            const moduleSpecifier = node.moduleSpecifier;
-            if (ts.isStringLiteral(moduleSpecifier)) {
-                const importPath = moduleSpecifier.text;
-                const importClause = node.importClause;
-                if (
-                    importClause &&
-                    importClause.namedBindings &&
-                    ts.isNamedImports(importClause.namedBindings)
-                ) {
-                    importClause.namedBindings.elements.forEach((element) => {
+                ts.forEachChild(sourceFile, (node) => {
+                    if (ts.isVariableStatement(node)) {
+                        const declaration =
+                            node.declarationList.declarations[0];
                         if (
-                            element.propertyName &&
-                            element.propertyName.text === 'desc'
+                            ts.isIdentifier(declaration.name) &&
+                            declaration.name.text === 'storageSchema'
                         ) {
-                            importMap[element.name.text] = importPath;
+                            storageSchemaNode = declaration.initializer;
                         }
-                    });
-                }
-            }
-        }
-    });
-
-    storageSchemaNode.properties.forEach((prop) => {
-        if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
-            const entityName = prop.name.text;
-            if (ts.isIdentifier(prop.initializer)) {
-                const descName = prop.initializer.text;
-                const importPath = importMap[descName];
-                if (importPath) {
-                    const resolvedPath = resolveImportPath(
-                        importPath,
-                        dirname(storageFile)
-                    );
-                    const descObject = parseDescFile(resolvedPath, program);
-                    if (descObject) {
-                        entityDict[entityName] = descObject;
                     }
-                } else {
-                    vscode.window.showWarningMessage(
-                        `未找到 ${descName} 的导入路径`
-                    );
-                }
-            } else {
-                vscode.window.showWarningMessage(
-                    `${entityName} 的值不是预期的标识符`
-                );
-            }
-        }
-    });
+                });
 
-    console.log('entityDict:', entityDict);
+                if (
+                    !storageSchemaNode ||
+                    !ts.isObjectLiteralExpression(storageSchemaNode)
+                ) {
+                    vscode.window.showErrorMessage(
+                        '无法找到storageSchema或格式不正确'
+                    );
+                    return;
+                }
+
+                const importMap: { [key: string]: string } = {};
+
+                ts.forEachChild(sourceFile, (node) => {
+                    if (ts.isImportDeclaration(node)) {
+                        const moduleSpecifier = node.moduleSpecifier;
+                        if (ts.isStringLiteral(moduleSpecifier)) {
+                            const importPath = moduleSpecifier.text;
+                            const importClause = node.importClause;
+                            if (
+                                importClause &&
+                                importClause.namedBindings &&
+                                ts.isNamedImports(importClause.namedBindings)
+                            ) {
+                                importClause.namedBindings.elements.forEach(
+                                    (element) => {
+                                        if (
+                                            element.propertyName &&
+                                            element.propertyName.text === 'desc'
+                                        ) {
+                                            importMap[element.name.text] =
+                                                importPath;
+                                        }
+                                    }
+                                );
+                            }
+                        }
+                    }
+                });
+
+                storageSchemaNode.properties.forEach((prop) => {
+                    if (
+                        ts.isPropertyAssignment(prop) &&
+                        ts.isIdentifier(prop.name)
+                    ) {
+                        const entityName = prop.name.text;
+                        if (ts.isIdentifier(prop.initializer)) {
+                            const descName = prop.initializer.text;
+                            const importPath = importMap[descName];
+                            if (importPath) {
+                                const resolvedPath = resolveImportPath(
+                                    importPath,
+                                    dirname(storageFile)
+                                );
+                                const descObject = parseDescFile(
+                                    resolvedPath,
+                                    program
+                                );
+                                if (descObject) {
+                                    entityDict[entityName] = descObject;
+                                }
+                            } else {
+                                vscode.window.showWarningMessage(
+                                    `未找到 ${descName} 的导入路径`
+                                );
+                            }
+                        } else {
+                            vscode.window.showWarningMessage(
+                                `${entityName} 的值不是预期的标识符`
+                            );
+                        }
+                    }
+                });
+                console.log('entityDict:', entityDict);
+                resolve();
+            });
+        }
+    );
 };
