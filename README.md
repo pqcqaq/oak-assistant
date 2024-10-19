@@ -1,6 +1,6 @@
 # oak-assistant README
 
-This is the README for your extension "oak-assistant". After writing up a brief description, we recommend including the following sections.
+oak框架适配性插件，为你的开发助力！
 
 ## Features
 

@@ -5,6 +5,10 @@
   "author": {
     "name": "oak-team"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pqcqaq/oak-assistant"
+  },
   "icon": "assets/oak_tree.png",
   "publisher": "oak-team",
   "version": "0.0.1",
