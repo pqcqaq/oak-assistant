@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
 import { EntityShape } from 'oak-domain/lib/types';
 import { StorageDesc } from 'oak-domain/lib/types/Storage';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import fs from 'fs';
 import * as ts from 'typescript';
 import { debounce } from 'lodash';
 import { random } from 'lodash';
+import * as glob from 'glob';
+import { pathConfig } from '../utils/paths';
+import { toUpperFirst } from '../utils/stringUtils';
 
 export type EntityDict = {
     [key: string]: StorageDesc<EntityShape>;
@@ -401,3 +404,28 @@ export const analyzeOakAppDomain = async (path: string) => {
         }
     );
 };
+
+export function findEntityDefFile(entityName: string): string[] {
+    const fileName = toUpperFirst(`${entityName}.ts`);
+    const possiblePaths: string[] = [];
+
+    // 搜索 pathConfig.entityHome
+    const entityHomePath = join(pathConfig.entityHome, fileName);
+    if (fs.existsSync(entityHomePath)) {
+        possiblePaths.push(entityHomePath);
+    }
+
+    // 搜索 node_modules 中以 oak 开头的包
+    const nodeModulesPath = resolve(pathConfig.projectHome, 'node_modules');
+    const oakPackages = glob.sync('oak-*/src/entities', {
+        cwd: nodeModulesPath,
+    });
+    for (const pkg of oakPackages) {
+        const pkgEntityPath = join(nodeModulesPath, pkg, fileName);
+        if (fs.existsSync(pkgEntityPath)) {
+            possiblePaths.push(pkgEntityPath);
+        }
+    }
+
+    return possiblePaths;
+}

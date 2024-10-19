@@ -1,10 +1,7 @@
 import * as vscode from 'vscode';
 import { pathConfig } from '../utils/paths';
-import { join, resolve } from 'path';
-import { toUpperFirst } from '../utils/stringUtils';
-import * as fs from 'fs';
-import * as glob from 'glob';
 import { EntityItem } from './oakTreePanel';
+import { findEntityDefFile } from '../utils/entities';
 
 const pushToEntityDefinition = vscode.commands.registerCommand(
     'oak-entities.jumpToDefinition',
@@ -16,26 +13,8 @@ const pushToEntityDefinition = vscode.commands.registerCommand(
             await vscode.commands.executeCommand('revealInExplorer', uri);
             return;
         }
-        const fileName = toUpperFirst(`${item.getEntityName()}.ts`);
-        const possiblePaths: string[] = [];
 
-        // 搜索 pathConfig.entityHome
-        const entityHomePath = join(pathConfig.entityHome, fileName);
-        if (fs.existsSync(entityHomePath)) {
-            possiblePaths.push(entityHomePath);
-        }
-
-        // 搜索 node_modules 中以 oak 开头的包
-        const nodeModulesPath = resolve(pathConfig.projectHome, 'node_modules');
-        const oakPackages = glob.sync('oak-*/src/entities', {
-            cwd: nodeModulesPath,
-        });
-        for (const pkg of oakPackages) {
-            const pkgEntityPath = join(nodeModulesPath, pkg, fileName);
-            if (fs.existsSync(pkgEntityPath)) {
-                possiblePaths.push(pkgEntityPath);
-            }
-        }
+        const possiblePaths = findEntityDefFile(item.getEntityName());
 
         if (possiblePaths.length === 0) {
             vscode.window.showErrorMessage(
