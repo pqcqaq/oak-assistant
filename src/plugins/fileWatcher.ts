@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { pathConfig, subscribe } from '../utils/paths';
+import { pathConfig, setProjectHome, subscribe } from '../utils/paths';
 import { analyzeOakAppDomain } from '../utils/entities';
 import { join } from 'path';
 
@@ -129,6 +129,28 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
             context,
             undefined,
             handleStorageChange
+        );
+    });
+
+    // 监控projectPath下的oak.config.json文件，如果发生变化，则重新同步entities
+    let disposeConfigWatcher: (() => void) | null = null;
+
+    const handleConfigChange = async () => {
+        setProjectHome(pathConfig.projectHome);
+    };
+
+    // 监听oak.config.json文件
+    subscribe(() => {
+        if (disposeConfigWatcher) {
+            disposeConfigWatcher();
+        }
+        
+        const configPath = join(pathConfig.projectHome, 'oak.config.json');
+        disposeConfigWatcher = watchDirectory(
+            configPath,
+            context,
+            undefined,
+            handleConfigChange
         );
     });
 }

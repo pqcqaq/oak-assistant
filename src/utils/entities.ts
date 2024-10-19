@@ -280,6 +280,11 @@ function parseDescFile(
     return descObject;
 }
 
+/**
+ * 分析 oak-app-domain 项目中的 Entity 定义，防止同时多次分析
+ */
+let isAnalyzing = false;
+
 export const analyzeOakAppDomain = async (path: string) => {
     await vscode.window.withProgress(
         {
@@ -289,6 +294,11 @@ export const analyzeOakAppDomain = async (path: string) => {
         },
         () => {
             return new Promise<void>((resolve, reject) => {
+                if (isAnalyzing) {
+                    resolve();
+                    return;
+                }
+                isAnalyzing = true;
                 // 开始分析，先清空entityDict
                 Object.keys(entityDict).forEach((key) => {
                     delete entityDict[key];
@@ -399,6 +409,7 @@ export const analyzeOakAppDomain = async (path: string) => {
                     }
                 });
                 console.log('entityDict:', entityDict);
+                isAnalyzing = false;
                 resolve();
             });
         }

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { setProjectHome, pathConfig } from './utils/paths';
+import { setProjectHome, pathConfig, subscribe } from './utils/paths';
 import { join } from 'path';
 import checkPagesAndNamespace from './plugins/checkPagesAndNamespace';
 import { OakConfiog } from './types/OakConfig';
@@ -16,6 +16,11 @@ const exclude: vscode.GlobPattern = new vscode.RelativePattern(
     '**',
     '{src,node_modules,lib,configuration}'
 );
+
+subscribe(() => {
+	vscode.window.showInformationMessage('配置文件已更新');
+	afterPathSet();
+});
 
 vscode.workspace.findFiles('oak.config.json', exclude).then((uris) => {
     const fs = vscode.workspace.fs;
@@ -55,7 +60,6 @@ vscode.workspace.findFiles('oak.config.json', exclude).then((uris) => {
                         vscode.window.showInformationMessage(
                             `已将项目主目录设置为: ${projectPath}`
                         );
-                        afterPathSet();
                     });
                 }
             });
@@ -70,7 +74,6 @@ vscode.workspace.findFiles('oak.config.json', exclude).then((uris) => {
         setProjectHome(projectHome);
         // 通知已经启用
         vscode.window.showInformationMessage('已启用oak-assistant!');
-        afterPathSet();
     });
 });
 
