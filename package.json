@@ -48,6 +48,10 @@
         "command": "oak-entities.jumpToSchema",
         "when": "view == oak-entities && viewItem == entityItem",
         "group": "navigation"
+      },
+      {
+        "command": "oak-assistant.reload",
+        "title": "重新加载oak-assistant"
       }
     ],
     "menus": {

@@ -135,9 +135,17 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     );
 
+    const reload = vscode.commands.registerCommand(
+        'oak-assistant.reload',
+        () => {
+            afterPathSet();
+        }
+    );
+
     createFileWatcher(context);
     context.subscriptions.push(
         helloOak,
+        reload,
         checkPagesAndNamespace(),
         createOakComponent(),
         createOakTreePanel(),
