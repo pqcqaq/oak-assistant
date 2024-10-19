@@ -22,8 +22,21 @@
       {
         "command": "oak-assistant.check-pages-and-namespace",
         "title": "检查page和namespace对应关系"
+      },
+      {
+        "command": "oak-assistant.create-oak-component",
+        "title": "创建OAK组件"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "explorerResourceIsFolder",
+          "command": "oak-assistant.create-oak-component",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
@@ -40,16 +53,22 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.94.0",
+    "@types/lodash": "^4.17.12",
     "@types/mocha": "^10.0.8",
     "@types/node": "20.x",
+    "@types/node-schedule": "^2.1.7",
+    "@types/vscode": "^1.94.0",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "eslint": "^9.11.1",
-    "esbuild": "^0.24.0",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.6.2",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.11.1",
+    "npm-run-all": "^4.1.5",
+    "oak-domain": "^5.1.6",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }

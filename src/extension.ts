@@ -1,93 +1,123 @@
 import * as vscode from "vscode";
-import { setProjectHome, pathConfig } from "./paths";
+import { setProjectHome, pathConfig } from "./utils/paths";
 import { join } from "path";
-import { Uri } from "vscode";
-
-let projectHome: string | undefined;
+import checkPagesAndNamespace from "./plugins/checkPagesAndNamespace";
+import { OakConfiog } from "./types/OakConfig";
+import createOakComponent from "./plugins/createOakComponent";
+import { analyzeOakAppDomain } from "./utils/entities";
 
 // 初始化配置
-// 查找工作区的根目录中的oak.config.json文件
-vscode.workspace.findFiles("oak.config.json").then((uris) => {
-    if (uris.length === 0) {
-        vscode.window.showErrorMessage("未找到oak.config.json文件");
-        return;
-    }
-    const uri = uris[0];
-    const fs = vscode.workspace.fs;
-    fs.readFile(uri).then((content) => {
-        const config = JSON.parse(content.toString());
-        projectHome = join(uri.path, "../", config.projectHome);
-        console.log("projectHome:", projectHome);
-        // 设置projectHome
-        setProjectHome(projectHome);
-    });
+// 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
+const exclude: vscode.GlobPattern = new vscode.RelativePattern(
+	"**",
+	"{src,node_modules,lib,configuration}"
+);
+
+vscode.workspace.findFiles("oak.config.json", exclude).then((uris) => {
+	if (uris.length === 0) {
+		// 获取当前工作区
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+
+		if (!workspaceFolders || workspaceFolders.length === 0) {
+			vscode.window.showErrorMessage(
+				"未找到工作区，请打开一个文件夹后再试。"
+			);
+			return;
+		}
+
+		// 弹出提示消息，询问是否以根目录为工作区
+		vscode.window
+			.showInformationMessage(
+				"未找到oak.config.json文件，是否以当前工作区根目录为项目主目录？",
+				"是",
+				"否"
+			)
+			.then((value) => {
+				if (value === "是") {
+					const rootPath = workspaceFolders[0].uri.fsPath;
+					const projectPath = join(rootPath, "./");
+					setProjectHome(projectPath);
+					vscode.window.showInformationMessage(
+						`已将项目主目录设置为: ${projectPath}`
+					);
+					afterPathSet();
+				}
+			});
+		return;
+	}
+	const uri = uris[0];
+	const fs = vscode.workspace.fs;
+	fs.readFile(uri).then((content) => {
+		const config = JSON.parse(content.toString()) as OakConfiog;
+		const projectHome = join(uri.fsPath, "..", config.projectHome);
+		console.log("projectHome:", projectHome);
+		// 设置projectHome
+		setProjectHome(projectHome);
+		// 通知已经启用
+		vscode.window.showInformationMessage("已启用oak-assistant!");
+		afterPathSet();
+	});
 });
 
+const afterPathSet = async () => {
+	const stepList: {
+		name: string;
+		description: string;
+		function: () => Promise<void>;
+	}[] = [
+		{
+			name: "解析 Entity",
+			description: "解析项目中的 Entity 结构",
+			function: async () => {
+				await analyzeOakAppDomain(pathConfig.oakAppDomainHome);
+			},
+		},
+	];
+
+	await vscode.window.withProgress(
+		{
+			location: vscode.ProgressLocation.Notification,
+			title: "解析oak项目结构",
+			cancellable: false,
+		},
+		async (progress) => {
+			progress.report({ message: "开始分析..." });
+			try {
+				for (let i = 0; i < stepList.length; i++) {
+					const step = stepList[i];
+					progress.report({
+						message: step.description,
+						increment: 100 / stepList.length,
+					});
+					await step.function();
+				}
+				vscode.window.showInformationMessage("分析完成");
+			} catch (error) {
+				vscode.window.showErrorMessage(`分析过程中出错: ${error}`);
+			}
+		}
+	);
+};
+
 export async function activate(context: vscode.ExtensionContext) {
-    console.log(
-        'Congratulations, your extension "oak-assistant" is now active!'
-    );
+	console.log(
+		'Congratulations, your extension "oak-assistant" is now active!'
+	);
 
-    const helloOak = vscode.commands.registerCommand(
-        "oak-assistant.hello-oak",
-        () => {
-            vscode.window.showInformationMessage(
-                "Hello OAK from oak-assistant!"
-            );
-        }
-    );
+	const helloOak = vscode.commands.registerCommand(
+		"oak-assistant.hello-oak",
+		() => {
+			vscode.window.showInformationMessage(
+				"Hello OAK from oak-assistant!"
+			);
+		}
+	);
 
-    const checkPagesAndNamespace = vscode.commands.registerCommand(
-        "oak-assistant.check-pages-and-namespace",
-        async () => {
-            if (!projectHome) {
-                vscode.window.showErrorMessage(
-                    "配置未初始化，请检查oak.config.json文件"
-                );
-                return;
-            }
-
-            let errorNums: number = 0;
-            const fs = vscode.workspace.fs;
-            const pagesHome = pathConfig.pagesHome;
-            const namespacesHome = pathConfig.namespacesHome;
-            console.log("checking:", pagesHome, namespacesHome);
-
-            try {
-                const namespaces = await fs.readDirectory(
-                    Uri.file(namespacesHome)
-                );
-                for (const [namespaceName, namespaceType] of namespaces) {
-                    if (namespaceType === vscode.FileType.Directory) {
-                        // 只检查 namespacesHome 下的第一层目录
-                        const pagePath = join(pagesHome, namespaceName);
-                        try {
-                            const stat = await fs.stat(Uri.file(pagePath));
-                            if (stat.type !== vscode.FileType.Directory) {
-                                vscode.window.showErrorMessage(
-                                    `页面${namespaceName}不存在或不是目录`
-                                );
-                                errorNums++;
-                            }
-                        } catch (error) {
-                            vscode.window.showErrorMessage(
-                                `页面${namespaceName}不存在`
-                            );
-                            errorNums++;
-                        }
-                    }
-                }
-
-                if (errorNums === 0) {
-                    vscode.window.showInformationMessage("检查通过");
-                }
-            } catch (error) {
-                vscode.window.showErrorMessage(`检查过程中发生错误: ${error}`);
-            }
-        }
-    );
-
-    context.subscriptions.push(helloOak, checkPagesAndNamespace);
+	context.subscriptions.push(
+		helloOak,
+		checkPagesAndNamespace(),
+		createOakComponent()
+	);
 }
 
 export function deactivate() {}
