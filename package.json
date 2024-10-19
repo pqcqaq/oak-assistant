@@ -19,7 +19,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "workspaceContains:oak.config.json"
   ],
   "main": "./dist/extension.js",
   "contributes": {
