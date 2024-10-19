@@ -3,6 +3,7 @@ import { isFileInDirectory } from "../utils/paths";
 import { entityConfig } from "../utils/entities";
 
 type CreateComponentConfig = {
+    folderName: string;
 	entityName: string;
 	isList: boolean;
 	autoProjection: boolean;
@@ -17,9 +18,14 @@ type ConfigStep = {
 };
 
 const createComponentSteps: ConfigStep[] = [
+    {
+        name: "folderName",
+        description: "请输入组件名称",
+        inputType: "input",
+    },
 	{
 		name: "entityName",
-		description: "请选择实体名称",
+		description: "请选择关联实体",
 		inputType: "select",
 		options: () => entityConfig.entityNameList,
 	},
@@ -58,7 +64,8 @@ const createOakComponent = () => {
 				);
 			}
 
-			const createComponentConfig: CreateComponentConfig = {
+            const createComponentConfig: CreateComponentConfig = {
+                folderName: "",
 				entityName: "",
 				isList: false,
 				autoProjection: false,

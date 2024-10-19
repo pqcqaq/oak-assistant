@@ -14,6 +14,7 @@ const exclude: vscode.GlobPattern = new vscode.RelativePattern(
 );
 
 vscode.workspace.findFiles("oak.config.json", exclude).then((uris) => {
+	const fs = vscode.workspace.fs;
 	if (uris.length === 0) {
 		// 获取当前工作区
 		const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -36,17 +37,27 @@ vscode.workspace.findFiles("oak.config.json", exclude).then((uris) => {
 				if (value === "是") {
 					const rootPath = workspaceFolders[0].uri.fsPath;
 					const projectPath = join(rootPath, "./");
-					setProjectHome(projectPath);
-					vscode.window.showInformationMessage(
-						`已将项目主目录设置为: ${projectPath}`
+					// 在根目录下创建oak.config.json文件
+					const content = JSON.stringify(
+						{ projectHome: "./" },
+						null,
+						2
 					);
-					afterPathSet();
+					fs.writeFile(
+						vscode.Uri.file(join(projectPath, "oak.config.json")),
+						Buffer.from(content)
+					).then(() => {
+						setProjectHome(projectPath);
+						vscode.window.showInformationMessage(
+							`已将项目主目录设置为: ${projectPath}`
+						);
+						afterPathSet();
+					});
 				}
 			});
 		return;
 	}
 	const uri = uris[0];
-	const fs = vscode.workspace.fs;
 	fs.readFile(uri).then((content) => {
 		const config = JSON.parse(content.toString()) as OakConfiog;
 		const projectHome = join(uri.fsPath, "..", config.projectHome);
