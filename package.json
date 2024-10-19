@@ -2,6 +2,11 @@
   "name": "oak-assistant",
   "displayName": "oak-assistant",
   "description": "OAK框架辅助开发插件",
+  "author": {
+    "name": "oak-team"
+  },
+  "icon": "assets/oak-icon.svg",
+  "publisher": "oak-team",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.94.0"
@@ -26,6 +31,12 @@
       {
         "command": "oak-assistant.create-oak-component",
         "title": "创建OAK组件"
+      },
+      {
+        "title": "跳转到entity定义",
+        "command": "oak-entities.jumpToDefinition",
+        "when": "view == oak-entities && viewItem == entityItem",
+        "group": "navigation"
       }
     ],
     "menus": {
@@ -34,6 +45,30 @@
           "when": "explorerResourceIsFolder",
           "command": "oak-assistant.create-oak-component",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "oak-entities.jumpToDefinition",
+          "when": "view == oak-entities && viewItem == entityItem",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "oak-entities",
+          "title": "Oak Entities",
+          "icon": "assets/oak-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "oak-entities": [
+        {
+          "id": "oak-entities",
+          "name": "Oak Entities"
         }
       ]
     }
@@ -69,6 +104,7 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
+    "glob": "^11.0.0",
     "lodash": "^4.17.21"
   }
 }

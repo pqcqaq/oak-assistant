@@ -5,6 +5,9 @@ import checkPagesAndNamespace from "./plugins/checkPagesAndNamespace";
 import { OakConfiog } from "./types/OakConfig";
 import createOakComponent from "./plugins/createOakComponent";
 import { analyzeOakAppDomain } from "./utils/entities";
+import { createOakTreePanel } from "./plugins/oakTreePanel";
+import { setLoadingEntities } from "./utils/status";
+import { treePanelCommands } from "./plugins/treePanelCommands";
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -71,6 +74,8 @@ vscode.workspace.findFiles("oak.config.json", exclude).then((uris) => {
 });
 
 const afterPathSet = async () => {
+	setLoadingEntities(true);
+
 	const stepList: {
 		name: string;
 		description: string;
@@ -108,6 +113,8 @@ const afterPathSet = async () => {
 			}
 		}
 	);
+
+	setLoadingEntities(false);
 };
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -127,7 +134,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		helloOak,
 		checkPagesAndNamespace(),
-		createOakComponent()
+		createOakComponent(),
+		createOakTreePanel(),
+		...treePanelCommands
 	);
 }
 
