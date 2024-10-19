@@ -1,0 +1,20 @@
+export default OakComponent({
+    entity: '{{entityName}}',
+    isList: {{isList}},
+    {{#if autoProjection}}
+    projection: {
+        {{#each projectionFields}}
+        {{this}}: 1,
+        {{/each}}
+    },
+    {{/if}}
+    formData({ data }) {
+        return {
+            {{#if isList}}
+            list: data,
+            {{else}}
+            item: data,
+            {{/if}}
+        };
+    },
+});

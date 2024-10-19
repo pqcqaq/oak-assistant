@@ -1,4 +1,4 @@
 // 将驼峰命名的entityName转换为大写开头
-export const toUpperFirst = (entityName: string) => {
-    return entityName.charAt(0).toUpperCase() + entityName.slice(1);
+export const toUpperFirst = (name: string) => {
+    return name.charAt(0).toUpperCase() + name.slice(1);
 };  

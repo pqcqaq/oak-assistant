@@ -1,0 +1,39 @@
+import React from 'react';
+import { EntityDict } from '@project/oak-app-domain';
+import { RowWithActions, WebComponentProps } from 'oak-frontend-base';
+import Styles from './styles.module.less';
+
+const {{componentName}} = (
+    props: WebComponentProps<
+        EntityDict,
+        '{{entityName}}',
+        {{isList}},
+        {
+            {{#if isList}}
+            list: RowWithActions<EntityDict, '{{entityName}}'>[];
+            {{else}}
+            item: RowWithActions<EntityDict, '{{entityName}}'>;
+            {{/if}}
+        }
+    >
+) => {
+    const { {{#if isList}}list{{else}}item{{/if}} } = props.data;
+
+    return (
+        <>
+            {{#if isList}}
+            {list && (
+                <>
+                    {list.map((item) => {
+                        return <div key={item.id} className={Styles.item}>{item.id}</div>;
+                    })}
+                </>
+            )}
+            {{else}}
+            {item && <div className={Styles.id}>{item.id}</div>}
+            {{/if}}
+        </>
+    );
+};
+
+export default {{componentName}};

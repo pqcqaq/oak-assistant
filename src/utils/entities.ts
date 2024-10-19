@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { EntityShape } from 'oak-domain/lib/types';
 import { StorageDesc } from 'oak-domain/lib/types/Storage';
-import { join, dirname, resolve } from 'path';
+import { join, dirname } from 'path';
 import fs from 'fs';
 import * as ts from 'typescript';
 import { debounce } from 'lodash';
@@ -59,6 +59,9 @@ const genEntityNameList = (): string[] => {
 export const entityConfig = {
     get entityNameList() {
         return genEntityNameList();
+    },
+    getEntityDesc(entityName: string) {
+        return entityDict[entityName];
     },
 };
 
@@ -427,7 +430,7 @@ export function findEntityDefFile(entityName: string): string[] {
     }
 
     // 搜索 node_modules 中以 oak 开头的包
-    const nodeModulesPath = resolve(pathConfig.projectHome, 'node_modules');
+    const nodeModulesPath = join(pathConfig.projectHome, 'node_modules');
     const oakPackages = glob.sync('oak-*/src/entities', {
         cwd: nodeModulesPath,
     });

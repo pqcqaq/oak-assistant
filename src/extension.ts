@@ -18,8 +18,8 @@ const exclude: vscode.GlobPattern = new vscode.RelativePattern(
 );
 
 subscribe(() => {
-	vscode.window.showInformationMessage('配置文件已更新');
-	afterPathSet();
+    // vscode.window.showInformationMessage('配置文件已更新');
+    afterPathSet();
 });
 
 vscode.workspace.findFiles('oak.config.json', exclude).then((uris) => {
@@ -73,7 +73,7 @@ vscode.workspace.findFiles('oak.config.json', exclude).then((uris) => {
         // 设置projectHome
         setProjectHome(projectHome);
         // 通知已经启用
-        vscode.window.showInformationMessage('已启用oak-assistant!');
+        // vscode.window.showInformationMessage('已启用oak-assistant!');
     });
 });
 
