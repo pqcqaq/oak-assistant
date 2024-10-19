@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { pathConfig } from '../utils/paths';
 import { EntityItem } from './oakTreePanel';
 import { findEntityDefFile } from '../utils/entities';
+import { join } from 'path';
+import { toUpperFirst } from '../utils/stringUtils';
 
 const pushToEntityDefinition = vscode.commands.registerCommand(
     'oak-entities.jumpToDefinition',
@@ -42,4 +44,25 @@ const pushToEntityDefinition = vscode.commands.registerCommand(
     }
 );
 
-export const treePanelCommands = [pushToEntityDefinition];
+const pushToEntitySchema = vscode.commands.registerCommand(
+    'oak-entities.jumpToSchema',
+    async (item: EntityItem) => {
+        if (!item) {
+            // 在explorer中定位到指定文件夹
+            const dir = pathConfig.oakAppDomainHome;
+            const uri = vscode.Uri.file(join(dir, 'EntityDict.ts'));
+            await vscode.commands.executeCommand('revealInExplorer', uri);
+            return;
+        }
+
+        // 打开schema文件
+        const schemaPath = pathConfig.oakAppDomainHome;
+        const schemaUri = vscode.Uri.file(
+            join(schemaPath, toUpperFirst(item.getEntityName()), 'Schema.ts')
+        );
+
+        await vscode.window.showTextDocument(schemaUri);
+    }
+);
+
+export const treePanelCommands = [pushToEntityDefinition, pushToEntitySchema];

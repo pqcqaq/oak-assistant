@@ -42,6 +42,12 @@
         "command": "oak-entities.jumpToDefinition",
         "when": "view == oak-entities && viewItem == entityItem",
         "group": "navigation"
+      },
+      {
+        "title": "跳转到Schema目录",
+        "command": "oak-entities.jumpToSchema",
+        "when": "view == oak-entities && viewItem == entityItem",
+        "group": "navigation"
       }
     ],
     "menus": {
@@ -55,6 +61,11 @@
       "view/item/context": [
         {
           "command": "oak-entities.jumpToDefinition",
+          "when": "view == oak-entities && viewItem == entityItem",
+          "group": "navigation"
+        },
+        {
+          "command": "oak-entities.jumpToSchema",
           "when": "view == oak-entities && viewItem == entityItem",
           "group": "navigation"
         }
