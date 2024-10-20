@@ -34,9 +34,9 @@ function updateDecorations(editor: vscode.TextEditor) {
     while ((match = oakPathRegex.exec(fileText)) !== null) {
         const projection = match[1];
         if (!entityProjections.includes(projection)) {
-            const startPos = editor.document.positionAt(match.index + 25);
+            const startPos = editor.document.positionAt(match.index + 16);
             const endPos = editor.document.positionAt(
-                match.index + 25 + projection.length
+                match.index + 16 + projection.length
             );
             const range = new vscode.Range(startPos, endPos);
 
