@@ -31,8 +31,13 @@ function updateDecorations(editor: vscode.TextEditor) {
     const decorations: vscode.DecorationOptions[] = [];
     let match: RegExpExecArray | null;
 
+    if (!entityName) {
+        return;
+    }
+
     while ((match = oakPathRegex.exec(fileText)) !== null) {
         const projection = match[1];
+
         if (!entityProjections.includes(projection)) {
             const startPos = editor.document.positionAt(match.index + 16);
             const endPos = editor.document.positionAt(
@@ -70,7 +75,7 @@ function parseDocument(document: vscode.TextDocument) {
 
     entityName = undefined;
 
-    ts.forEachChild(sourceFile, (node) => {
+    const eachChild = (node: ts.Node) => {
         if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node)) {
             const firstParameter = node.parameters[0];
             if (!firstParameter) {
@@ -90,11 +95,18 @@ function parseDocument(document: vscode.TextDocument) {
                     const innerNode = entityNameNode.literal;
                     if (innerNode && ts.isStringLiteral(innerNode)) {
                         entityName = innerNode.text;
+                        return;
                     }
                 }
             }
         }
-    });
+        // 如果没找到，继续遍历
+        if (!entityName) {
+            ts.forEachChild(node, eachChild);
+        }
+    };
+
+    ts.forEachChild(sourceFile, eachChild);
 
     if (entityName) {
         entityProjections = getProjectionList(entityName);

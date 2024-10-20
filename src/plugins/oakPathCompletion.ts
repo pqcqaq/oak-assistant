@@ -106,6 +106,12 @@ const oakPathDocumentLinkProvider =
             provideDocumentLinks(
                 document: vscode.TextDocument
             ): vscode.DocumentLink[] {
+                // 获取实体名称
+                let entityName = getEntityNameFromDocument(document);
+                if (!entityName) {
+                    return [];
+                }
+
                 const links: vscode.DocumentLink[] = [];
                 const text = document.getText();
                 const regex = /`\$\{oakFullpath\}.(\w+\$?\w+?)`/g;
@@ -117,12 +123,6 @@ const oakPathDocumentLinkProvider =
                         match.index + match[0].length
                     );
                     const range = new vscode.Range(start, end);
-
-                    // 获取实体名称
-                    let entityName = getEntityNameFromDocument(document);
-                    if (!entityName) {
-                        continue;
-                    }
 
                     // 检查投影是否正确
                     const projections = getProjectionList(entityName);
@@ -158,7 +158,7 @@ function getEntityNameFromDocument(
 
     let entityName: string | undefined;
 
-    ts.forEachChild(sourceFile, (node) => {
+    const eachChild = (node: ts.Node) => {
         if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node)) {
             const firstParameter = node.parameters[0];
             if (!firstParameter) {
@@ -170,7 +170,7 @@ function getEntityNameFromDocument(
             }
             if (
                 ts.isTypeReferenceNode(typeRef) &&
-                (typeRef.typeName as Identifier).escapedText ===
+                (typeRef.typeName as ts.Identifier).escapedText ===
                     'WebComponentProps'
             ) {
                 const entityNameNode = typeRef.typeArguments?.[1];
@@ -178,11 +178,18 @@ function getEntityNameFromDocument(
                     const innerNode = entityNameNode.literal;
                     if (innerNode && ts.isStringLiteral(innerNode)) {
                         entityName = innerNode.text;
+                        return;
                     }
                 }
             }
         }
-    });
+        // 如果没找到，继续遍历
+        if (!entityName) {
+            ts.forEachChild(node, eachChild);
+        }
+    };
+
+    ts.forEachChild(sourceFile, eachChild);
 
     return entityName;
 }
