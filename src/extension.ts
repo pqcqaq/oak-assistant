@@ -13,6 +13,7 @@ import oakPathInline from './plugins/oakPathInline';
 import oakPathCompletion from './plugins/oakPathCompletion';
 import oakPathHighlighter from './plugins/oakPathDecoration';
 import entityProviders from './plugins/entityJump';
+import { activateOakLocale, deactivateOakLocale } from './plugins/oakLocale';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -148,6 +149,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     createFileWatcher(context);
     try {
+        activateOakLocale(context);
         context.subscriptions.push(
             helloOak,
             reload,
@@ -171,4 +173,5 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     entityProviders.dispose();
     oakPathCompletion.dispose();
+    deactivateOakLocale();
 }

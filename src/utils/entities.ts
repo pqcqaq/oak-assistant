@@ -5,7 +5,7 @@ import fs from 'fs';
 import * as ts from 'typescript';
 import { debounce } from 'lodash';
 import { random } from 'lodash';
-import * as glob from 'glob';
+import { glob } from 'glob';
 import { pathConfig } from '../utils/paths';
 import { toLowerFirst, toUpperFirst } from '../utils/stringUtils';
 import { EntityDesc, LanguageValue, LocalesDef } from '../types';

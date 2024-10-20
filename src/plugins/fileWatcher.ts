@@ -13,6 +13,7 @@ import {
     removeConponentFromEntity,
     updateEntityComponent,
 } from '../utils/components';
+import { deleteCachedPathLocale } from '../utils/locales';
 
 /**
  * 监听指定目录下的所有文件变化
@@ -24,7 +25,8 @@ function watchDirectory(
     context: vscode.ExtensionContext,
     onCreate?: (uri: vscode.Uri, action?: 'create') => void,
     onChange?: (uri: vscode.Uri, action?: 'change') => void,
-    onDelete?: (uri: vscode.Uri, action?: 'delete') => void
+    onDelete?: (uri: vscode.Uri, action?: 'delete') => void,
+    pattern = '**/*'
 ) {
     // 确保路径是绝对路径
     const absolutePath = path.isAbsolute(directoryPath)
@@ -33,7 +35,7 @@ function watchDirectory(
 
     // 创建一个文件系统观察器
     const watcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(absolutePath, '**/*')
+        new vscode.RelativePattern(absolutePath, pattern)
     );
 
     const fileEvents = [
@@ -236,6 +238,32 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
             handleProjectEntityChange,
             undefined,
             handleProjectEntityChange
+        );
+    });
+
+
+    // 监控所有的**/locales目录，如果发生变化，则重新解析locales
+    let disposeLocaleWatcher: (() => void) | null = null;
+
+    const handleLocaleChange = async (path: vscode.Uri) => {
+        // 重新解析locales
+        deleteCachedPathLocale(normalizePath(path.fsPath));
+    };
+
+    // 监听locales目录
+    subscribe(() => {
+        if (disposeLocaleWatcher) {
+            disposeLocaleWatcher();
+        }
+
+        const localePath = pathConfig.localesHome;
+        disposeLocaleWatcher = watchDirectory(
+            localePath,
+            context,
+            handleLocaleChange,
+            handleLocaleChange,
+            handleLocaleChange,
+            '**/*.json'
         );
     });
 }

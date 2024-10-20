@@ -20,6 +20,7 @@ export const internalPath = {
     namespaces: 'web\\src\\app\\namespaces',
     oakAppDomain: 'src\\oak-app-domain',
     components: 'src\\components',
+    locales: 'src\\locales',
 };
 
 export const pathConfig: {
@@ -31,6 +32,7 @@ export const pathConfig: {
     get namespacesHome(): string;
     get oakAppDomainHome(): string;
     get componentsHome(): string;
+    get localesHome(): string;
 } = {
     projectHome: '',
     get entityHome() {
@@ -53,6 +55,9 @@ export const pathConfig: {
     },
     get componentsHome() {
         return `${this.projectHome}\\${internalPath.components}`;
+    },
+    get localesHome() {
+        return `${this.projectHome}\\${internalPath.locales}`;
     },
 };
 

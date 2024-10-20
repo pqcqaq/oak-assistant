@@ -1,4 +1,4 @@
-import { EntityShape, LocaleDef, StorageDesc } from 'oak-domain/lib/types';
+import { EntityShape, StorageDesc } from 'oak-domain/lib/types';
 
 export type CreateComponentConfig = {
     folderName: string;
@@ -78,4 +78,27 @@ export type TriggerDef = {
     action: string;
     when: string;
     path: string;
+};
+
+export type EntityLocale = {
+    [key: string]: LanguageValue;
+};
+
+export type LocaleData = {
+    [key: string]: string | LocaleData;
+};
+
+export type NamespaceLocale = {
+    [key: string]: LocaleData;
+};
+
+export type LocaleDef = {
+    namespaced: NamespaceLocale;
+    entities: EntityLocale;
+};
+
+export type LocaleItem = {
+    label: string;
+    value: string;
+    desc: string;
 };
