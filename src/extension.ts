@@ -156,11 +156,12 @@ export async function activate(context: vscode.ExtensionContext) {
             createOakTreePanel(),
             ...treePanelCommands,
             oakPathInline,
-            oakPathCompletion,
+            oakPathCompletion.oakPathCompletion,
+            oakPathCompletion.oakPathDocumentLinkProvider,
             ...oakPathHighlighter,
             entityProviders.selectionChangeHandler,
             entityProviders.hoverProvider,
-            entityProviders.documentLinkProvider,
+            entityProviders.documentLinkProvider
         );
     } catch (error) {
         console.error('激活插件时出错:', error);
@@ -169,4 +170,5 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
     entityProviders.dispose();
+    oakPathCompletion.dispose();
 }
