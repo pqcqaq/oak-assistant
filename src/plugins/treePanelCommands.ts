@@ -47,7 +47,13 @@ const pushToEntityDefinition = vscode.commands.registerCommand(
 
 const pushToEntitySchema = vscode.commands.registerCommand(
     'oak-entities.jumpToSchema',
-    async (item: EntityItem | string) => {
+    async (
+        item:
+            | EntityItem
+            | {
+                  entityName: string;
+              }
+    ) => {
         const openSchema = (entityName: string) => {
             // 打开schema文件
             const schemaPath = pathConfig.oakAppDomainHome;
@@ -57,8 +63,8 @@ const pushToEntitySchema = vscode.commands.registerCommand(
             vscode.window.showTextDocument(schemaUri);
         };
 
-        if (typeof item === 'string') {
-            openSchema(item);
+        if ((item as any).entityName) {
+            openSchema((item as any).entityName);
             return;
         }
 
@@ -70,7 +76,7 @@ const pushToEntitySchema = vscode.commands.registerCommand(
             return;
         }
 
-        openSchema(item.getEntityName());
+        openSchema((item as EntityItem).getEntityName());
     }
 );
 

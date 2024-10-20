@@ -12,6 +12,7 @@ import { createFileWatcher } from './plugins/fileWatcher';
 import oakPathInline from './plugins/oakPathInline';
 import oakPathCompletion from './plugins/oakPathCompletion';
 import oakPathHighlighter from './plugins/oakPathDecoration';
+import entityProviders from './plugins/entityJump';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -146,18 +147,26 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     createFileWatcher(context);
-    context.subscriptions.push(
-        helloOak,
-        reload,
-        checkPagesAndNamespace(),
-        createOakComponent(),
-        createOakTreePanel(),
-        ...treePanelCommands,
-		oakPathInline,
-		oakPathCompletion,
-		...oakPathHighlighter,
-		
-    );
+    try {
+        context.subscriptions.push(
+            helloOak,
+            reload,
+            checkPagesAndNamespace(),
+            createOakComponent(),
+            createOakTreePanel(),
+            ...treePanelCommands,
+            oakPathInline,
+            oakPathCompletion,
+            ...oakPathHighlighter,
+            entityProviders.selectionChangeHandler,
+            entityProviders.hoverProvider,
+            entityProviders.documentLinkProvider,
+        );
+    } catch (error) {
+        console.error('激活插件时出错:', error);
+    }
 }
 
-export function deactivate() {}
+export function deactivate() {
+    entityProviders.dispose();
+}
