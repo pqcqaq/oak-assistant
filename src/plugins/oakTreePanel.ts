@@ -83,11 +83,11 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         }
         if (element instanceof EntityItem) {
             const children: TreeItem[] = [];
-            children.push(new ProjectionItem(element.getEntityName()));
+            // children.push(new TriggersItem(element.getEntityName()));
             children.push(new ComponentsItem(element.getEntityName()));
             return children;
         }
-        if (element instanceof ProjectionItem) {
+        if (element instanceof TriggersItem) {
             return entityConfig
                 .getEntityDesc(element.getEntityName())
                 .projectionList.map((projection) => {
@@ -147,7 +147,7 @@ export class EntityItem extends TreeItem {
 
 export class ComponentsItem extends TreeItem {
     constructor(public readonly entity: string) {
-        super('Components', vscode.TreeItemCollapsibleState.Collapsed, entity);
+        super('项目组件', vscode.TreeItemCollapsibleState.Collapsed, entity);
         this.contextValue = 'componentsItem'; // 添加这行，用于识别右键菜单项
     }
 }
@@ -173,10 +173,10 @@ export class ComponentItem extends TreeItem {
     }
 }
 
-export class ProjectionItem extends TreeItem {
+export class TriggersItem extends TreeItem {
     constructor(public readonly entity: string) {
-        super('Projection', vscode.TreeItemCollapsibleState.Collapsed, entity);
-        this.contextValue = 'projectionItem'; // 添加这行，用于识别右键菜单项
+        super('Triggers', vscode.TreeItemCollapsibleState.Collapsed, entity);
+        this.contextValue = 'triggersItem'; // 添加这行，用于识别右键菜单项
     }
 }
 

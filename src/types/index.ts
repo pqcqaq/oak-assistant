@@ -49,9 +49,16 @@ export type EntityComponentDef = {
     path: string;
     entityName: string;
     isList: boolean;
-    components: ComponentDef[]
+    components: ComponentDef[];
 };
 
 export type EnhtityComponentMap = {
     [entityName: string]: EntityComponentDef[];
+};
+
+export type TriggerDef = {
+    entity: string;
+    action: string;
+    when: string;
+    path: string;
 };
