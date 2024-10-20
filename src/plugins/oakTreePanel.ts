@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {
     entityConfig,
+    getEntityName,
     getProjectEntityList,
     subscribe,
 } from '../utils/entities';
@@ -140,7 +141,10 @@ export class EntityItem extends TreeItem {
         public readonly label: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState
     ) {
-        super(label, collapsibleState, label);
+        const name = getEntityName(label);
+        const labelWithZhCN = name ? label + ` (${name})` : label;
+        super(labelWithZhCN, collapsibleState, label);
+        this.label = labelWithZhCN; // 不知道为什么，上面的super方法不生效，所以这里再设置一次
         this.contextValue = 'entityItem'; // 添加这行，用于识别右键菜单项
     }
 }

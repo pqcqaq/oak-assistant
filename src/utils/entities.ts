@@ -522,6 +522,10 @@ export const syncProjectEntityList = () => {
     updateProjectEntityList(entities);
 };
 
+export const getEntityName = (en: string) => {
+    return entityConfig.getEntityDesc(en)?.locales.zh_CN?.name || "";
+};
+
 export function findEntityDefFile(entityName: string): string[] {
     const fileName = toUpperFirst(`${entityName}.ts`);
     const possiblePaths: string[] = [];
