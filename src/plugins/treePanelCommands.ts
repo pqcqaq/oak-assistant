@@ -5,10 +5,48 @@ import { findEntityDefFile } from '../utils/entities';
 import { join } from 'path';
 import { toUpperFirst } from '../utils/stringUtils';
 import fs from 'fs';
+import assert from 'assert';
 
 const pushToEntityDefinition = vscode.commands.registerCommand(
     'oak-entities.jumpToDefinition',
-    async (item: EntityItem) => {
+    async (
+        item:
+            | EntityItem
+            | {
+                  entityName: string;
+              }
+    ) => {
+        const jumpToDefinition = async (entityName: string) => {
+            const possiblePaths = findEntityDefFile(entityName);
+
+            if (possiblePaths.length === 0) {
+                vscode.window.showErrorMessage(
+                    `没有找到entity的定义文件: ${entityName}`
+                );
+                return;
+            }
+
+            let selectedPath: string;
+            if (possiblePaths.length === 1) {
+                selectedPath = possiblePaths[0];
+            } else {
+                const selected = await vscode.window.showQuickPick(
+                    possiblePaths.map((path) => ({
+                        label: path,
+                        description: '',
+                    })),
+                    { placeHolder: '选择一个entity定义文件' }
+                );
+                if (!selected) {
+                    return;
+                }
+                selectedPath = selected.label;
+            }
+
+            const entityDefinitionUri = vscode.Uri.file(selectedPath);
+            await vscode.window.showTextDocument(entityDefinitionUri);
+        };
+
         if (!item) {
             // 在explorer中定位到指定文件夹
             const dir = pathConfig.entityHome;
@@ -17,31 +55,14 @@ const pushToEntityDefinition = vscode.commands.registerCommand(
             return;
         }
 
-        const possiblePaths = findEntityDefFile(item.getEntityName());
-
-        if (possiblePaths.length === 0) {
-            vscode.window.showErrorMessage(
-                `没有找到entity的定义文件: ${item.getEntityName()}`
-            );
+        if ((item as any).entityName) {
+            jumpToDefinition((item as any).entityName);
             return;
         }
 
-        let selectedPath: string;
-        if (possiblePaths.length === 1) {
-            selectedPath = possiblePaths[0];
-        } else {
-            const selected = await vscode.window.showQuickPick(
-                possiblePaths.map((path) => ({ label: path, description: '' })),
-                { placeHolder: '选择一个entity定义文件' }
-            );
-            if (!selected) {
-                return;
-            }
-            selectedPath = selected.label;
-        }
+        assert(item instanceof EntityItem, 'item should be EntityItem');
 
-        const entityDefinitionUri = vscode.Uri.file(selectedPath);
-        await vscode.window.showTextDocument(entityDefinitionUri);
+        jumpToDefinition(item.getEntityName());
     }
 );
 
@@ -68,6 +89,8 @@ const pushToEntitySchema = vscode.commands.registerCommand(
             return;
         }
 
+        assert(item instanceof EntityItem, 'item should be EntityItem');
+
         if (!item) {
             // 在explorer中定位到指定文件夹
             const dir = pathConfig.oakAppDomainHome;
@@ -76,7 +99,7 @@ const pushToEntitySchema = vscode.commands.registerCommand(
             return;
         }
 
-        openSchema((item as EntityItem).getEntityName());
+        openSchema(item.getEntityName());
     }
 );
 

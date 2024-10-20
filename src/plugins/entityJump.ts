@@ -92,7 +92,7 @@ const entityProviders = {
                     );
                     const range = new vscode.Range(start, end);
                     const uri = vscode.Uri.parse(
-                        `command:oak-entities.jumpToSchema?${encodeURIComponent(
+                        `command:oak-entities.jumpToDefinition?${encodeURIComponent(
                             JSON.stringify({ entityName: match[2] })
                         )}`
                     );
