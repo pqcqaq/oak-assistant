@@ -10,7 +10,7 @@ export const templateNames = {
     webPcTsx: 'web.pc.tsx',
     webTsx: 'web.tsx',
     localeZhCN: 'locales\\zh_CN.json',
-    styleLess: 'style.module.less',
+    styleLess: 'styles.module.less',
 } as const;
 
 export type TemplateName = keyof typeof templateNames;
@@ -66,9 +66,10 @@ export const outputTemplate = (
 };
 
 export const generateTemplate = (outPath: string, data: CreateOakComponent) => {
-    outputTemplate('index', data.index, outPath);
     outputTemplate('webPcTsx', data.webPcTsx, outPath);
     outputTemplate('webTsx', data.webTsx, outPath);
     outputTemplate('localeZhCN', data.localeZhCN, outPath);
     outputTemplate('styleLess', data.styleLess, outPath);
+    // 因为这里涉及到组件的扫描，index.ts 文件需要在最后生成
+    outputTemplate('index', data.index, outPath);
 };

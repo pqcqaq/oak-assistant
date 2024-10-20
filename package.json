@@ -72,6 +72,11 @@
           "command": "oak-entities.jumpToSchema",
           "when": "view == oak-entities && viewItem == entityItem",
           "group": "navigation"
+        },
+        {
+          "command": "oak-assistant.create-oak-component",
+          "when": "view == oak-entities && viewItem == componentsItem",
+          "group": "navigation"
         }
       ]
     },

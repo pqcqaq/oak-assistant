@@ -1,9 +1,17 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { normalizePath, pathConfig, setProjectHome, subscribe } from '../utils/paths';
+import {
+    normalizePath,
+    pathConfig,
+    setProjectHome,
+    subscribe,
+} from '../utils/paths';
 import { analyzeOakAppDomain } from '../utils/entities';
 import { join } from 'path';
-import { removeConponentFromEntity, updateEntityComponent } from '../utils/components';
+import {
+    removeConponentFromEntity,
+    updateEntityComponent,
+} from '../utils/components';
 
 /**
  * 监听指定目录下的所有文件变化
@@ -155,12 +163,34 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
         );
     });
 
-
     // 监控components和page目录，如果发生变化，则重新解析component
     let disposeComponentWatcher: (() => void) | null = null;
 
     const handleComponentChange = async (uri: vscode.Uri, action: any) => {
-        const componentPath = normalizePath(join(uri.fsPath, ".."));
+        // 如果不是index.ts，有可能是删除操作导致，也有可能是其他文件变化
+        if (uri.fsPath.indexOf('index.ts') === -1) {
+            // 如果是删除操作，拼接上index.ts，以便重新解析
+            if (action === 'delete') {
+                uri = vscode.Uri.file(join(uri.fsPath, 'index.ts'));
+            } else {
+                // 更新操作，需要判断是不是以下的文件结尾
+                // 'web.tsx', 'web.pc.tsx', 'render.native.tsx', 'render.ios.tsx', 'render.android.tsx', 'index.xml'
+                const ext = path.extname(uri.fsPath);
+                if (
+                    ext !== '.tsx' &&
+                    ext !== '.xml' &&
+                    ext !== '.ts'
+                ) {
+                    return;
+                }
+                // 如果是组件文件，则需要更新entity的component
+                updateEntityComponent(
+                    normalizePath(join(uri.fsPath, '..'))
+                );
+                return;
+            }
+        }
+        const componentPath = normalizePath(join(uri.fsPath, '..'));
         switch (action) {
             case 'create':
             case 'change':
