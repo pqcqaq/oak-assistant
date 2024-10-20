@@ -78,6 +78,14 @@ export const entityConfig = {
     },
 };
 
+export const getProjectionList = (entityName: string) => {
+    const desc = entityDict[entityName];
+    if (desc) {
+        return desc.projectionList;
+    }
+    return [];
+};
+
 function resolveImportPath(importPath: string, currentDir: string): string {
     if (importPath.startsWith('.')) {
         return join(currentDir, `${importPath}.ts`);

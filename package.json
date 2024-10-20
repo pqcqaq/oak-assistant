@@ -62,6 +62,10 @@
       {
         "command": "oak-entities.toggleShowAllEntities",
         "title": "切换实体类显示范围"
+      },
+      {
+        "command": "oak-assistant.insertOakFullpath",
+        "title": "插入oakPath属性"
       }
     ],
     "menus": {

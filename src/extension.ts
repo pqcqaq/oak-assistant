@@ -9,6 +9,8 @@ import { createOakTreePanel } from './plugins/oakTreePanel';
 import { setLoadingEntities } from './utils/status';
 import { treePanelCommands } from './plugins/treePanelCommands';
 import { createFileWatcher } from './plugins/fileWatcher';
+import oakPathInline from './plugins/oakPathInline';
+import oakPathCompletion from './plugins/oakPathCompletion';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -149,7 +151,9 @@ export async function activate(context: vscode.ExtensionContext) {
         checkPagesAndNamespace(),
         createOakComponent(),
         createOakTreePanel(),
-        ...treePanelCommands
+        ...treePanelCommands,
+		oakPathInline,
+		oakPathCompletion
     );
 }
 
