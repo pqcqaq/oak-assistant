@@ -6,12 +6,10 @@ import {
     setProjectHome,
     subscribe,
 } from '../utils/paths';
-import {
-    analyzeOakAppDomain,
-    syncProjectEntityList,
-} from '../utils/entities';
+import { analyzeOakAppDomain, syncProjectEntityList } from '../utils/entities';
 import { join } from 'path';
 import {
+    removeByPrefixPath,
     removeConponentFromEntity,
     updateEntityComponent,
 } from '../utils/components';
@@ -174,7 +172,8 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
         if (uri.fsPath.indexOf('index.ts') === -1) {
             // 如果是删除操作，拼接上index.ts，以便重新解析
             if (action === 'delete') {
-                uri = vscode.Uri.file(join(uri.fsPath, 'index.ts'));
+                removeByPrefixPath(normalizePath(uri.fsPath));
+                return;
             } else {
                 // 更新操作，需要判断是不是以下的文件结尾
                 // 'web.tsx', 'web.pc.tsx', 'render.native.tsx', 'render.ios.tsx', 'render.android.tsx', 'index.xml'

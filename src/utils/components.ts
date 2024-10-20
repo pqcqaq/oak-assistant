@@ -251,6 +251,26 @@ export const updateEntityComponent = (path: string) => {
     addComponentsToEntity([newComponent]);
 };
 
+export const removeByPrefixPath = (prefixPath: string) => {
+    let found = false;
+    Object.keys(entityComponents).forEach((entityName) => {
+        const list = entityComponents[entityName];
+        const index = list.findIndex((item) =>
+            item.path.startsWith(prefixPath)
+        );
+        if (index > -1) {
+            // 从list中删除
+            list.splice(index, 1);
+            entityComponents[entityName] = list;
+            found = true;
+        }
+    });
+
+    if (!found) {
+        console.log('没有找到要删除的component，可能会出现问题');
+    }
+};
+
 // 订阅path的更新
 subscribe(() => {
     const scanPath = [pathConfig.componentsHome, pathConfig.pagesHome];
