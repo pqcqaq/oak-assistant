@@ -1,14 +1,27 @@
 import * as vscode from 'vscode';
 import { EntityShape } from 'oak-domain/lib/types';
-import { join, dirname } from 'path';
+import path, { join, dirname } from 'path';
 import fs from 'fs';
 import * as ts from 'typescript';
 import { debounce } from 'lodash';
 import { random } from 'lodash';
 import * as glob from 'glob';
 import { pathConfig } from '../utils/paths';
-import { toUpperFirst } from '../utils/stringUtils';
+import { toLowerFirst, toUpperFirst } from '../utils/stringUtils';
 import { EntityDesc } from '../types';
+
+const projectEntityList: string[] = [];
+
+export const updateProjectEntityList = (entityList: string[]) => {
+    console.log('updateProjectEntityList:', entityList);
+    projectEntityList.splice(0, projectEntityList.length, ...entityList);
+    // 通知更新
+    updateDeounced();
+};
+
+export const getProjectEntityList = () => {
+    return projectEntityList;
+};
 
 export type EntityDict = {
     [key: string]: EntityDesc<EntityShape>;
@@ -463,6 +476,20 @@ export const analyzeOakAppDomain = async (path: string) => {
             });
         }
     );
+
+    syncProjectEntityList();
+};
+
+export const syncProjectEntityList = () => {
+    const entitiesFiles = glob.sync('*.ts', {
+        cwd: pathConfig.entityHome,
+    });
+    const entities = entitiesFiles.map((file) => {
+        // 使用 path.basename 来正确地获取文件名（不包含扩展名）
+        const entityName = path.basename(file, '.ts');
+        return toLowerFirst(entityName);
+    });
+    updateProjectEntityList(entities);
 };
 
 export function findEntityDefFile(entityName: string): string[] {

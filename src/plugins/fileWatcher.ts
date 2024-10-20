@@ -6,7 +6,10 @@ import {
     setProjectHome,
     subscribe,
 } from '../utils/paths';
-import { analyzeOakAppDomain } from '../utils/entities';
+import {
+    analyzeOakAppDomain,
+    syncProjectEntityList,
+} from '../utils/entities';
 import { join } from 'path';
 import {
     removeConponentFromEntity,
@@ -176,17 +179,11 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
                 // 更新操作，需要判断是不是以下的文件结尾
                 // 'web.tsx', 'web.pc.tsx', 'render.native.tsx', 'render.ios.tsx', 'render.android.tsx', 'index.xml'
                 const ext = path.extname(uri.fsPath);
-                if (
-                    ext !== '.tsx' &&
-                    ext !== '.xml' &&
-                    ext !== '.ts'
-                ) {
+                if (ext !== '.tsx' && ext !== '.xml' && ext !== '.ts') {
                     return;
                 }
                 // 如果是组件文件，则需要更新entity的component
-                updateEntityComponent(
-                    normalizePath(join(uri.fsPath, '..'))
-                );
+                updateEntityComponent(normalizePath(join(uri.fsPath, '..')));
                 return;
             }
         }
@@ -215,6 +212,31 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
             handleComponentChange,
             handleComponentChange,
             handleComponentChange
+        );
+    });
+
+    // 监控entities目录，只在新增或者删除的时候更新ProjectEntityList
+    let disposeProjectEntityWatcher: (() => void) | null = null;
+
+    const handleProjectEntityChange = async (uri: vscode.Uri, action: any) => {
+        if (action === 'create' || action === 'delete') {
+            syncProjectEntityList();
+        }
+    };
+
+    // 监听entities目录
+    subscribe(() => {
+        if (disposeProjectEntityWatcher) {
+            disposeProjectEntityWatcher();
+        }
+
+        const entityPath = pathConfig.entityHome;
+        disposeProjectEntityWatcher = watchDirectory(
+            entityPath,
+            context,
+            handleProjectEntityChange,
+            undefined,
+            handleProjectEntityChange
         );
     });
 }

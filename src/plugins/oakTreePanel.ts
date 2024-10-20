@@ -1,11 +1,22 @@
 import * as vscode from 'vscode';
-import { entityConfig, subscribe } from '../utils/entities';
+import {
+    entityConfig,
+    getProjectEntityList,
+    subscribe,
+} from '../utils/entities';
 import { componentConfig, subscribeAll } from '../utils/components';
 import { join } from 'path';
 
 class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private disposeGlobal: (() => void) | null = null;
     private disposeComponentSub: (() => void) | null = null;
+    private showAllEntities: boolean = true; // 控制是否显示全部实体类
+
+    // 切换显示全部实体类的方法
+    toggleShowAllEntities(): void {
+        this.showAllEntities = !this.showAllEntities;
+        this.refresh();
+    }
 
     private _onDidChangeTreeData: vscode.EventEmitter<
         TreeItem | undefined | null | void
@@ -44,6 +55,25 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     getChildren(element?: TreeItem): vscode.ProviderResult<TreeItem[]> {
         // 最顶层
         if (!element) {
+            if (!this.showAllEntities) {
+                const projectEntities = getProjectEntityList();
+                return [
+                    new EntityItem(
+                        '仅显示项目中定义的实体类',
+                        vscode.TreeItemCollapsibleState.None
+                    ),
+                    ...entityConfig.entityNameList
+                        .filter((item) => {
+                            return projectEntities.includes(item);
+                        })
+                        .map((entityName) => {
+                            return new EntityItem(
+                                entityName,
+                                vscode.TreeItemCollapsibleState.Collapsed
+                            );
+                        }),
+                ];
+            }
             return entityConfig.entityNameList.map((entityName) => {
                 return new EntityItem(
                     entityName,
@@ -155,6 +185,14 @@ export const createOakTreePanel = () => {
     const treeView = vscode.window.createTreeView('oak-entities', {
         treeDataProvider: treeDataProvider,
     });
+
+    // 注册切换显示全部实体类的命令
+    vscode.commands.registerCommand(
+        'oak-entities.toggleShowAllEntities',
+        () => {
+            treeDataProvider.toggleShowAllEntities();
+        }
+    );
 
     return treeView;
 };

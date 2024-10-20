@@ -58,6 +58,10 @@
         "title": "删除组件",
         "when": "view == oak-entities && viewItem == componentItem",
         "group": "navigation"
+      },
+      {
+        "command": "oak-entities.toggleShowAllEntities",
+        "title": "切换实体类显示范围"
       }
     ],
     "menus": {
@@ -87,6 +91,13 @@
         {
           "command": "oak-entities.deleteComponent",
           "when": "view == oak-entities && viewItem == componentItem",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "oak-entities.toggleShowAllEntities",
+          "when": "view == oak-entities",
           "group": "navigation"
         }
       ]
