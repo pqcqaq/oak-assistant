@@ -38,7 +38,7 @@ function handleSelectionChange(event: vscode.TextEditorSelectionChangeEvent) {
     }
 
     const text = document.getText(selection);
-    const pattern = /entity:\s*(['"])(.*?)\1,/;
+    const pattern = /entity:\s*(['"])([a-zA-Z0-9_\s]+)\1,/;
     const match = text.match(pattern);
 
     if (match) {
@@ -56,7 +56,7 @@ const entityProviders = {
         { scheme: 'file' },
         {
             provideHover(document, position, token) {
-                const pattern = /entity:\s*(['"])(.*?)\1,/;
+                const pattern = /entity:\s*(['"])([a-zA-Z0-9_\s]+)\1,/;
                 const range = document.getWordRangeAtPosition(
                     position,
                     pattern
@@ -82,7 +82,7 @@ const entityProviders = {
                 document: vscode.TextDocument
             ): vscode.DocumentLink[] {
                 const links: vscode.DocumentLink[] = [];
-                const regex = /entity:\s*(['"])(.*?)\1,/g;
+                const regex = /entity:\s*(['"])([a-zA-Z0-9_\s]+)\1,/g;
                 const text = document.getText();
                 let match;
                 while ((match = regex.exec(text)) !== null) {
