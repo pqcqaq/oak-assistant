@@ -7,7 +7,7 @@ let sourceFile: ts.SourceFile | null = null;
 let entityName: string | undefined;
 let entityProjections: string[] = [];
 
-const oakPathRegex = /oakPath=\{`\$\{oakFullpath\}.(\w+\$?\w+?)`\}/g;
+const oakPathRegex = /`\$\{oakFullpath\}.(\w+\$?\w+?)`/g;
 
 const oakPathDecoration = vscode.window.createTextEditorDecorationType({
     borderWidth: '1px',
