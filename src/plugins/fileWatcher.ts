@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { pathConfig, setProjectHome, subscribe } from '../utils/paths';
+import { normalizePath, pathConfig, setProjectHome, subscribe } from '../utils/paths';
 import { analyzeOakAppDomain } from '../utils/entities';
 import { join } from 'path';
+import { removeConponentFromEntity, updateEntityComponent } from '../utils/components';
 
 /**
  * 监听指定目录下的所有文件变化
@@ -144,13 +145,46 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
         if (disposeConfigWatcher) {
             disposeConfigWatcher();
         }
-        
+
         const configPath = join(pathConfig.projectHome, 'oak.config.json');
         disposeConfigWatcher = watchDirectory(
             configPath,
             context,
             undefined,
             handleConfigChange
+        );
+    });
+
+
+    // 监控components和page目录，如果发生变化，则重新解析component
+    let disposeComponentWatcher: (() => void) | null = null;
+
+    const handleComponentChange = async (uri: vscode.Uri, action: any) => {
+        const componentPath = normalizePath(join(uri.fsPath, ".."));
+        switch (action) {
+            case 'create':
+            case 'change':
+                updateEntityComponent(componentPath);
+                break;
+            case 'delete':
+                removeConponentFromEntity(componentPath);
+                break;
+        }
+    };
+
+    // 监听components目录
+    subscribe(() => {
+        if (disposeComponentWatcher) {
+            disposeComponentWatcher();
+        }
+
+        const componentPath = pathConfig.componentsHome;
+        disposeComponentWatcher = watchDirectory(
+            componentPath,
+            context,
+            handleComponentChange,
+            handleComponentChange,
+            handleComponentChange
         );
     });
 }

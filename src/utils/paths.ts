@@ -1,59 +1,59 @@
-import { debounce, random } from "lodash";
+import { debounce, random } from 'lodash';
 
 export const pluginPaths: {
-	root: string;
-	get templates(): string;
+    root: string;
+    get templates(): string;
 } = {
-	root: __dirname,
-	get templates() {
-		return `${this.root}\\templates`;
-	},
+    root: __dirname,
+    get templates() {
+        return `${this.root}\\templates`;
+    },
 };
 
-console.log("plugin inited:", pluginPaths);
+console.log('plugin inited:', pluginPaths);
 
 export const internalPath = {
-	entities: "src\\entities",
-	triggers: "src\\triggers",
-	checkers: "src\\checkers",
-	pages: "src\\pages",
-	namespaces: "web\\src\\app\\namespaces",
-	oakAppDomain: "src\\oak-app-domain",
-	components: "src\\components",
+    entities: 'src\\entities',
+    triggers: 'src\\triggers',
+    checkers: 'src\\checkers',
+    pages: 'src\\pages',
+    namespaces: 'web\\src\\app\\namespaces',
+    oakAppDomain: 'src\\oak-app-domain',
+    components: 'src\\components',
 };
 
 export const pathConfig: {
-	projectHome: string;
-	get entityHome(): string;
-	get triggerHome(): string;
-	get checkerHome(): string;
-	get pagesHome(): string;
-	get namespacesHome(): string;
-	get oakAppDomainHome(): string;
-	get componentsHome(): string;
+    projectHome: string;
+    get entityHome(): string;
+    get triggerHome(): string;
+    get checkerHome(): string;
+    get pagesHome(): string;
+    get namespacesHome(): string;
+    get oakAppDomainHome(): string;
+    get componentsHome(): string;
 } = {
-	projectHome: "",
-	get entityHome() {
-		return `${this.projectHome}\\${internalPath.entities}`;
-	},
-	get triggerHome() {
-		return `${this.projectHome}\\${internalPath.triggers}`;
-	},
-	get checkerHome() {
-		return `${this.projectHome}\\${internalPath.checkers}`;
-	},
-	get pagesHome() {
-		return `${this.projectHome}\\${internalPath.pages}`;
-	},
-	get namespacesHome() {
-		return `${this.projectHome}\\${internalPath.namespaces}`;
-	},
-	get oakAppDomainHome() {
-		return `${this.projectHome}\\${internalPath.oakAppDomain}`;
-	},
-	get componentsHome() {
-		return `${this.projectHome}\\${internalPath.components}`;
-	},
+    projectHome: '',
+    get entityHome() {
+        return `${this.projectHome}\\${internalPath.entities}`;
+    },
+    get triggerHome() {
+        return `${this.projectHome}\\${internalPath.triggers}`;
+    },
+    get checkerHome() {
+        return `${this.projectHome}\\${internalPath.checkers}`;
+    },
+    get pagesHome() {
+        return `${this.projectHome}\\${internalPath.pages}`;
+    },
+    get namespacesHome() {
+        return `${this.projectHome}\\${internalPath.namespaces}`;
+    },
+    get oakAppDomainHome() {
+        return `${this.projectHome}\\${internalPath.oakAppDomain}`;
+    },
+    get componentsHome() {
+        return `${this.projectHome}\\${internalPath.components}`;
+    },
 };
 
 // 发布订阅模式
@@ -87,22 +87,57 @@ export const subscribe = (callback: () => void) => {
 };
 
 export const isConfigReady = (): boolean => {
-	return pathConfig.projectHome !== "";
+    return pathConfig.projectHome !== '';
 };
 
 export const setProjectHome = (projectHome: string) => {
-	pathConfig.projectHome = projectHome.endsWith("\\")
-		? projectHome.slice(0, -1)
-		: projectHome;
-	updateDeounced();
+    pathConfig.projectHome = projectHome.endsWith('\\')
+        ? projectHome.slice(0, -1)
+        : projectHome;
+    updateDeounced();
 };
 
 export const isFileInDirectory = (
-	file: string,
-	...directory: (keyof typeof pathConfig)[]
+    file: string,
+    ...directory: (keyof typeof pathConfig)[]
 ): boolean => {
-	return directory.some((dir) => {
-		const pathGetter = pathConfig[dir];
-		return file.startsWith(pathGetter);
-	});
+    return directory.some((dir) => {
+        const pathGetter = pathConfig[dir];
+        return file.startsWith(pathGetter);
+    });
 };
+
+export function normalizePath(path: string): string {
+    // 将路径分割为数组
+    const pathParts = path.replace(/\\/g, '/').split('/');
+    const normalizedParts = [];
+
+    // 处理盘符大小写
+    if (pathParts[0].endsWith(':')) {
+        normalizedParts.push(pathParts[0].toUpperCase());
+        pathParts.shift();
+    }
+
+    // 遍历路径部分
+    for (const part of pathParts) {
+        if (part === '.') {
+            // 忽略 '.'
+            continue;
+        } else if (part === '..') {
+            // 处理 '..'
+            if (
+                normalizedParts.length > 0 &&
+                normalizedParts[normalizedParts.length - 1] !== '..'
+            ) {
+                normalizedParts.pop();
+            } else {
+                normalizedParts.push('..');
+            }
+        } else {
+            normalizedParts.push(part);
+        }
+    }
+
+    // 拼接规范化后的路径
+    return normalizedParts.join('\\');
+}
