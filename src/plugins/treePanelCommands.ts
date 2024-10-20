@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
 import { pathConfig } from '../utils/paths';
-import { EntityItem } from './oakTreePanel';
+import { ComponentItem, EntityItem } from './oakTreePanel';
 import { findEntityDefFile } from '../utils/entities';
 import { join } from 'path';
 import { toUpperFirst } from '../utils/stringUtils';
+import fs from 'fs';
 
 const pushToEntityDefinition = vscode.commands.registerCommand(
     'oak-entities.jumpToDefinition',
@@ -65,4 +66,29 @@ const pushToEntitySchema = vscode.commands.registerCommand(
     }
 );
 
-export const treePanelCommands = [pushToEntityDefinition, pushToEntitySchema];
+const deleteComponent = vscode.commands.registerCommand(
+    'oak-entities.deleteComponent',
+    async (item: ComponentItem) => {
+        if (!item) {
+            return;
+        }
+        const componentPath = item.getComponentPath();
+        // 弹出提示，确认是否删除
+        const result = await vscode.window.showInformationMessage(
+            `确定要删除组件: ${item.label} 吗?`,
+            { modal: true },
+            '确定'
+        );
+        if (result !== '确定') {
+            return;
+        }
+        // 删除文件夹
+        fs.rmSync(componentPath, { recursive: true });
+    }
+);
+
+export const treePanelCommands = [
+    pushToEntityDefinition,
+    pushToEntitySchema,
+    deleteComponent,
+];

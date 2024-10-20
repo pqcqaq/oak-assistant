@@ -52,6 +52,12 @@
       {
         "command": "oak-assistant.reload",
         "title": "重新加载oak-assistant"
+      },
+      {
+        "command": "oak-entities.deleteComponent",
+        "title": "删除组件",
+        "when": "view == oak-entities && viewItem == componentItem",
+        "group": "navigation"
       }
     ],
     "menus": {
@@ -76,6 +82,11 @@
         {
           "command": "oak-assistant.create-oak-component",
           "when": "view == oak-entities && viewItem == componentsItem",
+          "group": "navigation"
+        },
+        {
+          "command": "oak-entities.deleteComponent",
+          "when": "view == oak-entities && viewItem == componentItem",
           "group": "navigation"
         }
       ]

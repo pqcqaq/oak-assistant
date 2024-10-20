@@ -123,6 +123,10 @@ export class ComponentsItem extends TreeItem {
 }
 
 export class ComponentItem extends TreeItem {
+    private readonly componentPath: string;
+    getComponentPath() {
+        return this.componentPath;
+    }
     constructor(public readonly entity: string, public readonly path: string) {
         // 只保留最后两个\\后面的内容
         const label = path.split('\\').slice(-2).join('\\');
@@ -134,6 +138,7 @@ export class ComponentItem extends TreeItem {
             title: 'Open',
             arguments: [vscode.Uri.file(join(path, 'index.ts'))],
         };
+        this.componentPath = path;
         this.contextValue = 'componentItem'; // 添加这行，用于识别右键菜单项
     }
 }
