@@ -77,10 +77,22 @@ const documentOpenListener = vscode.workspace.onDidOpenTextDocument(
     }
 );
 
+// 在切换窗口的时候调用一次getLocalesData
+vscode.window.onDidChangeActiveTextEditor((editor) => {
+    if (editor) {
+        const document = editor.document;
+        if (document.languageId === 'typescriptreact') {
+            getLocalesData(join(document.uri.fsPath, '../locales'));
+            validateDocument(document);
+        }
+    }
+});
+
 function validateDocument(document: vscode.TextDocument) {
     const diagnostics: vscode.Diagnostic[] = [];
     const text = document.getText();
-    const tCallRegex = /t$['"](.*?)['"]$/g;
+    // 修改正则表达式以正确匹配 t 函数调用
+    const tCallRegex = /t\(['"]([^'"]*)['"]\)/g;
     let match;
 
     while ((match = tCallRegex.exec(text)) !== null) {

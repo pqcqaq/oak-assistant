@@ -148,7 +148,17 @@ export const clearCachedLocaleItems = () => {
 };
 
 export const isKeyExist = (key: string): boolean => {
-    return cachedLocaleItems.every((item) => item.value !== key);
+    let exist = false;
+    cachedLocaleItems.forEach((item) => {
+        if (item.value === key) {
+            exist = true;
+        }
+    });
+    return exist;
+};
+
+export const isLocalePathCached = (path: string): boolean => {
+    return cachedPathLocale.has(normalizePath(path));
 };
 
 /**
@@ -158,13 +168,13 @@ export const isKeyExist = (key: string): boolean => {
  * @returns  返回一个LocaleItem数组
  */
 export const getLocalesData = (path: string, prefix?: string): LocaleItem[] => {
-    if (!cachedLocaleItems.length) {
-        cachedLocaleItems = [
-            ...getLocaleItemsByPath(path),
-            ...getNamespacedLocaleItems(),
-            ...getEntityLocaleItems(),
-        ];
-    }
+    
+    cachedLocaleItems = [
+        ...getNamespacedLocaleItems(),
+        ...getEntityLocaleItems(),
+        ...getLocaleItemsByPath(path),
+    ];
+
     const locales = cachedLocaleItems;
 
     if (!prefix) {
@@ -207,6 +217,12 @@ subsEntity(() => {
 subsPath(() => {
     setNameSpaceLocales();
     clearCachedLocaleItems();
+    // 刚刚加载完的时候，先设置一次
+    cachedLocaleItems = [
+        ...getNamespacedLocaleItems(),
+        ...getEntityLocaleItems(),
+        // 文件的locales等具体打开某一个文件的时候再设置
+    ];
 });
 
 export const deleteCachedPathLocale = (path: string) => {
