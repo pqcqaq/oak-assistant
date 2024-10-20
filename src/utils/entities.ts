@@ -8,7 +8,7 @@ import { random } from 'lodash';
 import * as glob from 'glob';
 import { pathConfig } from '../utils/paths';
 import { toLowerFirst, toUpperFirst } from '../utils/stringUtils';
-import { EntityDesc } from '../types';
+import { EntityDesc, LanguageValue, LocalesDef } from '../types';
 
 const projectEntityList: string[] = [];
 
@@ -304,6 +304,24 @@ function parseDescFile(
     return descObject;
 }
 
+const language = ['zh_CN', 'en_US'] as const;
+function readLocales(localesDir: string): LocalesDef {
+    // 是否为文件夹并存在
+    if (!fs.existsSync(localesDir)) {
+        return {};
+    }
+    const locales: LocalesDef = {};
+    language.forEach((lang) => {
+        const localeFile = join(localesDir, `${lang}.json`);
+        if (fs.existsSync(localeFile)) {
+            locales[lang] = JSON.parse(
+                fs.readFileSync(localeFile, 'utf-8')
+            ) as LanguageValue;
+        }
+    });
+    return locales;
+}
+
 function parseSchemaFile(filePath: string, program: ts.Program): string[] {
     const sourceFile = program.getSourceFile(filePath);
     if (!sourceFile) {
@@ -460,10 +478,14 @@ export const analyzeOakAppDomain = async (path: string) => {
                                     schemaFile,
                                     program
                                 );
+                                const locales = readLocales(
+                                    join(resolvedPath, '../locales')
+                                );
                                 if (descObject) {
                                     entityDict[entityName] = {
                                         ...descObject,
                                         projectionList,
+                                        locales,
                                     };
                                 }
                             } else {

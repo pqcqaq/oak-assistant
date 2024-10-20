@@ -1,4 +1,4 @@
-import { EntityShape, StorageDesc } from 'oak-domain/lib/types';
+import { EntityShape, LocaleDef, StorageDesc } from 'oak-domain/lib/types';
 
 export type CreateComponentConfig = {
     folderName: string;
@@ -32,8 +32,25 @@ export type CreateOakComponent = {
     styleLess: StyleLessTemplate;
 };
 
+type Language = 'zh_CN' | 'en_US';
+
+export type LanguageValue = {
+    name: string;
+    attr: {
+        [key: string]: string;
+    };
+    action?: {
+        [key: string]: string;
+    };
+};
+
+export type LocalesDef = {
+    [L in Language]?: LanguageValue;
+};
+
 export interface EntityDesc<SH extends EntityShape> extends StorageDesc<SH> {
     projectionList: string[];
+    locales: LocalesDef;
 }
 
 // 'web.tsx', 'web.pc.tsx', 'render.native.tsx', 'render.ios.tsx', 'render.android.tsx', 'index.xml'
