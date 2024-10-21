@@ -1,3 +1,5 @@
+import { random } from 'lodash';
+
 const globalStatus = {
     isLoadingEntities: false,
     isLoadingLocale: false,
@@ -5,6 +7,11 @@ const globalStatus = {
 
 export const setLoadingEntities = (loading: boolean) => {
     globalStatus.isLoadingEntities = loading;
+    if (!loading) {
+        entitySubscribers.forEach((callback) => {
+            callback();
+        });
+    }
 };
 
 export const isLoadingEntities = () => {
@@ -17,6 +24,19 @@ export const setLoadingLocale = (loading: boolean) => {
 
 export const isLoadingLocale = () => {
     return globalStatus.isLoadingLocale;
+};
+
+const entitySubscribers = new Map<number, () => void>();
+
+export const onEntityLoaded = (callback: () => void): (() => void) => {
+    const key = random(0, 100000);
+    if (entitySubscribers.has(key)) {
+        return onEntityLoaded(callback);
+    }
+    entitySubscribers.set(key, callback);
+    return () => {
+        entitySubscribers.delete(key);
+    };
 };
 
 export const waitUntilEntitiesLoaded = async () => {
