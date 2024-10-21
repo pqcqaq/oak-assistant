@@ -57,10 +57,52 @@ export const subscribe = (callback: () => void) => {
     };
 };
 
+const entitySubscribers: Map<
+    string | '#all',
+    Map<number, (name: string) => void>
+> = new Map();
+
+const updateEntity = (entity: string) => {
+    const subscribers = entitySubscribers.get(entity);
+    if (subscribers) {
+        subscribers.forEach((callback) => callback(entity));
+    }
+    // 尝试通知#all的
+    const allSub = entitySubscribers.get('#all');
+    if (allSub) {
+        allSub.forEach((callback) => callback(entity));
+    }
+};
+
+export const subscribeEntity = (
+    entityName: string | '#all',
+    callback: (name: string) => void
+) => {
+    let subscribers = entitySubscribers.get(entityName);
+    if (!subscribers) {
+        subscribers = new Map<number, (name: string) => void>();
+        entitySubscribers.set(entityName, subscribers);
+    }
+    const add = (callback: (name: string) => void) => {
+        const key = random(0, 100000);
+        if (subscribers.has(key)) {
+            return add(callback);
+        }
+        subscribers.set(key, callback);
+        return key;
+    };
+
+    const key = add(callback);
+    return () => {
+        subscribers.delete(key);
+    };
+};
+
 const entityDict: EntityDict = new Proxy({} as EntityDict, {
     set(target, key, value) {
         target[key as string] = value;
         updateDeounced();
+        updateEntity(key as string);
         return true;
     },
 });
@@ -470,18 +512,18 @@ export const analyzeOakAppDomain = async (path: string) => {
                                     resolvedPath,
                                     program
                                 );
-                                const schemaFile = join(
-                                    resolvedPath,
-                                    '../Schema.ts'
-                                );
-                                const projectionList = parseSchemaFile(
-                                    schemaFile,
-                                    program
-                                );
-                                const locales = readLocales(
-                                    join(resolvedPath, '../locales')
-                                );
                                 if (descObject) {
+                                    const schemaFile = join(
+                                        resolvedPath,
+                                        '../Schema.ts'
+                                    );
+                                    const projectionList = parseSchemaFile(
+                                        schemaFile,
+                                        program
+                                    );
+                                    const locales = readLocales(
+                                        join(resolvedPath, '../locales')
+                                    );
                                     entityDict[entityName] = {
                                         ...descObject,
                                         projectionList,

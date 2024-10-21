@@ -92,9 +92,14 @@ export type NamespaceLocale = {
     [key: string]: LocaleData;
 };
 
+export type ComponentLocale = {
+    [path: string]: LocaleData;
+};
+
 export type LocaleDef = {
     namespaced: NamespaceLocale;
     entities: EntityLocale;
+    components: ComponentLocale;
 };
 
 export type LocaleItem = {

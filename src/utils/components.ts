@@ -11,7 +11,7 @@ const entityComponents: EnhtityComponentMap = new Proxy(
     {
         set(target, key, value) {
             target[key as string] = value;
-            updateDeounced(key as string);
+            // updateDeounced(key as string);
             // 通知all
             updateAllDeounced(key as string);
             return true;
@@ -23,36 +23,6 @@ export const componentConfig = {
     getEntityComponents: (name: string) => {
         return entityComponents[name] || [];
     },
-};
-
-const entitySubscribers: Map<string, Map<number, () => void>> = new Map();
-
-const updateDeounced = debounce((entity: string) => {
-    const subscribers = entitySubscribers.get(entity);
-    if (subscribers) {
-        subscribers.forEach((callback) => callback());
-    }
-}, 100);
-
-export const subscribeEntity = (entityName: string, callback: () => void) => {
-    let subscribers = entitySubscribers.get(entityName);
-    if (!subscribers) {
-        subscribers = new Map();
-        entitySubscribers.set(entityName, subscribers);
-    }
-    const add = (callback: () => void) => {
-        const key = random(0, 100000);
-        if (subscribers.has(key)) {
-            return add(callback);
-        }
-        subscribers.set(key, callback);
-        return key;
-    };
-
-    const key = add(callback);
-    return () => {
-        subscribers.delete(key);
-    };
 };
 
 const subscribers = new Map<number, (name: string) => void>();

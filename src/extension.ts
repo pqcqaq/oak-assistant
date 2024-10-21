@@ -34,9 +34,6 @@ vscode.workspace.findFiles('oak.config.json', exclude).then((uris) => {
         const workspaceFolders = vscode.workspace.workspaceFolders;
 
         if (!workspaceFolders || workspaceFolders.length === 0) {
-            vscode.window.showErrorMessage(
-                '未找到工作区，请打开一个文件夹后再试。'
-            );
             return;
         }
 

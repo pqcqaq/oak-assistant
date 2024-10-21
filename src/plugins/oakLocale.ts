@@ -112,7 +112,7 @@ const oakLocalesProvider = vscode.languages.registerCompletionItemProvider(
     "'",
     '"',
     '(',
-    "`",
+    '`'
 );
 
 // 添加文档变化监听器
@@ -167,23 +167,24 @@ async function validateDocument(document: vscode.TextDocument) {
                 vscode.DiagnosticSeverity.Error
             );
             diagnostics.push(diagnostic);
-        } else {
-            const localePath = getCachedLocaleItemByKey(key);
-            if (!localePath || !localePath.path) {
-                continue;
-            }
-            const startPos = document.positionAt(match.index);
-            const endPos = document.positionAt(match.index + match[0].length);
-            const range = new vscode.Range(startPos, endPos);
-
-            // 如果需要，您也可以添加一个信息性的诊断
-            const diagnostic = new vscode.Diagnostic(
-                range,
-                `Locale 定义在: ${localePath.path}`,
-                vscode.DiagnosticSeverity.Information
-            );
-            diagnostics.push(diagnostic);
         }
+        // else {
+        //     const localePath = getCachedLocaleItemByKey(key);
+        //     if (!localePath || !localePath.path) {
+        //         continue;
+        //     }
+        //     const startPos = document.positionAt(match.index);
+        //     const endPos = document.positionAt(match.index + match[0].length);
+        //     const range = new vscode.Range(startPos, endPos);
+
+        //     // 如果需要，您也可以添加一个信息性的诊断
+        //     const diagnostic = new vscode.Diagnostic(
+        //         range,
+        //         `Locale 定义在: ${localePath.path}`,
+        //         vscode.DiagnosticSeverity.Information
+        //     );
+        //     diagnostics.push(diagnostic);
+        // }
     }
 
     diagnosticCollection.set(document.uri, diagnostics);
