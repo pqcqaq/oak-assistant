@@ -50,62 +50,6 @@ export const subscribeAll = (callback: (name: string) => void) => {
 export const scanComponents = (scanPath: string[]) => {
     const componentList: EntityComponentDef[] = [];
 
-    scanPath.forEach((dirPath) => {
-        const files = glob.sync(`${dirPath}/**/index.ts`);
-
-        files.forEach((filePath) => {
-            // 因为涉及到路径的比较，所以需要规范化路径
-            const normalizedPath = normalizePath(filePath);
-            const sourceFile = ts.createSourceFile(
-                filePath,
-                fs.readFileSync(filePath, 'utf-8'),
-                ts.ScriptTarget.ES2015,
-                true
-            );
-
-            ts.forEachChild(sourceFile, (node) => {
-                visitNode(node, normalizedPath);
-            });
-        });
-    });
-
-    componentList.forEach((component) => {
-        const path = join(component.path, '..');
-        // 查找web.pc.tsx 文件
-        const webPcTsx = glob.sync(join(path, 'web.pc.tsx'));
-        // 如果有
-        if (webPcTsx.length) {
-            component.components.push({
-                type: 'web.pc',
-                path: normalizePath(webPcTsx[0]),
-                children: [], // 这里的children关系先不管
-            });
-        }
-        // 查找web.tsx 文件
-        const webTsx = glob.sync(join(path, 'web.tsx'));
-        // 如果有
-        if (webTsx.length) {
-            component.components.push({
-                type: 'web',
-                path: normalizePath(webTsx[0]),
-                children: [], // 这里的children关系先不管
-            });
-        }
-
-        // 查找 index.xml
-        const indexXml = glob.sync(join(path, 'index.xml'));
-        // 如果有
-        if (indexXml.length) {
-            component.components.push({
-                type: 'miniapp',
-                path: normalizePath(indexXml[0]),
-                children: [], // 这里的children关系先不管
-            });
-        }
-    });
-
-    return componentList;
-
     function visitNode(node: ts.Node, path: string) {
         if (
             ts.isCallExpression(node) &&
@@ -167,7 +111,7 @@ export const scanComponents = (scanPath: string[]) => {
                     }
                     // 这里的path是整个文件夹的路径
                     componentList.push({
-                        path: join(path, '..'),
+                        path: normalizePath(join(path, '..')),
                         entityName: entity.initializer.getText().slice(1, -1),
                         isList: isList.initializer.getText() === 'true',
                         components: [],
@@ -180,6 +124,62 @@ export const scanComponents = (scanPath: string[]) => {
             visitNode(node, path);
         });
     }
+
+    scanPath.forEach((dirPath) => {
+        const files = glob.sync(`${dirPath}/**/index.ts`);
+
+        files.forEach((filePath) => {
+            // 因为涉及到路径的比较，所以需要规范化路径
+            const normalizedPath = normalizePath(filePath);
+            const sourceFile = ts.createSourceFile(
+                filePath,
+                fs.readFileSync(filePath, 'utf-8'),
+                ts.ScriptTarget.ES2015,
+                true
+            );
+
+            ts.forEachChild(sourceFile, (node) => {
+                visitNode(node, normalizedPath);
+            });
+        });
+    });
+
+    componentList.forEach((component) => {
+        const path = join(component.path, '..');
+        // 查找web.pc.tsx 文件
+        const webPcTsx = glob.sync(join(path, 'web.pc.tsx'));
+        // 如果有
+        if (webPcTsx.length) {
+            component.components.push({
+                type: 'web.pc',
+                path: normalizePath(webPcTsx[0]),
+                children: [], // 这里的children关系先不管
+            });
+        }
+        // 查找web.tsx 文件
+        const webTsx = glob.sync(join(path, 'web.tsx'));
+        // 如果有
+        if (webTsx.length) {
+            component.components.push({
+                type: 'web',
+                path: normalizePath(webTsx[0]),
+                children: [], // 这里的children关系先不管
+            });
+        }
+
+        // 查找 index.xml
+        const indexXml = glob.sync(join(path, 'index.xml'));
+        // 如果有
+        if (indexXml.length) {
+            component.components.push({
+                type: 'miniapp',
+                path: normalizePath(indexXml[0]),
+                children: [], // 这里的children关系先不管
+            });
+        }
+    });
+
+    return componentList;
 };
 
 export const addComponentsToEntity = (components: EntityComponentDef[]) => {
@@ -239,6 +239,22 @@ export const removeByPrefixPath = (prefixPath: string) => {
     if (!found) {
         console.log('没有找到要删除的component，可能会出现问题');
     }
+};
+
+/**
+ *  判断是否是一个组件
+ * @param path  文件路径
+ */
+export const isFileOakComponent = (path: string) => {
+    // 假定这里的缓存中，一定包含了所有的entity的component
+    if (!path.endsWith('index.ts')) {
+        return false;
+    }
+    // 查找是否存在这个组件
+    const norPath = normalizePath(path);
+    return Object.values(entityComponents).some((list) => {
+        return list.some((item) => item.path === norPath);
+    });
 };
 
 // 订阅path的更新

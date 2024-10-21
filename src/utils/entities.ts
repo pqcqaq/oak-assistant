@@ -113,7 +113,10 @@ const genEntityNameList = (): string[] => {
 
 export const entityConfig = {
     get entityNameList() {
-        return genEntityNameList();
+        // 这里需要排序一下
+        return genEntityNameList().sort((a, b) => {
+            return a.localeCompare(b);
+        });
     },
     getEntityDesc(entityName: string) {
         return entityDictCache[entityName];
