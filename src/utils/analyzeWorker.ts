@@ -11,7 +11,6 @@ assert(parentPort, 'parentPort is not defined');
 
 console.log('AnalyzeEntity Worker started...');
 
-
 // 将 parseDescFile, parseSchemaFile, readLocales 等辅助函数复制到这里
 
 function resolveImportPath(importPath: string, currentDir: string): string {
@@ -315,6 +314,7 @@ function analyzeOakAppDomain(path: string) {
 
     const storageFile = join(path, 'Storage.ts');
     if (!fs.existsSync(storageFile)) {
+        console.log('Storage.ts file does not exist in path', storageFile);
         return { error: 'Storage.ts file does not exist' };
     }
 
@@ -421,7 +421,6 @@ function analyzeOakAppDomain(path: string) {
 
     return { entityDict: entityDict };
 }
-
 
 // send Ready message
 parentPort.postMessage('ready');

@@ -144,5 +144,6 @@ export function normalizePath(path: string): string {
     }
 
     // 拼接规范化后的路径
-    return normalizedParts.join('\\');
+    const outPath = normalizedParts.join('\\');
+    return outPath.endsWith('\\') ? outPath.slice(0, -1) : outPath;
 }

@@ -257,6 +257,13 @@ export const isFileOakComponent = (path: string) => {
     });
 };
 
+export const getOakComponentData = (path: string) => {
+    const norPath = normalizePath(path);
+    return Object.values(entityComponents).flat().find((component) => {
+        return component.path === norPath;
+    });
+};
+
 // 订阅path的更新
 subscribe(() => {
     const scanPath = [pathConfig.componentsHome, pathConfig.pagesHome];

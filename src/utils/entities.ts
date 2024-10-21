@@ -9,6 +9,7 @@ import { pathConfig } from '../utils/paths';
 import { toLowerFirst, toUpperFirst } from '../utils/stringUtils';
 import { EntityDesc } from '../types';
 import { getWorker } from './workers';
+import { setLoadingEntities } from './status';
 
 const projectEntityList: string[] = [];
 
@@ -137,6 +138,10 @@ export const getProjectionList = (entityName: string) => {
 let isAnalyzing = false;
 
 export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
+    if (isAnalyzing) {
+        return;
+    }
+
     const worker = getWorker();
     await vscode.window.withProgress(
         {
@@ -145,11 +150,9 @@ export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
             cancellable: false,
         },
         () => {
+            setLoadingEntities(true);
             return new Promise<void>((resolve, reject) => {
-                if (isAnalyzing) {
-                    resolve();
-                    return;
-                }
+                
                 isAnalyzing = true;
 
                 // 发送消息开始分析
@@ -170,6 +173,7 @@ export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
                             });
                         }
                         isAnalyzing = false;
+                        setLoadingEntities(false);
                         resolve();
                     }
                 });

@@ -5,7 +5,11 @@ import {
     isKeyExist,
 } from '../utils/locales';
 import * as vscode from 'vscode';
-import { isLoadingLocale, waitUntilLocaleLoaded } from '../utils/status';
+import {
+    isLoadingLocale,
+    onEntityLoaded,
+    waitUntilLocaleLoaded,
+} from '../utils/status';
 import fs from 'fs';
 
 // 创建诊断集合
@@ -18,7 +22,7 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
         token: vscode.CancellationToken
     ): Promise<vscode.DocumentLink[]> {
         const text = document.getText();
-        const tCallRegex = /t\(['"`]([^'"`]*)['"`]\)/g;
+        const tCallRegex = /(?<![a-zA-Z])t\(['"`]([^'"`]*)['"`]\)/g;
         const documentLinks: vscode.DocumentLink[] = [];
         let match;
 
@@ -85,7 +89,7 @@ const oakLocalesProvider = vscode.languages.registerCompletionItemProvider(
             }
 
             // 修改正则表达式以匹配更多情况
-            const regex = /t\(['"`]([^'"`]*)/;
+            const regex = /(?<![a-zA-Z])t\(['"`]([^'"`]*)/;
             const match = linePrefix.match(regex);
 
             if (!match) {
@@ -154,7 +158,7 @@ async function validateDocument(document: vscode.TextDocument) {
     const diagnostics: vscode.Diagnostic[] = [];
     const text = document.getText();
     // 修改正则表达式以正确匹配 t 函数调用
-    const tCallRegex = /t\(['"`]([^'"`]*)['"`]\)/g;
+    const tCallRegex = /(?<![a-zA-Z])t\(['"`]([^'"`]*)['"`]\)/g;
     let match;
 
     if (isLoadingLocale()) {
@@ -309,3 +313,11 @@ export function deactivateOakLocale() {
     addLocaleActionProvider.dispose();
     addLocaleCommand.dispose();
 }
+
+onEntityLoaded(() => {
+    // 第一次加载完先激活一次
+    if (vscode.window.activeTextEditor) {
+        diagnosticCollection.clear();
+        validateDocument(vscode.window.activeTextEditor.document);
+    }
+});

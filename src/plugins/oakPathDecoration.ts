@@ -1,157 +1,117 @@
 import * as vscode from 'vscode';
-import ts from 'typescript';
 import { getProjectionList, subscribe } from '../utils/entities';
+import { join } from 'path';
+import fs from 'fs';
+import { getOakComponentData, isFileOakComponent } from '../utils/components';
+import { onEntityLoaded } from '../utils/status';
 
-let currentEditingDocument: ts.Program | null = null;
-let sourceFile: ts.SourceFile | null = null;
 let entityName: string | undefined;
 let entityProjections: string[] = [];
 
 const oakPathRegex = /`\$\{oakFullpath\}.(\w+\$?\w+?)`/g;
 
-const oakPathDecoration = vscode.window.createTextEditorDecorationType({
-    borderWidth: '1px',
-    borderStyle: 'wave',
-    overviewRulerColor: 'red',
-    overviewRulerLane: vscode.OverviewRulerLane.Center,
-    light: {
-        borderColor: 'red',
-        color: 'red',
-    },
-    dark: {
-        borderColor: 'red',
-        color: 'red',
-    },
-    textDecoration: 'line-through',
-    cursor: 'pointer',
-});
+// 创建诊断集合
+const diagnosticCollection =
+    vscode.languages.createDiagnosticCollection('oakPath');
 
-function updateDecorations(editor: vscode.TextEditor) {
-    const fileText = editor.document.getText();
-    const decorations: vscode.DecorationOptions[] = [];
+function updateDiagnostics(document: vscode.TextDocument) {
+    const diagnostics: vscode.Diagnostic[] = [];
+    const fileText = document.getText();
     let match: RegExpExecArray | null;
 
-    if (!entityName) {
-        return;
-    }
-
     while ((match = oakPathRegex.exec(fileText)) !== null) {
+        
+        if (!entityName) {
+            // 提示在非oakComponent中使用oakPath，无法检测
+            const startPos = document.positionAt(match.index);
+            const endPos = document.positionAt(match.index + 16);
+            const range = new vscode.Range(startPos, endPos);
+            const diagnostic = new vscode.Diagnostic(
+                range,
+                `上下文非OakComponent，无法检测`,
+                vscode.DiagnosticSeverity.Information
+            );
+            diagnostic.code = 'invalid_oak_path';
+            diagnostics.push(diagnostic);
+            return;
+        }
+
         const projection = match[1];
 
         if (!entityProjections.includes(projection)) {
-            const startPos = editor.document.positionAt(match.index + 16);
-            const endPos = editor.document.positionAt(
+            const startPos = document.positionAt(match.index + 16);
+            const endPos = document.positionAt(
                 match.index + 16 + projection.length
             );
             const range = new vscode.Range(startPos, endPos);
 
-            const msg = new vscode.MarkdownString(
-                `实体类：${entityName} 中不存在属性：${projection}`
-            );
-
-            const decoration: vscode.DecorationOptions = {
+            const diagnostic = new vscode.Diagnostic(
                 range,
-                hoverMessage: msg,
-            };
-
-            decorations.push(decoration);
+                `实体类：${entityName} 中不存在属性：${projection}`,
+                vscode.DiagnosticSeverity.Error
+            );
+            diagnostic.code = 'invalid_oak_path';
+            diagnostics.push(diagnostic);
         }
     }
 
-    editor.setDecorations(oakPathDecoration, decorations);
+    diagnosticCollection.set(document.uri, diagnostics);
 }
 
 function parseDocument(document: vscode.TextDocument) {
-    if (!currentEditingDocument) {
-        currentEditingDocument = ts.createProgram({
-            rootNames: [document.fileName],
-            options: {},
-        });
+    // 换成更简单的实现方式
+    const docPath = document.uri.fsPath;
+    const indexPath = join(docPath, '../');
+
+    if (!fs.existsSync(indexPath)) {
+        return;
+    }
+    const data = getOakComponentData(indexPath);
+    if (!data) {
+        return;
     }
 
-    if (!sourceFile || sourceFile.fileName !== document.fileName) {
-        sourceFile = currentEditingDocument.getSourceFile(document.fileName)!;
-    }
-
-    entityName = undefined;
-
-    const eachChild = (node: ts.Node) => {
-        if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node)) {
-            const firstParameter = node.parameters[0];
-            if (!firstParameter) {
-                return;
-            }
-            const typeRef = firstParameter.type;
-            if (!typeRef) {
-                return;
-            }
-            if (
-                ts.isTypeReferenceNode(typeRef) &&
-                (typeRef.typeName as ts.Identifier).escapedText ===
-                    'WebComponentProps'
-            ) {
-                const entityNameNode = typeRef.typeArguments?.[1];
-                if (entityNameNode && ts.isLiteralTypeNode(entityNameNode)) {
-                    const innerNode = entityNameNode.literal;
-                    if (innerNode && ts.isStringLiteral(innerNode)) {
-                        entityName = innerNode.text;
-                        return;
-                    }
-                }
-            }
-        }
-        // 如果没找到，继续遍历
-        if (!entityName) {
-            ts.forEachChild(node, eachChild);
-        }
-    };
-
-    ts.forEachChild(sourceFile, eachChild);
-
-    if (entityName) {
-        entityProjections = getProjectionList(entityName);
-    } else {
-        entityProjections = [];
-    }
+    entityName = data.entityName;
+    entityProjections = getProjectionList(entityName);
 }
 
-function activateDecorations(editor: vscode.TextEditor) {
-    parseDocument(editor.document);
-    updateDecorations(editor);
+function activateDiagnostics(document: vscode.TextDocument) {
+    parseDocument(document);
+    updateDiagnostics(document);
 }
 
 console.log('oakPathHighlighter enabled');
 
-let activeEditor: vscode.TextEditor | undefined = undefined;
+let activeDocument: vscode.TextDocument | undefined = undefined;
 
 // 订阅entity更新
 subscribe(() => {
-    if (activeEditor) {
-        activateDecorations(activeEditor);
+    if (activeDocument) {
+        activateDiagnostics(activeDocument);
     }
 });
 
-// 加载完成先激活一次
-if (vscode.window.activeTextEditor) {
-    activeEditor = vscode.window.activeTextEditor;
-    activateDecorations(activeEditor);
-}
+onEntityLoaded(() => {
+    // 加载完成先激活一次
+    if (vscode.window.activeTextEditor) {
+        activeDocument = vscode.window.activeTextEditor.document;
+        activateDiagnostics(activeDocument);
+    }
+});
 
 export default [
     vscode.window.onDidChangeActiveTextEditor((editor) => {
-        activeEditor = editor;
-        // 清空之前的缓存
-        currentEditingDocument = null;
-        sourceFile = null;
-        entityName = undefined;
-        entityProjections = [];
         if (editor) {
-            activateDecorations(editor);
+            activeDocument = editor.document;
+            // 清空之前的缓存
+            entityName = undefined;
+            entityProjections = [];
+            activateDiagnostics(activeDocument);
         }
     }),
     vscode.workspace.onDidChangeTextDocument((event) => {
-        if (activeEditor && event.document === activeEditor.document) {
-            updateDecorations(activeEditor);
+        if (activeDocument && event.document === activeDocument) {
+            updateDiagnostics(activeDocument);
         }
     }),
 ];
