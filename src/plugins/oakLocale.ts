@@ -28,6 +28,11 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
         while ((match = tCallRegex.exec(text)) !== null) {
             const key = match[1];
+
+            if (key.includes('${')) {
+                return [];
+            }
+
             if (isKeyExist(key)) {
                 const localePath = getCachedLocaleItemByKey(key);
                 if (localePath && localePath.path) {
@@ -84,14 +89,15 @@ const oakLocalesProvider = vscode.languages.registerCompletionItemProvider(
             const match = linePrefix.match(regex);
 
             if (!match) {
-                console.log('No match found'); // 添加日志
                 return undefined;
             }
 
-            console.log('Match found:', match[1]); // 添加日志
-
             const filePath = document.uri.fsPath;
             const prefix = match[1] || '';
+
+            if (prefix.includes('${')) {
+                return undefined;
+            }
 
             const localeItems = getLocalesData(
                 join(filePath, '../locales'),
@@ -157,6 +163,11 @@ async function validateDocument(document: vscode.TextDocument) {
 
     while ((match = tCallRegex.exec(text)) !== null) {
         const key = match[1];
+
+        if (key.includes('${')) {
+            return undefined;
+        }
+
         if (!isKeyExist(key)) {
             const startPos = document.positionAt(match.index);
             const endPos = document.positionAt(match.index + match[0].length);
