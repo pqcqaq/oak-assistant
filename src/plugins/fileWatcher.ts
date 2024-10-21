@@ -13,7 +13,7 @@ import {
     removeConponentFromEntity,
     updateEntityComponent,
 } from '../utils/components';
-import { deleteCachedPathLocale } from '../utils/locales';
+import { reloadCachedPathLocale } from '../utils/locales';
 
 /**
  * 监听指定目录下的所有文件变化
@@ -247,7 +247,7 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
 
     const handleLocaleChange = async (path: vscode.Uri) => {
         // 重新解析locales
-        deleteCachedPathLocale(normalizePath(path.fsPath));
+        reloadCachedPathLocale(path.fsPath);
     };
 
     // 监听locales目录
@@ -256,7 +256,7 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
             disposeLocaleWatcher();
         }
 
-        const localePath = pathConfig.localesHome;
+        const localePath = pathConfig.projectHome;
         disposeLocaleWatcher = watchDirectory(
             localePath,
             context,

@@ -166,29 +166,117 @@ async function validateDocument(document: vscode.TextDocument) {
                 `找不到对应的locale定义: ${key}`,
                 vscode.DiagnosticSeverity.Error
             );
+            // 添加 code 用于区分错误类型
+            diagnostic.code = 'missing_locale';
             diagnostics.push(diagnostic);
         }
-        // else {
-        //     const localePath = getCachedLocaleItemByKey(key);
-        //     if (!localePath || !localePath.path) {
-        //         continue;
-        //     }
-        //     const startPos = document.positionAt(match.index);
-        //     const endPos = document.positionAt(match.index + match[0].length);
-        //     const range = new vscode.Range(startPos, endPos);
-
-        //     // 如果需要，您也可以添加一个信息性的诊断
-        //     const diagnostic = new vscode.Diagnostic(
-        //         range,
-        //         `Locale 定义在: ${localePath.path}`,
-        //         vscode.DiagnosticSeverity.Information
-        //     );
-        //     diagnostics.push(diagnostic);
-        // }
     }
 
     diagnosticCollection.set(document.uri, diagnostics);
 }
+
+const addLocaleActionProvider = vscode.languages.registerCodeActionsProvider(
+    'typescriptreact',
+    {
+        provideCodeActions(document, range, context, token) {
+            const diagnostics = context.diagnostics;
+            const codeActions: vscode.CodeAction[] = [];
+
+            for (const diagnostic of diagnostics) {
+                if (diagnostic.code === 'missing_locale') {
+                    const action = new vscode.CodeAction(
+                        '添加 locale 定义',
+                        vscode.CodeActionKind.QuickFix
+                    );
+                    action.command = {
+                        title: 'Add locale definition',
+                        command: 'oak-i18n.addLocaleDefinition',
+                        arguments: [
+                            document,
+                            diagnostic.range,
+                            diagnostic.message.split(': ')[1],
+                        ],
+                    };
+                    action.diagnostics = [diagnostic];
+                    action.isPreferred = true;
+                    codeActions.push(action);
+                }
+            }
+            return codeActions;
+        },
+    }
+);
+
+const addLocaleCommand = vscode.commands.registerCommand(
+    'oak-i18n.addLocaleDefinition',
+    (document: vscode.TextDocument, range: vscode.Range, key: string) => {
+        // 得到文档的位置
+        const filePath = document.uri.fsPath;
+        // 得到 locale 文件的路径
+        // 如果不存在 locales目录，需要创建
+        const localeDir = join(filePath, '../locales');
+        if (!fs.existsSync(localeDir)) {
+            fs.mkdirSync(localeDir);
+        }
+        // 判断是否存在 zh_CN.json 文件，如果不存在则使用 zh-CN.json
+        let localeFilePath = join(filePath, '../locales/zh-CN.json');
+        if (!fs.existsSync(localeFilePath)) {
+            localeFilePath = join(filePath, '../locales/zh_CN.json');
+            if (!fs.existsSync(localeFilePath)) {
+                // 如果两个都不存在，创建一个新的 zh_CN.json 文件
+                fs.writeFileSync(localeFilePath, '{}');
+            }
+        }
+        // 尝试读取文件
+        let localeData = {};
+        try {
+            localeData = JSON.parse(fs.readFileSync(localeFilePath, 'utf-8'));
+        } catch (error) {
+            // 如果读取文件失败，直接返回
+            vscode.window.showErrorMessage('读取 locale 文件失败');
+            return;
+        }
+        // 添加新的键值对
+        addLocaleToData(localeData, key);
+        // 写入文件
+        fs.writeFileSync(localeFilePath, JSON.stringify(localeData, null, 2));
+        // 跳转到文件
+        vscode.window.showTextDocument(vscode.Uri.file(localeFilePath));
+        // 更新缓存
+        getLocalesData(localeDir, '', true);
+    }
+);
+
+const addLocaleToData = (
+    localeData: any,
+    key: string,
+    value: string = ''
+): void => {
+    const keys = key.split('.');
+    let current = localeData;
+
+    for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+
+        if (i === keys.length - 1) {
+            // 最后一个键，直接赋值
+            current[k] = value;
+        } else {
+            // 不是最后一个键，检查下一级
+            if (!(k in current)) {
+                // 如果键不存在，创建一个新的对象
+                current[k] = {};
+            } else if (typeof current[k] !== 'object') {
+                // 如果存在但不是对象，抛出错误
+                throw new Error(
+                    `Cannot add key "${key}". "${k}" is not an object.`
+                );
+            }
+            // 移动到下一级
+            current = current[k];
+        }
+    }
+};
 
 export function activateOakLocale(context: vscode.ExtensionContext) {
     context.subscriptions.push(oakLocalesProvider);
@@ -196,10 +284,17 @@ export function activateOakLocale(context: vscode.ExtensionContext) {
     context.subscriptions.push(documentOpenListener);
     context.subscriptions.push(diagnosticCollection);
     context.subscriptions.push(documentLinkProvider);
+    context.subscriptions.push(addLocaleActionProvider);
+    context.subscriptions.push(addLocaleCommand);
     console.log('oakLocale插件已激活');
 }
 
 export function deactivateOakLocale() {
     diagnosticCollection.clear();
     diagnosticCollection.dispose();
+    documentChangeListener.dispose();
+    documentOpenListener.dispose();
+    documentLinkProvider.dispose();
+    addLocaleActionProvider.dispose();
+    addLocaleCommand.dispose();
 }

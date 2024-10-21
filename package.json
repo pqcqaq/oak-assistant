@@ -52,6 +52,10 @@
       {
         "command": "oak-assistant.insertOakFullpath",
         "title": "插入oakPath属性"
+      },
+      {
+        "command": "oak-i18n.addLocaleDefinition",
+        "title": "添加国际化定义"
       }
     ],
     "menus": {

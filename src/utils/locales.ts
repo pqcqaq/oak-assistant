@@ -260,8 +260,16 @@ const getCachedComponentItems = (path: string): LocaleItem[] => {
  * @param prefix  前缀
  * @returns  返回一个LocaleItem数组
  */
-export const getLocalesData = (path: string, prefix?: string): LocaleItem[] => {
+export const getLocalesData = (
+    path: string,
+    prefix: string = '',
+    force?: boolean
+): LocaleItem[] => {
     setLoadingLocale(true);
+
+    if (force) {
+        updatePathCached(path);
+    }
 
     if (!isPathCached(path)) {
         console.log('i18n缓存中没有找到', path);
@@ -319,8 +327,10 @@ const setEntityLocales = (name: string) => {
     });
 };
 
-export const deleteCachedPathLocale = (path: string) => {
-    locales.components[path] = {};
+export const reloadCachedPathLocale = (path: string) => {
+    const norPath = normalizePath(join(path, ".."));
+    locales.components[norPath] = {};
+    updatePathCached(norPath);
 };
 
 export const getCachedLocaleItemByKey = (
