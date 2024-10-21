@@ -88,8 +88,10 @@ const helloOak = vscode.commands.registerCommand(
 );
 
 const reload = vscode.commands.registerCommand('oak-assistant.reload', () => {
-    stopWorker();
-    afterPathSet();
+    // stopWorker();
+    // afterPathSet();
+    // 调用vscode的api，重新加载
+    vscode.commands.executeCommand('workbench.action.reloadWindow');
 });
 
 const checkPagesAndNamespacePlugin = checkPagesAndNamespace();
