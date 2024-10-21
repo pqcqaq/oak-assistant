@@ -14,6 +14,7 @@ import oakPathCompletion from './plugins/oakPathCompletion';
 import oakPathHighlighter from './plugins/oakPathDecoration';
 import entityProviders from './plugins/entityJump';
 import { activateOakLocale, deactivateOakLocale } from './plugins/oakLocale';
+import { startWorker, stopWorker, waitWorkerReady } from './utils/workers';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -35,6 +36,14 @@ const afterPathSet = async () => {
         description: string;
         function: () => Promise<void>;
     }[] = [
+        {
+            name: '启动worker',
+            description: '启动worker线程',
+            function: async () => {
+                startWorker();
+                await waitWorkerReady();
+            },
+        },
         {
             name: '解析 Entity',
             description: '解析项目中的 Entity 结构',
@@ -127,7 +136,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // 弹出提示消息，询问是否以根目录为工作区
         const value = await vscode.window.showInformationMessage(
-            '未找到oak.config.json文件，是否以当前工作区根目录为项目主目录？',
+            '未找到oak.config.json文件，是否以当前工作区根目录为项目主目录，创建配置并启用Oak-Assistant插件？',
             '是',
             '否'
         );
@@ -175,4 +184,5 @@ export function deactivate() {
     entityProviders.dispose();
     oakPathCompletion.dispose();
     deactivateOakLocale();
+    stopWorker();
 }
