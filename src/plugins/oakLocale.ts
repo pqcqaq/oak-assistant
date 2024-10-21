@@ -1,10 +1,65 @@
 import { join } from 'path';
-import { getLocalesData, isKeyExist } from '../utils/locales';
+import {
+    getCachedLocaleItemByKey,
+    getLocalesData,
+    isKeyExist,
+} from '../utils/locales';
 import * as vscode from 'vscode';
+import { isLoadingLocale, waitUntilLocaleLoaded } from '../utils/status';
+import fs from 'fs';
 
 // 创建诊断集合
 const diagnosticCollection =
     vscode.languages.createDiagnosticCollection('oakLocales');
+
+class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
+    async provideDocumentLinks(
+        document: vscode.TextDocument,
+        token: vscode.CancellationToken
+    ): Promise<vscode.DocumentLink[]> {
+        const text = document.getText();
+        const tCallRegex = /t\(['"`]([^'"`]*)['"`]\)/g;
+        const documentLinks: vscode.DocumentLink[] = [];
+        let match;
+
+        if (isLoadingLocale()) {
+            await waitUntilLocaleLoaded();
+        }
+
+        while ((match = tCallRegex.exec(text)) !== null) {
+            const key = match[1];
+            if (isKeyExist(key)) {
+                const localePath = getCachedLocaleItemByKey(key);
+                if (localePath && localePath.path) {
+                    const startPos = document.positionAt(match.index);
+                    const endPos = document.positionAt(
+                        match.index + match[0].length
+                    );
+                    const range = new vscode.Range(startPos, endPos);
+
+                    let filePath = join(localePath.path, 'zh_CN.json');
+                    if (!fs.existsSync(filePath)) {
+                        filePath = join(localePath.path, 'zh-CN.json');
+                    }
+
+                    const documentLink = new vscode.DocumentLink(
+                        range,
+                        vscode.Uri.file(filePath)
+                    );
+                    documentLink.tooltip = '点击跳转到定义';
+                    documentLinks.push(documentLink);
+                }
+            }
+        }
+
+        return documentLinks;
+    }
+}
+
+const documentLinkProvider = vscode.languages.registerDocumentLinkProvider(
+    { scheme: 'file', language: 'typescriptreact' },
+    new LocaleDocumentLinkProvider()
+);
 
 const oakLocalesProvider = vscode.languages.registerCompletionItemProvider(
     { scheme: 'file', language: 'typescriptreact' },
@@ -25,7 +80,7 @@ const oakLocalesProvider = vscode.languages.registerCompletionItemProvider(
             }
 
             // 修改正则表达式以匹配更多情况
-            const regex = /t\(['"]([^'"]*)/;
+            const regex = /t\(['"`]([^'"`]*)/;
             const match = linePrefix.match(regex);
 
             if (!match) {
@@ -56,7 +111,8 @@ const oakLocalesProvider = vscode.languages.registerCompletionItemProvider(
     },
     "'",
     '"',
-    '('
+    '(',
+    "`",
 );
 
 // 添加文档变化监听器
@@ -88,12 +144,16 @@ vscode.window.onDidChangeActiveTextEditor((editor) => {
     }
 });
 
-function validateDocument(document: vscode.TextDocument) {
+async function validateDocument(document: vscode.TextDocument) {
     const diagnostics: vscode.Diagnostic[] = [];
     const text = document.getText();
     // 修改正则表达式以正确匹配 t 函数调用
-    const tCallRegex = /t\(['"]([^'"]*)['"]\)/g;
+    const tCallRegex = /t\(['"`]([^'"`]*)['"`]\)/g;
     let match;
+
+    if (isLoadingLocale()) {
+        await waitUntilLocaleLoaded();
+    }
 
     while ((match = tCallRegex.exec(text)) !== null) {
         const key = match[1];
@@ -107,6 +167,22 @@ function validateDocument(document: vscode.TextDocument) {
                 vscode.DiagnosticSeverity.Error
             );
             diagnostics.push(diagnostic);
+        } else {
+            const localePath = getCachedLocaleItemByKey(key);
+            if (!localePath || !localePath.path) {
+                continue;
+            }
+            const startPos = document.positionAt(match.index);
+            const endPos = document.positionAt(match.index + match[0].length);
+            const range = new vscode.Range(startPos, endPos);
+
+            // 如果需要，您也可以添加一个信息性的诊断
+            const diagnostic = new vscode.Diagnostic(
+                range,
+                `Locale 定义在: ${localePath.path}`,
+                vscode.DiagnosticSeverity.Information
+            );
+            diagnostics.push(diagnostic);
         }
     }
 
@@ -118,6 +194,7 @@ export function activateOakLocale(context: vscode.ExtensionContext) {
     context.subscriptions.push(documentChangeListener);
     context.subscriptions.push(documentOpenListener);
     context.subscriptions.push(diagnosticCollection);
+    context.subscriptions.push(documentLinkProvider);
     console.log('oakLocale插件已激活');
 }
 

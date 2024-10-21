@@ -101,4 +101,5 @@ export type LocaleItem = {
     label: string;
     value: string;
     desc: string;
+    path: string;
 };

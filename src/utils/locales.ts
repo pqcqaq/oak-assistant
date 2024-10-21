@@ -1,10 +1,15 @@
-import { join } from 'path';
+import path, { join } from 'path';
 import { LanguageValue, LocaleData, LocaleDef, LocaleItem } from '../types';
 import { glob } from 'glob';
 import fs from 'fs';
 import vscode from 'vscode';
-import { entityConfig, subscribe as subsEntity } from './entities';
+import {
+    entityConfig,
+    getEntityLocalePath,
+    subscribe as subsEntity,
+} from './entities';
 import { normalizePath, pathConfig, subscribe as subsPath } from './paths';
+import { setLoadingLocale } from './status';
 
 const locales: LocaleDef = {
     namespaced: {},
@@ -108,6 +113,7 @@ export const getNamespacedLocaleItems = (): LocaleItem[] => {
                     label: key,
                     value: key,
                     desc: getLocaleValue(key) || '',
+                    path: join(pathConfig.localesHome, key.split('::')[0]),
                 };
             }),
     ];
@@ -125,6 +131,7 @@ export const getEntityLocaleItems = (): LocaleItem[] => {
                     label: key,
                     value: key,
                     desc: getLocaleValue(key) || '',
+                    path: getEntityLocalePath(key.split(':')[0]),
                 };
             }),
     ];
@@ -137,15 +144,12 @@ export const getLocaleItemsByPath = (path: string): LocaleItem[] => {
             label: key,
             value: key,
             desc: findValueByKey(localesGet, key) || '',
+            path,
         };
     });
 };
 
 let cachedLocaleItems: LocaleItem[] = [];
-
-export const clearCachedLocaleItems = () => {
-    cachedLocaleItems = [];
-};
 
 export const isKeyExist = (key: string): boolean => {
     let exist = false;
@@ -161,6 +165,22 @@ export const isLocalePathCached = (path: string): boolean => {
     return cachedPathLocale.has(normalizePath(path));
 };
 
+export const checkLocaled = () => {
+    const hasNamespaced = () => {
+        return cachedLocaleItems.some((item) => item.value.includes('::'));
+    };
+
+    const hasEntityd = () => {
+        return !cachedLocaleItems.every(
+            (item) => item.value.includes('::') || !item.value.includes(':')
+        );
+    };
+
+    if (!hasEntityd() || !hasNamespaced()) {
+        setNamespacedAndEntityLocale();
+    }
+};
+
 /**
  *  获取locales的数据
  * @param path  locales的路径
@@ -168,14 +188,20 @@ export const isLocalePathCached = (path: string): boolean => {
  * @returns  返回一个LocaleItem数组
  */
 export const getLocalesData = (path: string, prefix?: string): LocaleItem[] => {
-    
-    cachedLocaleItems = [
-        ...getNamespacedLocaleItems(),
-        ...getEntityLocaleItems(),
-        ...getLocaleItemsByPath(path),
-    ];
+    setLoadingLocale(true);
+
+    checkLocaled();
+
+    if (!isLocalePathCached(path)) {
+        cachedLocaleItems = [
+            ...cachedLocaleItems,
+            ...getLocaleItemsByPath(path),
+        ];
+    }
 
     const locales = cachedLocaleItems;
+
+    setLoadingLocale(false);
 
     if (!prefix) {
         return locales;
@@ -208,24 +234,61 @@ const setEntityLocales = () => {
     });
 };
 
+export const removeEntityCachedLocaleItem = () => {
+    cachedLocaleItems = cachedLocaleItems.filter((item) => {
+        return item.value.includes('::') || !item.value.includes(':');
+    });
+};
+
+export const removeNamespacedLocaleItems = () => {
+    cachedLocaleItems = cachedLocaleItems.filter((item) => {
+        return !item.value.includes('::');
+    });
+};
+
+export const setNamespacedAndEntityLocale = () => {
+    removeEntityCachedLocaleItem();
+    removeNamespacedLocaleItems();
+    cachedLocaleItems = [
+        ...cachedLocaleItems,
+        ...getNamespacedLocaleItems(),
+        ...getEntityLocaleItems(),
+    ];
+};
+
 subsEntity(() => {
+    removeEntityCachedLocaleItem();
     setEntityLocales();
-    clearCachedLocaleItems();
 });
 
 // 在路径变化的时候，重新设置namespaced的locales
 subsPath(() => {
+    // 直接清空
+    cachedLocaleItems = [];
     setNameSpaceLocales();
-    clearCachedLocaleItems();
     // 刚刚加载完的时候，先设置一次
-    cachedLocaleItems = [
-        ...getNamespacedLocaleItems(),
-        ...getEntityLocaleItems(),
-        // 文件的locales等具体打开某一个文件的时候再设置
-    ];
+    setNamespacedAndEntityLocale();
 });
+
+export const clearCachedLocaleItemsByPath = (path: string) => {
+    cachedLocaleItems = cachedLocaleItems.filter((item) => {
+        return normalizePath(item.path) !== path;
+    });
+};
 
 export const deleteCachedPathLocale = (path: string) => {
     cachedPathLocale.delete(path);
-    clearCachedLocaleItems();
+    clearCachedLocaleItemsByPath(path);
+};
+
+export const getCachedLocaleItemByKey = (
+    key: string
+): LocaleItem | undefined => {
+    return cachedLocaleItems.find((item) => item.value === key);
+};
+
+export const removeCachedLocaleItemByKeyPrefix = (prefix: string) => {
+    cachedLocaleItems = cachedLocaleItems.filter((item) => {
+        return !item.value.startsWith(prefix);
+    });
 };

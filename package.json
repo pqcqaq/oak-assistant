@@ -1,28 +1,14 @@
 {
-  "name": "oak-assistant",
-  "displayName": "oak-assistant",
-  "description": "OAK框架辅助开发插件",
-  "author": {
-    "name": "oak-team"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/pqcqaq/oak-assistant"
-  },
-  "icon": "assets/oak_tree.png",
-  "publisher": "QCQCQC",
-  "version": "0.2.0",
-  "engines": {
-    "vscode": "^1.94.0"
-  },
-  "categories": [
-    "Other"
-  ],
   "activationEvents": [
     "onStartupFinished",
     "workspaceContains:oak.config.json"
   ],
-  "main": "./dist/extension.js",
+  "author": {
+    "name": "oak-team"
+  },
+  "categories": [
+    "Other"
+  ],
   "contributes": {
     "commands": [
       {
@@ -38,16 +24,16 @@
         "title": "创建OAK组件"
       },
       {
-        "title": "跳转到entity定义",
         "command": "oak-entities.jumpToDefinition",
-        "when": "view == oak-entities && viewItem == entityItem",
-        "group": "navigation"
+        "group": "navigation",
+        "title": "跳转到entity定义",
+        "when": "view == oak-entities && viewItem == entityItem"
       },
       {
-        "title": "跳转到Schema目录",
         "command": "oak-entities.jumpToSchema",
-        "when": "view == oak-entities && viewItem == entityItem",
-        "group": "navigation"
+        "group": "navigation",
+        "title": "跳转到Schema目录",
+        "when": "view == oak-entities && viewItem == entityItem"
       },
       {
         "command": "oak-assistant.reload",
@@ -55,9 +41,9 @@
       },
       {
         "command": "oak-entities.deleteComponent",
+        "group": "navigation",
         "title": "删除组件",
-        "when": "view == oak-entities && viewItem == componentItem",
-        "group": "navigation"
+        "when": "view == oak-entities && viewItem == componentItem"
       },
       {
         "command": "oak-entities.toggleShowAllEntities",
@@ -71,47 +57,38 @@
     "menus": {
       "explorer/context": [
         {
-          "when": "explorerResourceIsFolder",
           "command": "oak-assistant.create-oak-component",
-          "group": "navigation"
+          "group": "navigation",
+          "when": "explorerResourceIsFolder"
         }
       ],
       "view/item/context": [
         {
           "command": "oak-entities.jumpToDefinition",
-          "when": "view == oak-entities && viewItem == entityItem",
-          "group": "navigation"
+          "group": "navigation",
+          "when": "view == oak-entities && viewItem == entityItem"
         },
         {
           "command": "oak-entities.jumpToSchema",
-          "when": "view == oak-entities && viewItem == entityItem",
-          "group": "navigation"
+          "group": "navigation",
+          "when": "view == oak-entities && viewItem == entityItem"
         },
         {
           "command": "oak-assistant.create-oak-component",
-          "when": "view == oak-entities && viewItem == componentsItem",
-          "group": "navigation"
+          "group": "navigation",
+          "when": "view == oak-entities && viewItem == componentsItem"
         },
         {
           "command": "oak-entities.deleteComponent",
-          "when": "view == oak-entities && viewItem == componentItem",
-          "group": "navigation"
+          "group": "navigation",
+          "when": "view == oak-entities && viewItem == componentItem"
         }
       ],
       "view/title": [
         {
           "command": "oak-entities.toggleShowAllEntities",
-          "when": "view == oak-entities",
-          "group": "navigation"
-        }
-      ]
-    },
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "oak-entities",
-          "title": "Oak Entities",
-          "icon": "assets/oak-icon.svg"
+          "group": "navigation",
+          "when": "view == oak-entities"
         }
       ]
     },
@@ -122,23 +99,23 @@
           "name": "Oak Entities"
         }
       ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "icon": "assets/oak-icon.svg",
+          "id": "oak-entities",
+          "title": "Oak Entities"
+        }
+      ]
     }
   },
-  "scripts": {
-    "vscode:prepublish": "pnpm run package",
-    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
-    "watch": "npm-run-all -p watch:*",
-    "watch:esbuild": "node esbuild.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
-    "check-types": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vscode-test",
-    "package:vsce": "pnpm vsce package --no-dependencies"
+  "dependencies": {
+    "glob": "^11.0.0",
+    "handlebars": "^4.7.8",
+    "lodash": "^4.17.21"
   },
+  "description": "OAK框架辅助开发插件",
   "devDependencies": {
     "@types/lodash": "^4.17.12",
     "@types/mocha": "^10.0.8",
@@ -154,12 +131,34 @@
     "eslint": "^9.11.1",
     "npm-run-all": "^4.1.5",
     "oak-domain": "^5.1.6",
-    "typescript": "^5.6.2",
-    "vsce": "^2.15.0"
+    "typescript": "^5.6.2"
   },
-  "dependencies": {
-    "glob": "^11.0.0",
-    "handlebars": "^4.7.8",
-    "lodash": "^4.17.21"
-  }
+  "displayName": "oak-assistant",
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "icon": "assets/oak_tree.png",
+  "main": "./dist/extension.js",
+  "name": "oak-assistant",
+  "publisher": "QCQCQC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pqcqaq/oak-assistant"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "compile-tests": "tsc -p . --outDir out",
+    "lint": "eslint src",
+    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "package:vsce": "pnpm vsce package --no-dependencies",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "test": "vscode-test",
+    "vscode:prepublish": "pnpm run package",
+    "watch": "npm-run-all -p watch:*",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json"
+  },
+  "version": "0.2.0"
 }

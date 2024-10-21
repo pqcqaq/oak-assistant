@@ -523,7 +523,7 @@ export const syncProjectEntityList = () => {
 };
 
 export const getEntityName = (en: string) => {
-    return entityConfig.getEntityDesc(en)?.locales.zh_CN?.name || "";
+    return entityConfig.getEntityDesc(en)?.locales.zh_CN?.name || '';
 };
 
 export function findEntityDefFile(entityName: string): string[] {
@@ -550,3 +550,11 @@ export function findEntityDefFile(entityName: string): string[] {
 
     return possiblePaths;
 }
+
+export const getEntityLocalePath = (entityName: string) => {
+    return join(
+        pathConfig.oakAppDomainHome,
+        toUpperFirst(entityName),
+        'locales'
+    );
+};
