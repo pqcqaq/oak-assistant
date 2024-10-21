@@ -58,6 +58,12 @@ oak框架适配性插件，为你的开发助力！
      - 如果attr是一个合法的属性，可以点击跳转到当前entity的定义Schema
 
        ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021114711.png)
+     
+   - 属性提示
+
+     - 在编写时，当你在${oakFullpath}的后面输入`.`，就可以获得当前entity下的所有可选attr的提示
+
+       
 
 4. i18n检查与跳转
 
@@ -80,6 +86,11 @@ oak框架适配性插件，为你的开发助力！
      - 如果i18n的引用不合法，会显示警告信息
 
        ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021115449.png)
+       
+     - 立即创建i18n
+     
+       - 当找不到locale定义的时候，可以点击快速修复，在当前组件的locale中创建一个新的键值对
+       - 如果当前组件下不存在locales文件夹，会自动创建locales/zh_CN.json文件
 
 
 
