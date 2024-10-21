@@ -88,6 +88,7 @@ const helloOak = vscode.commands.registerCommand(
 );
 
 const reload = vscode.commands.registerCommand('oak-assistant.reload', () => {
+    stopWorker();
     afterPathSet();
 });
 
