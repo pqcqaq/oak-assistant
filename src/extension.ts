@@ -97,7 +97,6 @@ const createOakTreePanelPlugin = createOakTreePanel();
 
 export async function activate(context: vscode.ExtensionContext) {
     const loadPlugin = () => {
-        createFileWatcher(context);
         try {
             activateOakLocale(context);
             context.subscriptions.push(
@@ -115,6 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 entityProviders.hoverProvider,
                 entityProviders.documentLinkProvider
             );
+            createFileWatcher(context);
         } catch (error) {
             console.error('激活插件时出错:', error);
         }
