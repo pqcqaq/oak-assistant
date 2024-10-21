@@ -27,58 +27,6 @@ subscribe(() => {
     afterPathSet();
 });
 
-vscode.workspace.findFiles('oak.config.json', exclude).then((uris) => {
-    const fs = vscode.workspace.fs;
-    if (uris.length === 0) {
-        // 获取当前工作区
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            return;
-        }
-
-        // 弹出提示消息，询问是否以根目录为工作区
-        vscode.window
-            .showInformationMessage(
-                '未找到oak.config.json文件，是否以当前工作区根目录为项目主目录？',
-                '是',
-                '否'
-            )
-            .then((value) => {
-                if (value === '是') {
-                    const rootPath = workspaceFolders[0].uri.fsPath;
-                    const projectPath = join(rootPath, './');
-                    // 在根目录下创建oak.config.json文件
-                    const content = JSON.stringify(
-                        { projectHome: './' },
-                        null,
-                        2
-                    );
-                    fs.writeFile(
-                        vscode.Uri.file(join(projectPath, 'oak.config.json')),
-                        Buffer.from(content)
-                    ).then(() => {
-                        setProjectHome(projectPath);
-                        vscode.window.showInformationMessage(
-                            `已将项目主目录设置为: ${projectPath}`
-                        );
-                    });
-                }
-            });
-        return;
-    }
-    const uri = uris[0];
-    fs.readFile(uri).then((content) => {
-        const config = JSON.parse(content.toString()) as OakConfiog;
-        const projectHome = join(uri.fsPath, '..', config.projectHome);
-        console.log('projectHome:', projectHome);
-        // 设置projectHome
-        setProjectHome(projectHome);
-        // 通知已经启用
-        // vscode.window.showInformationMessage('已启用oak-assistant!');
-    });
-});
-
 const afterPathSet = async () => {
     setLoadingEntities(true);
 
@@ -123,51 +71,107 @@ const afterPathSet = async () => {
     setLoadingEntities(false);
 };
 
+const helloOak = vscode.commands.registerCommand(
+    'oak-assistant.hello-oak',
+    () => {
+        vscode.window.showInformationMessage('Hello OAK from oak-assistant!');
+    }
+);
+
+const reload = vscode.commands.registerCommand('oak-assistant.reload', () => {
+    afterPathSet();
+});
+
+const checkPagesAndNamespacePlugin = checkPagesAndNamespace();
+const createOakComponentPlugin = createOakComponent();
+const createOakTreePanelPlugin = createOakTreePanel();
+
 export async function activate(context: vscode.ExtensionContext) {
+    const loadPlugin = () => {
+        createFileWatcher(context);
+        try {
+            activateOakLocale(context);
+            context.subscriptions.push(
+                helloOak,
+                reload,
+                checkPagesAndNamespacePlugin,
+                createOakComponentPlugin,
+                createOakTreePanelPlugin,
+                ...treePanelCommands,
+                oakPathInline,
+                oakPathCompletion.oakPathCompletion,
+                oakPathCompletion.oakPathDocumentLinkProvider,
+                ...oakPathHighlighter,
+                entityProviders.selectionChangeHandler,
+                entityProviders.hoverProvider,
+                entityProviders.documentLinkProvider
+            );
+        } catch (error) {
+            console.error('激活插件时出错:', error);
+        }
+    };
+
     console.log(
         'Congratulations, your extension "oak-assistant" is now active!'
     );
 
-    const helloOak = vscode.commands.registerCommand(
-        'oak-assistant.hello-oak',
-        () => {
-            vscode.window.showInformationMessage(
-                'Hello OAK from oak-assistant!'
-            );
-        }
-    );
+    const uris = await vscode.workspace.findFiles('oak.config.json', exclude);
+    const fs = vscode.workspace.fs;
+    if (uris.length === 0) {
+        // 获取当前工作区
+        const workspaceFolders = vscode.workspace.workspaceFolders;
 
-    const reload = vscode.commands.registerCommand(
-        'oak-assistant.reload',
-        () => {
-            afterPathSet();
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            return;
         }
-    );
 
-    createFileWatcher(context);
-    try {
-        activateOakLocale(context);
-        context.subscriptions.push(
-            helloOak,
-            reload,
-            checkPagesAndNamespace(),
-            createOakComponent(),
-            createOakTreePanel(),
-            ...treePanelCommands,
-            oakPathInline,
-            oakPathCompletion.oakPathCompletion,
-            oakPathCompletion.oakPathDocumentLinkProvider,
-            ...oakPathHighlighter,
-            entityProviders.selectionChangeHandler,
-            entityProviders.hoverProvider,
-            entityProviders.documentLinkProvider
+        // 弹出提示消息，询问是否以根目录为工作区
+        const value = await vscode.window.showInformationMessage(
+            '未找到oak.config.json文件，是否以当前工作区根目录为项目主目录？',
+            '是',
+            '否'
         );
-    } catch (error) {
-        console.error('激活插件时出错:', error);
+        if (value === '是') {
+            const rootPath = workspaceFolders[0].uri.fsPath;
+            const projectPath = join(rootPath, './');
+            // 在根目录下创建oak.config.json文件
+            const content = JSON.stringify({ projectHome: './' }, null, 2);
+            fs.writeFile(
+                vscode.Uri.file(join(projectPath, 'oak.config.json')),
+                Buffer.from(content)
+            ).then(() => {
+                setProjectHome(projectPath);
+                vscode.window.showInformationMessage(
+                    `已将项目主目录设置为: ${projectPath}`
+                );
+                loadPlugin();
+            });
+        }
+        return;
     }
+    const uri = uris[0];
+    const contextFile = await fs.readFile(uri);
+    const config = JSON.parse(contextFile.toString()) as OakConfiog;
+    const projectHome = join(uri.fsPath, '..', config.projectHome);
+    // 设置projectHome
+    setProjectHome(projectHome);
+    // 通知已经启用
+    loadPlugin();
 }
 
 export function deactivate() {
+    checkPagesAndNamespacePlugin.dispose();
+    createOakComponentPlugin.dispose();
+    createOakTreePanelPlugin.dispose();
+    treePanelCommands.forEach((command) => {
+        command.dispose();
+    });
+    oakPathHighlighter.forEach((decoration) => {
+        decoration.dispose();
+    });
+    helloOak.dispose();
+    reload.dispose();
+    oakPathInline.dispose();
     entityProviders.dispose();
     oakPathCompletion.dispose();
     deactivateOakLocale();
