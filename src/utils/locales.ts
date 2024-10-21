@@ -199,6 +199,8 @@ export const getLocalesData = (path: string, prefix?: string): LocaleItem[] => {
         ];
     }
 
+    // 这里有一点问题，会混入非当前文件夹的locales，先不做处理吧
+
     const locales = cachedLocaleItems;
 
     setLoadingLocale(false);

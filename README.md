@@ -2,70 +2,94 @@
 
 oak框架适配性插件，为你的开发助力！
 
-## Features
+> 当你在开发Oak框架的项目时，是否经常遇到以下问题：
+>
+> - 经常需要翻找Entity的定义和Schema文件，费时费力。
+> - oakPath拼错导致的白屏需要长时间的debug。
+> - t的locale不知道到底该怎么写
+> - 创建OakComponent的时候要新建一大堆文件，太麻烦。
+> - ......
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### 那么你就需要这个插件，来加速Oak项目的开发
 
-For example if there is an image subfolder under your extension project workspace:
+## 功能
 
-\!\[feature X\]\(images/feature-x.png\)
+1. 快速创建OakComponent
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+   - 你可以在src/pages或者src/components目录内的任何文件夹中右键，`创建OAK组件` 接下来会引导你快速创建oak组件
 
-## Requirements
+     ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021113922.png)
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+   - 你也可以在Oak Entities的页面中，对某一个`实体`的`项目组件`点击右键，可以快速在components中创建该entity对应的组件
 
-## Extension Settings
+     ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021114028.png)
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+   - 同时，你也可以在Oak Entities中快速删除一个oak组件
 
-For example:
+     ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021114054.png)
 
-This extension contributes the following settings:
+2. 随时跳转到Entity的定义或者Schema文件
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+   - 在Oak Entities窗口中，你可以在实体名称上点击右键，一键跳转。
 
-## Known Issues
+     ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021114222.png)
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+3. 实时检查oakPath的定义是否合法
 
-## Release Notes
+   - 前提条件：请务必使用以下的使用形式来定义 *固定的* oakPath
 
-Users appreciate release notes as you update your extension.
+     ```ts
+     `${oakFullpath}.attr`
+     ```
 
-### 1.0.0
+     
 
-Initial release of ...
+   - 自动扫描
 
-### 1.0.1
+     - 插件会自动检查attr是否在当前组件所定义的entity的Schema属性中
 
-Fixed issue #.
+   - 扫描范围
 
-### 1.1.0
+     - 必须是Oak组件
+     - 必须定义组件的形参为WebComponentProps，并且第二个参数为实体类的名称
 
-Added features X, Y, and Z.
+   - 跳转到Schema定义
 
----
+     - 如果attr是一个合法的属性，可以点击跳转到当前entity的定义Schema
 
-## Following extension guidelines
+       ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021114711.png)
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+4. i18n检查与跳转
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+   - 当打开或者编辑tsx文件时，会自动扫描该文件下的所有的t方法调用，并提供代码提示以及定义检查
 
-## Working with Markdown
+   - 语法提示
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+     - 当在t()中输入任意引号的一种，会提示您当前文件可用的所有i18n选项
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+       ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021115215.png)
 
-## For more information
+   - i18n检查
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+     - 插件会根据您正在编辑的文件，自动扫描公共命名空间，所有实体类，以及当前文件目录下的locales定义
 
-**Enjoy!**
+     - 如果i18n的引用是合法的，你可以点击跳转到定义
+
+       ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021115358.png)
+
+     - 如果i18n的引用不合法，会显示警告信息
+
+       ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021115449.png)
+
+
+
+## 安装并使用
+
+在插件市场搜索oak-assistant
+
+启用插件后，在oak项目内，会自动扫描所有的entity
+
+
+
+![启动项目时分析entity](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021113726.png)
+
