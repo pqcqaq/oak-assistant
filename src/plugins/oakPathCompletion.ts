@@ -84,7 +84,9 @@ const oakPathDocumentLinkProvider =
                                 JSON.stringify({ entityName })
                             )}`
                         );
-                        links.push(new vscode.DocumentLink(range, uri));
+                        const link = new vscode.DocumentLink(range, uri);
+                        link.tooltip = `跳转到实体Schema: ${entityName}`;
+                        links.push(link);
                     }
                 }
 

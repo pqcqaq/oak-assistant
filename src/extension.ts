@@ -113,8 +113,6 @@ export async function activate(context: vscode.ExtensionContext) {
                 oakPathCompletion.oakPathCompletion,
                 oakPathCompletion.oakPathDocumentLinkProvider,
                 ...oakPathHighlighter,
-                entityProviders.selectionChangeHandler,
-                entityProviders.hoverProvider,
                 entityProviders.documentLinkProvider
             );
             createFileWatcher(context);
