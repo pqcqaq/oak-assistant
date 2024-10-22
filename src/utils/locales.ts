@@ -272,7 +272,6 @@ export const getLocalesData = (
     }
 
     if (!isPathCached(path)) {
-        console.log('i18n缓存中没有找到', path);
         updatePathCached(path);
     }
 

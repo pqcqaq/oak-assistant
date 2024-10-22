@@ -67,6 +67,7 @@ export type EntityComponentDef = {
     entityName: string;
     isList: boolean;
     components: ComponentDef[];
+    formDataAttrs: string[];
 };
 
 export type EnhtityComponentMap = {

@@ -5,6 +5,7 @@ import ts from 'typescript';
 import { glob } from 'glob';
 import fs from 'fs';
 import { join } from 'path';
+import { onEntityLoaded } from './status';
 
 const entityComponents: EnhtityComponentMap = new Proxy(
     {} as EnhtityComponentMap,
@@ -47,7 +48,7 @@ export const subscribeAll = (callback: (name: string) => void) => {
     };
 };
 
-export const scanComponents = (scanPath: string[]) => {
+export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
     const componentList: EntityComponentDef[] = [];
 
     function visitNode(node: ts.Node, path: string) {
@@ -69,6 +70,48 @@ export const scanComponents = (scanPath: string[]) => {
                         ts.isPropertyAssignment(prop) &&
                         prop.name.getText() === 'isList'
                 );
+
+                const formData = properties.find(
+                    (prop) =>
+                        ts.isMethodDeclaration(prop) &&
+                        prop.name.getText() === 'formData'
+                );
+
+                // 获取formData下的block 下的 returnStatement 下的ObjectLiteralExpression 下的properties
+                const formDataAttrs: string[] = [];
+                if (formData) {
+                    formData.getChildren().forEach((child) => {
+                        if (ts.isBlock(child)) {
+                            child.getChildren().forEach((blockChild) => {
+                                if (ts.isReturnStatement(blockChild)) {
+                                    blockChild
+                                        .getChildren()
+                                        .forEach((returnChild) => {
+                                            if (
+                                                ts.isObjectLiteralExpression(
+                                                    returnChild
+                                                )
+                                            ) {
+                                                returnChild
+                                                    .getChildren()
+                                                    .forEach((objectChild) => {
+                                                        if (
+                                                            ts.isPropertyAssignment(
+                                                                objectChild
+                                                            )
+                                                        ) {
+                                                            formDataAttrs.push(
+                                                                objectChild.name.getText()
+                                                            );
+                                                        }
+                                                    });
+                                            }
+                                        });
+                                }
+                            });
+                        }
+                    });
+                }
 
                 if (entity && isList) {
                     if (
@@ -115,6 +158,7 @@ export const scanComponents = (scanPath: string[]) => {
                         entityName: entity.initializer.getText().slice(1, -1),
                         isList: isList.initializer.getText() === 'true',
                         components: [],
+                        formDataAttrs: formDataAttrs,
                     });
                 }
             }
@@ -304,10 +348,16 @@ export const getOakComponentData = (path: string) => {
         });
 };
 
-// 订阅path的更新
-subscribe(() => {
+export const loadComponents = () => {
     const scanPath = [pathConfig.componentsHome, pathConfig.pagesHome];
     const components = scanComponents(scanPath);
     addComponentsToEntity(components);
-    console.log('components inited:', entityComponents);
+    console.log('components loaded:', entityComponents);
+};
+
+onEntityLoaded(() => {
+    // 订阅path的更新
+    subscribe(() => {
+        loadComponents();
+    });
 });

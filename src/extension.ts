@@ -15,6 +15,7 @@ import oakPathHighlighter from './plugins/oakPathDecoration';
 import entityProviders from './plugins/entityJump';
 import { activateOakLocale, deactivateOakLocale } from './plugins/oakLocale';
 import { startWorker, stopWorker, waitWorkerReady } from './utils/workers';
+import { loadComponents } from './utils/components';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -49,6 +50,13 @@ const afterPathSet = async () => {
             description: '解析项目中的 Entity 结构',
             function: async () => {
                 await analyzeOakAppDomain(pathConfig.oakAppDomainHome);
+            },
+        },
+        {
+            name: '扫描组件',
+            description: '导入所有组件信息',
+            function: async () => {
+                loadComponents();
             },
         },
     ];
