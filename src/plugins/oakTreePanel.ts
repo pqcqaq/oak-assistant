@@ -60,6 +60,10 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
                 const projectEntities = getProjectEntityList();
                 return [
                     new EntityItem(
+                        `共 ${projectEntities.length} 个实体类`,
+                        vscode.TreeItemCollapsibleState.None
+                    ),
+                    new EntityItem(
                         '仅显示项目中定义的实体类',
                         vscode.TreeItemCollapsibleState.None
                     ),
@@ -75,12 +79,18 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
                         }),
                 ];
             }
-            return entityConfig.entityNameList.map((entityName) => {
-                return new EntityItem(
-                    entityName,
-                    vscode.TreeItemCollapsibleState.Collapsed
-                );
-            });
+            return [
+                new EntityItem(
+                    `共 ${entityConfig.entityNameList.length} 个实体类`,
+                    vscode.TreeItemCollapsibleState.None
+                ),
+                ...entityConfig.entityNameList.map((entityName) => {
+                    return new EntityItem(
+                        entityName,
+                        vscode.TreeItemCollapsibleState.Collapsed
+                    );
+                }),
+            ];
         }
         if (element instanceof EntityItem) {
             const children: TreeItem[] = [];

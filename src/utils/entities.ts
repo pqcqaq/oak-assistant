@@ -152,7 +152,6 @@ export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
         () => {
             setLoadingEntities(true);
             return new Promise<void>((resolve, reject) => {
-                
                 isAnalyzing = true;
 
                 // 发送消息开始分析
@@ -174,6 +173,10 @@ export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
                         }
                         isAnalyzing = false;
                         setLoadingEntities(false);
+                        console.log(
+                            '分析完成, 耗时:',
+                            performance.now() - startTime
+                        );
                         resolve();
                     }
                 });
@@ -186,6 +189,7 @@ export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
                     reject(error);
                 });
 
+                const startTime = performance.now();
                 worker.postMessage({ type: 'analyze', oakAppDomainPath });
             });
         }

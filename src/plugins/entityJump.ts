@@ -9,7 +9,7 @@ const entityProviders = {
                 document: vscode.TextDocument
             ): vscode.DocumentLink[] {
                 const links: vscode.DocumentLink[] = [];
-                const regex = /entity[:=]\s*(['"])([a-zA-Z0-9_\s]+)\1[,\n]/g;
+                const regex = /[\$]?entity[:=]\s*(['"])([a-zA-Z0-9_\s]+)\1[,\n]/g;
                 const text = document.getText();
                 let match;
                 while ((match = regex.exec(text)) !== null) {

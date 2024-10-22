@@ -86,7 +86,7 @@ const goCreate = async (
                 }
                 (createComponentConfig as any)[step.name] = result;
             } else {
-                vscode.window.showErrorMessage('未输入有效值，退出创建。');
+                // vscode.window.showErrorMessage('未输入有效值，退出创建。');
                 return;
             }
         } else if (step.inputType === 'select') {
@@ -105,7 +105,7 @@ const goCreate = async (
                 }
                 (createComponentConfig as any)[step.name] = result;
             } else {
-                vscode.window.showErrorMessage('未选择有效值，退出创建。');
+                // vscode.window.showErrorMessage('未选择有效值，退出创建。');
                 return;
             }
         } else if (step.inputType === 'confirm') {

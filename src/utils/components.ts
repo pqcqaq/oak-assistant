@@ -182,6 +182,10 @@ export const scanComponents = (scanPath: string[]) => {
     return componentList;
 };
 
+/**
+ *  添加组件到entity
+ * @param components 组件列表
+ */
 export const addComponentsToEntity = (components: EntityComponentDef[]) => {
     components.forEach((component) => {
         const entityName = component.entityName;
@@ -191,6 +195,10 @@ export const addComponentsToEntity = (components: EntityComponentDef[]) => {
     });
 };
 
+/**
+ *  从entity中删除component
+ * @param path  文件路径
+ */
 export const removeConponentFromEntity = (path: string) => {
     let found = false;
     // 调用这个函数的时候就已经删除了，所以直接forEach
@@ -210,6 +218,11 @@ export const removeConponentFromEntity = (path: string) => {
     }
 };
 
+/**
+ *  更新entity的component
+ * @param path  文件路径
+ * @returns  void
+ */
 export const updateEntityComponent = (path: string) => {
     // 直接删除，后面再添加（修改entity的情况）
     removeConponentFromEntity(path);
@@ -221,6 +234,10 @@ export const updateEntityComponent = (path: string) => {
     addComponentsToEntity([newComponent]);
 };
 
+/**
+ *  根据路径前缀删除
+ * @param prefixPath 路径前缀
+ */
 export const removeByPrefixPath = (prefixPath: string) => {
     let found = false;
     Object.keys(entityComponents).forEach((entityName) => {
@@ -242,10 +259,10 @@ export const removeByPrefixPath = (prefixPath: string) => {
 };
 
 /**
- *  判断是否是一个组件
+ *  判断是否是一个组件的index.ts所在目录
  * @param path  文件路径
  */
-export const isFileOakComponent = (path: string) => {
+export const isOakComponentIndex = (path: string) => {
     // 假定这里的缓存中，一定包含了所有的entity的component
     if (!path.endsWith('index.ts')) {
         return false;
@@ -257,11 +274,34 @@ export const isFileOakComponent = (path: string) => {
     });
 };
 
+/**
+ *  判断是否是一个组件的render文件
+ * @param path  文件路径
+ * @returns  是否是一个组件的render文件
+ */
+export const isOakComponentRenderFile = (path: string) => {
+    const norPath = normalizePath(path);
+    return Object.values(entityComponents).some((list) => {
+        return list.some((item) => {
+            return item.components.some((component) => {
+                return component.path === norPath;
+            });
+        });
+    });
+};
+
+/**
+ *  获取index.ts文件的component数据
+ * @param path  index.ts文件路径
+ * @returns  component数据
+ */
 export const getOakComponentData = (path: string) => {
     const norPath = normalizePath(path);
-    return Object.values(entityComponents).flat().find((component) => {
-        return component.path === norPath;
-    });
+    return Object.values(entityComponents)
+        .flat()
+        .find((component) => {
+            return component.path === norPath;
+        });
 };
 
 // 订阅path的更新

@@ -139,7 +139,7 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
         disposeStorageWatcher = watchDirectory(
             storageFile,
             context,
-            undefined,
+            handleStorageChange,
             handleStorageChange
         );
     });
