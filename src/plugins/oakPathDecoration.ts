@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { getProjectionList, subscribe } from '../utils/entities';
 import { join } from 'path';
 import fs from 'fs';
-import { getOakComponentData, isFileOakComponent } from '../utils/components';
+import { getOakComponentData } from '../utils/components';
 import { onEntityLoaded } from '../utils/status';
 
 let entityName: string | undefined;
@@ -20,7 +20,7 @@ function updateDiagnostics(document: vscode.TextDocument) {
     let match: RegExpExecArray | null;
 
     while ((match = oakPathRegex.exec(fileText)) !== null) {
-        
+
         if (!entityName) {
             // 提示在非oakComponent中使用oakPath，无法检测
             const startPos = document.positionAt(match.index);
@@ -33,7 +33,7 @@ function updateDiagnostics(document: vscode.TextDocument) {
             );
             diagnostic.code = 'invalid_oak_path';
             diagnostics.push(diagnostic);
-            return;
+            continue;
         }
 
         const projection = match[1];

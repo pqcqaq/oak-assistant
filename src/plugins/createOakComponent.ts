@@ -6,7 +6,6 @@ import { toUpperFirst } from '../utils/stringUtils';
 import { generateTemplate } from '../utils/template';
 import { join } from 'path';
 import { ComponentsItem } from './oakTreePanel';
-import { updateEntityComponent } from '../utils/components';
 
 type ConfigStep = {
     name: keyof CreateComponentConfig;

@@ -34,7 +34,7 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
             const key = match[1];
 
             if (key.includes('${')) {
-                return [];
+                continue;
             }
 
             if (isKeyExist(key)) {
@@ -169,7 +169,7 @@ async function validateDocument(document: vscode.TextDocument) {
         const key = match[1];
 
         if (key.includes('${')) {
-            return undefined;
+            continue;
         }
 
         if (!isKeyExist(key)) {
