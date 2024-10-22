@@ -82,33 +82,49 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                 if (formData) {
                     formData.getChildren().forEach((child) => {
                         if (ts.isBlock(child)) {
-                            child.getChildren().forEach((blockChild) => {
-                                if (ts.isReturnStatement(blockChild)) {
-                                    blockChild
-                                        .getChildren()
-                                        .forEach((returnChild) => {
-                                            if (
-                                                ts.isObjectLiteralExpression(
-                                                    returnChild
-                                                )
-                                            ) {
-                                                returnChild
-                                                    .getChildren()
-                                                    .forEach((objectChild) => {
-                                                        if (
-                                                            ts.isPropertyAssignment(
-                                                                objectChild
-                                                            )
-                                                        ) {
-                                                            formDataAttrs.push(
-                                                                objectChild.name.getText()
-                                                            );
-                                                        }
-                                                    });
-                                            }
-                                        });
+                            // 拿到block的returnStatement
+                            let returnStatement: ts.ReturnStatement | null = null;
+                            ts.forEachChild(child, (grandChild) => {
+                                if (ts.isReturnStatement(grandChild)) {
+                                    // 处理 return 语句
+                                    returnStatement = grandChild;
                                 }
                             });
+                            if(!returnStatement) {
+                                return;
+                            }
+                            ts.forEachChild(returnStatement, (returnChild) => {
+                                if (ts.isObjectLiteralExpression(returnChild)) {
+                                    ts.forEachChild(returnChild, (objectChild) => {
+                                        if (ts.isShorthandPropertyAssignment(objectChild)) {
+                                            formDataAttrs.push(objectChild.name.getText());
+                                        }
+                                        if (ts.isPropertyAssignment(objectChild)) {
+                                            formDataAttrs.push(objectChild.name.getText());
+                                        }
+                                        if (ts.isSpreadAssignment(objectChild)) {
+                                            // 这里是展开运算符
+                                            if (ts.isSpreadAssignment(objectChild)) {
+                                                // 处理展开运算符
+                                                if (ts.isObjectLiteralExpression(objectChild.expression)) {
+                                                    // 如果展开的是一个对象字面量表达式
+                                                    objectChild.expression.properties.forEach(prop => {
+                                                        if (ts.isPropertyAssignment(prop) || ts.isShorthandPropertyAssignment(prop)) {
+                                                            formDataAttrs.push(prop.name.getText());
+                                                        }
+                                                    });
+                                                } else if (ts.isIdentifier(objectChild.expression)) {
+                                                    // 如果展开的是一个标识符，我们可能需要查找它的定义
+                                                    console.error('Spread assignment with identifier:', objectChild.expression.text);
+                                                } else {
+                                                    // 处理其他可能的情况
+                                                    console.error('Spread assignment with expression type:', objectChild.expression.kind);
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            });  
                         }
                     });
                 }
