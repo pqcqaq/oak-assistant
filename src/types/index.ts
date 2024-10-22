@@ -67,12 +67,29 @@ export type EntityComponentDef = {
     entityName: string;
     isList: boolean;
     components: ComponentDef[];
-    formDataAttrs: string[];
+    formDataAttrs?: string[];
+    methodNames?: string[];
 };
 
 export type EnhtityComponentMap = {
     [entityName: string]: EntityComponentDef[];
 };
+
+export type DocumentValue = {
+    value: string | number | boolean;
+    pos: {
+        start: number;
+        end: number;
+    };
+}
+
+export type RenderProps = {
+    dictName: DocumentValue;
+    entityName: DocumentValue;
+    isList: DocumentValue;
+    attrList?: DocumentValue[];
+    methodList?: DocumentValue[];
+}
 
 export type TriggerDef = {
     entity: string;
