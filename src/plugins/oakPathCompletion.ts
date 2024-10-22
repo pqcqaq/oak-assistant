@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
-import ts, { Identifier } from 'typescript';
 import { getProjectionList } from '../utils/entities';
+import { join } from 'path';
+import fs from 'fs';
+import { getOakComponentData } from '../utils/components';
 
 console.log('oakPathCompletion enabled');
-
-let currentEditingDocument: ts.Program | null = null;
-let sourceFile: ts.SourceFile | null = null;
 
 const oakPathCompletion = vscode.languages.registerCompletionItemProvider(
     { scheme: 'file', language: 'typescriptreact' },
@@ -24,54 +23,7 @@ const oakPathCompletion = vscode.languages.registerCompletionItemProvider(
                 return undefined;
             }
 
-            // 打开当前编辑的文件
-            if (!currentEditingDocument) {
-                currentEditingDocument = ts.createProgram({
-                    rootNames: [document.fileName],
-                    options: {},
-                });
-            }
-
-            if (!sourceFile || sourceFile.fileName !== document.fileName) {
-                sourceFile = currentEditingDocument.getSourceFile(
-                    document.fileName
-                )!;
-            }
-
-            let entityName: string | undefined;
-
-            // 查找 WebComponentProps 的使用情况
-            ts.forEachChild(sourceFile, (node) => {
-                if (
-                    ts.isFunctionDeclaration(node) ||
-                    ts.isArrowFunction(node)
-                ) {
-                    const firstParameter = node.parameters[0];
-                    if (!firstParameter) {
-                        return;
-                    }
-                    const typeRef = firstParameter.type;
-                    if (!typeRef) {
-                        return;
-                    }
-                    if (
-                        ts.isTypeReferenceNode(typeRef) &&
-                        (typeRef.typeName as Identifier).escapedText ===
-                            'WebComponentProps'
-                    ) {
-                        const entityNameNode = typeRef.typeArguments?.[1];
-                        if (
-                            entityNameNode &&
-                            ts.isLiteralTypeNode(entityNameNode)
-                        ) {
-                            const innerNode = entityNameNode.literal;
-                            if (innerNode && ts.isStringLiteral(innerNode)) {
-                                entityName = innerNode.text;
-                            }
-                        }
-                    }
-                }
-            });
+            const entityName = getEntityNameFromDocument(document);
 
             if (!entityName) {
                 return undefined;
@@ -94,8 +46,8 @@ const oakPathCompletion = vscode.languages.registerCompletionItemProvider(
 
             return completionItems;
         },
-    }
-    // 移除这里的 TRIGGER_CHARACTER
+    },
+    '.' // triggered whenever a '.' is being typed
 );
 
 // 新增文档链接提供器
@@ -144,54 +96,18 @@ const oakPathDocumentLinkProvider =
 function getEntityNameFromDocument(
     document: vscode.TextDocument
 ): string | undefined {
-    if (
-        !currentEditingDocument ||
-        !sourceFile ||
-        sourceFile.fileName !== document.fileName
-    ) {
-        currentEditingDocument = ts.createProgram({
-            rootNames: [document.fileName],
-            options: {},
-        });
-        sourceFile = currentEditingDocument.getSourceFile(document.fileName)!;
+    // 换成更简单的实现方式
+    const docPath = document.uri.fsPath;
+    const indexPath = join(docPath, '../');
+
+    if (!fs.existsSync(indexPath)) {
+        return;
     }
-
-    let entityName: string | undefined;
-
-    const eachChild = (node: ts.Node) => {
-        if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node)) {
-            const firstParameter = node.parameters[0];
-            if (!firstParameter) {
-                return;
-            }
-            const typeRef = firstParameter.type;
-            if (!typeRef) {
-                return;
-            }
-            if (
-                ts.isTypeReferenceNode(typeRef) &&
-                (typeRef.typeName as ts.Identifier).escapedText ===
-                    'WebComponentProps'
-            ) {
-                const entityNameNode = typeRef.typeArguments?.[1];
-                if (entityNameNode && ts.isLiteralTypeNode(entityNameNode)) {
-                    const innerNode = entityNameNode.literal;
-                    if (innerNode && ts.isStringLiteral(innerNode)) {
-                        entityName = innerNode.text;
-                        return;
-                    }
-                }
-            }
-        }
-        // 如果没找到，继续遍历
-        if (!entityName) {
-            ts.forEachChild(node, eachChild);
-        }
-    };
-
-    ts.forEachChild(sourceFile, eachChild);
-
-    return entityName;
+    const data = getOakComponentData(indexPath);
+    if (!data) {
+        return;
+    }
+    return data.entityName;
 }
 
 // 在切换文档的时候，清空当前编辑的文档
@@ -199,8 +115,6 @@ vscode.window.onDidChangeActiveTextEditor((editor) => {
     if (!editor) {
         return;
     }
-    currentEditingDocument = null;
-    sourceFile = null;
 });
 
 export default {
