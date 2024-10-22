@@ -100,6 +100,20 @@ export const getAttrsFromMethods = (
     return attrs;
 };
 
+/**
+ *  获取函数的返回值的attrs
+ * @param sourceFile    源文件
+ * @returns  返回值的attrs
+ *
+ * 这里实际上有四种情况：
+ *
+ * export default function render
+ * function render....export default render;
+ * const render....export default render;
+ * export default [ArrowFunction]
+ *
+ * 所以最开始先考虑四种情况，拿到functionNode，然后再去拿到第一个参数
+ */
 export const getWebComponentPropsData = (
     sourceFile: ts.SourceFile
 ): RenderProps | undefined => {
