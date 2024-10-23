@@ -63,6 +63,10 @@ oak框架适配性插件，为你的开发助力！
 
      - 在编写时，当你在${oakFullpath}的后面输入`.`，就可以获得当前entity下的所有可选attr的提示
 
+       ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/202410232240998.png)
+       
+       
+       
        
 
 4. i18n检查与跳转
@@ -92,6 +96,28 @@ oak框架适配性插件，为你的开发助力！
        - 当找不到locale定义的时候，可以点击快速修复，在当前组件的locale中创建一个新的键值对
        - 如果当前组件下不存在locales文件夹，会自动创建locales/zh_CN.json文件
 
+5. 对于WebComponentProps的泛型检查
+
+   - ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/202410232243249.png)
+   - 检查entity的名称是否与index.ts中定义的相同
+   - 检查isList的参数是否与index.ts中相同
+   - 检查所有的data属性是否在index.ts中的formData中有返回值，或者已经定义在properties中
+   - 检查所有的方法定义是否都在index.ts中的methods中
+
+6. 提供相关快速跳转功能
+
+   1. 当entity：""出现项目中已经定义的实体时，提供一键跳转到定义的功能
+   2. 在WebComponentProps的data参数和methods参数中，可以一键跳转到具体的定义位置
+
+7. 提供快速修复功能
+
+   1. 在locales未定义的情况下，可以一键修复，在本地的locales目录中创建该键值对。
+
+   2. WebComponentProps中的entity或者isList值错误，可以一键修复。
+
+   3. 当WebComponentProps中的data未定义或者methods不存在，可以一键在index.ts中创建。
+
+      
 
 
 ## 安装并使用
