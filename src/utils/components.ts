@@ -76,11 +76,14 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         prop.name.getText() === 'isList'
                 );
 
-                const formData = properties.find(
-                    (prop) =>
-                        ts.isMethodDeclaration(prop) &&
-                        prop.name.getText() === 'formData'
-                );
+                const formData = properties.find((prop) => {
+                    return (
+                        (ts.isPropertyAssignment(prop) ||
+                            ts.isMethodDeclaration(prop)) &&
+                        ts.isIdentifier(prop.name) &&
+                        prop.name.text === 'formData'
+                    );
+                }) as ts.MethodDeclaration | ts.PropertyAssignment | undefined;
 
                 const method = properties.find(
                     (prop) =>

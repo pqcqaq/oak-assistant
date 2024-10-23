@@ -9,9 +9,15 @@ import { join } from 'path';
  * @returns       返回值的attrs
  */
 export const getAttrsFromFormData = (
-    element: ts.ObjectLiteralElementLike
+    formItem: ts.MethodDeclaration | ts.PropertyAssignment
 ): string[] => {
     const attrs: string[] = [];
+    let element: ts.Node = formItem;
+    // 如果是isPropertyAssignment
+    if (ts.isPropertyAssignment(element)) {
+        element = element.initializer;
+    }
+
     element.getChildren().forEach((child) => {
         if (ts.isBlock(child)) {
             // 拿到block的returnStatement
@@ -312,16 +318,36 @@ export async function addAttrToFormData(
             const arg = node.arguments[0];
             if (ts.isObjectLiteralExpression(arg)) {
                 const formData = arg.properties.find(
-                    (prop): prop is ts.MethodDeclaration =>
-                        ts.isMethodDeclaration(prop) &&
-                        ts.isIdentifier(prop.name) &&
-                        prop.name.text === 'formData'
-                );
+                    (prop): prop is ts.MethodDeclaration => {
+                        return (
+                            (ts.isPropertyAssignment(prop) ||
+                                ts.isMethodDeclaration(prop)) &&
+                            ts.isIdentifier(prop.name) &&
+                            prop.name.text === 'formData'
+                        );
+                    }
+                ) as ts.MethodDeclaration | ts.PropertyAssignment | undefined;
 
                 if (formData) {
-                    const returnStatement = formData.body?.statements.find(
-                        ts.isReturnStatement
-                    );
+                    let returnStatement;
+                    if (ts.isMethodDeclaration(formData)) {
+                        returnStatement = formData.body?.statements.find(
+                            ts.isReturnStatement
+                        );
+                    } else if (ts.isPropertyAssignment(formData)) {
+                        const functionDeclaration = formData.initializer;
+                        const block = ts.forEachChild(
+                            functionDeclaration,
+                            (child) => {
+                                if (ts.isBlock(child)) {
+                                    return child;
+                                }
+                            }
+                        );
+                        returnStatement = block?.statements.find(
+                            ts.isReturnStatement
+                        );
+                    }
                     if (
                         returnStatement &&
                         ts.isObjectLiteralExpression(
