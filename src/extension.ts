@@ -16,7 +16,10 @@ import entityProviders from './plugins/entityJump';
 import { activateOakLocale, deactivateOakLocale } from './plugins/oakLocale';
 import { startWorker, stopWorker, waitWorkerReady } from './utils/workers';
 import { loadComponents } from './utils/components';
-import { activateOakComponentPropsLinkProvider, deactivateOakComponentPropsLinkProvider } from './plugins/oakComponent';
+import {
+    activateOakComponentPropsLinkProvider,
+    deactivateOakComponentPropsLinkProvider,
+} from './plugins/oakComponent';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -123,7 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 oakPathCompletion.oakPathCompletion,
                 oakPathCompletion.oakPathDocumentLinkProvider,
                 ...oakPathHighlighter,
-                entityProviders.documentLinkProvider,
+                entityProviders.documentLinkProvider
             );
             createFileWatcher(context);
         } catch (error) {
