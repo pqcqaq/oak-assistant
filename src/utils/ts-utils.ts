@@ -422,6 +422,12 @@ export async function addAttrToFormData(
         edit.insert(indexPath, indexDocument.positionAt(insertPos), insertText);
         await vscode.workspace.applyEdit(edit);
         // vscode.window.showInformationMessage(`属性 ${attrName} 已添加到 formData`);
+        const args = {
+            filePath: indexPath.fsPath,
+            start: insertPos,
+            end: insertPos + insertText.length,
+        };
+        await vscode.commands.executeCommand('oak-assistant.jumpToPosition', args);
     } else {
         vscode.window.showErrorMessage('无法在 index.ts 中找到合适的插入位置');
     }
@@ -506,7 +512,16 @@ export async function addMethodToMethods(
         await vscode.workspace.applyEdit(edit);
         //保存
         await indexDocument.save();
-        vscode.window.showTextDocument(indexDocument.uri);
+        // vscode.window.showTextDocument(indexDocument.uri);
+        const args = {
+            filePath: indexPath.fsPath,
+            start: lastPropPos,
+            end: lastPropPos + insertText.length,
+        };
+        await vscode.commands.executeCommand(
+            'oak-assistant.jumpToPosition',
+            args
+        );
         return;
     }
 
@@ -535,5 +550,11 @@ export async function addMethodToMethods(
     // );
     await indexDocument.save();
     // 跳转文件
-    vscode.window.showTextDocument(indexDocument.uri);
+    // vscode.window.showTextDocument(indexDocument.uri);
+    const args = {
+        filePath: indexPath.fsPath,
+        start: insertPos,
+        end: insertPos + insertText.length,
+    };
+    await vscode.commands.executeCommand('oak-assistant.jumpToPosition', args);
 }
