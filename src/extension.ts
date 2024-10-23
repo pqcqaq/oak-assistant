@@ -21,6 +21,7 @@ import {
     deactivateOakComponentPropsLinkProvider,
 } from './plugins/oakComponent';
 import { preLoadLocales } from './utils/locales';
+import { createCommonPlugin } from './plugins/common';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -114,6 +115,8 @@ const reload = vscode.commands.registerCommand('oak-assistant.reload', () => {
     vscode.commands.executeCommand('workbench.action.reloadWindow');
 });
 
+const commonCommands = createCommonPlugin();
+
 const checkPagesAndNamespacePlugin = checkPagesAndNamespace();
 const createOakComponentPlugin = createOakComponent();
 const createOakTreePanelPlugin = createOakTreePanel();
@@ -123,6 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
         try {
             activateOakLocale(context);
             activateOakComponentPropsLinkProvider(context);
+            commonCommands.activate(context);
             context.subscriptions.push(
                 helloOak,
                 reload,
@@ -191,6 +195,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+    commonCommands.dispose();
     checkPagesAndNamespacePlugin.dispose();
     createOakComponentPlugin.dispose();
     createOakTreePanelPlugin.dispose();

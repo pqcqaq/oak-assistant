@@ -68,9 +68,9 @@ export type EntityComponentDef = {
     entityName: string;
     isList: boolean;
     components: ComponentDef[];
-    formDataAttrs?: string[];
-    methodNames?: string[];
-    propertiesAttrs?: string[];
+    formDataAttrs?: DocumentValue[];
+    methodNames?: DocumentValue[];
+    propertiesAttrs?: DocumentValue[];
 };
 
 export type EnhtityComponentMap = {

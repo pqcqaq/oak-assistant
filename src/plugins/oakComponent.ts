@@ -110,21 +110,40 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
 
         // 检查attrs是否都在定义中
         node.attrList?.forEach((attr) => {
-            if (!componentInfo.formDataAttrs?.includes(attr.value as string)) {
+            if (
+                !componentInfo.formDataAttrs
+                    ?.map((i) => i.value)
+                    .includes(attr.value as string)
+            ) {
                 // 这里还需要判断在不在propertiesAttrs里面
                 if (
-                    componentInfo.propertiesAttrs?.includes(
-                        attr.value as string
-                    )
+                    componentInfo.propertiesAttrs
+                        ?.map((i) => i.value)
+                        .includes(attr.value as string)
                 ) {
                     // 创建文档链接
                     const startPos = document.positionAt(attr.pos.start);
                     const endPos = document.positionAt(attr.pos.end);
                     const range = new vscode.Range(startPos, endPos);
-                    const uri = vscode.Uri.file(
-                        join(document.uri.fsPath, '../index.ts')
+                    const toStart = componentInfo.propertiesAttrs?.find(
+                        (i) => i.value === attr.value
+                    )?.pos.start;
+                    const toEnd = componentInfo.propertiesAttrs?.find(
+                        (i) => i.value === attr.value
+                    )?.pos.end;
+                    const args = {
+                        filePath: join(document.uri.fsPath, '../index.ts'),
+                        start: toStart,
+                        end: toEnd,
+                    };
+                    const link = new vscode.DocumentLink(
+                        range,
+                        vscode.Uri.parse(
+                            `command:oak-assistant.jumpToPosition?${encodeURIComponent(
+                                JSON.stringify(args)
+                            )}`
+                        )
                     );
-                    const link = new vscode.DocumentLink(range, uri);
                     link.tooltip = 'index.ts中的properties之一';
                     documentLinks.push(link);
                     return;
@@ -146,10 +165,25 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 const startPos = document.positionAt(attr.pos.start);
                 const endPos = document.positionAt(attr.pos.end);
                 const range = new vscode.Range(startPos, endPos);
-                const uri = vscode.Uri.file(
-                    join(document.uri.fsPath, '../index.ts')
+                const toStart = componentInfo.formDataAttrs?.find(
+                    (i) => i.value === attr.value
+                )?.pos.start;
+                const toEnd = componentInfo.formDataAttrs?.find(
+                    (i) => i.value === attr.value
+                )?.pos.end;
+                const args = {
+                    filePath: join(document.uri.fsPath, '../index.ts'),
+                    start: toStart,
+                    end: toEnd,
+                };
+                const link = new vscode.DocumentLink(
+                    range,
+                    vscode.Uri.parse(
+                        `command:oak-assistant.jumpToPosition?${encodeURIComponent(
+                            JSON.stringify(args)
+                        )}`
+                    )
                 );
-                const link = new vscode.DocumentLink(range, uri);
                 link.tooltip = 'index.ts中formData的返回值之一';
                 documentLinks.push(link);
             }
@@ -157,7 +191,11 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
 
         // 检查methods是否都在定义中
         node.methodList?.forEach((method) => {
-            if (!componentInfo.methodNames?.includes(method.value as string)) {
+            if (
+                !componentInfo.methodNames
+                    ?.map((i) => i.value)
+                    .includes(method.value as string)
+            ) {
                 const startPos = document.positionAt(method.pos.start);
                 const endPos = document.positionAt(method.pos.end);
                 const range = new vscode.Range(startPos, endPos);
@@ -175,10 +213,25 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 const startPos = document.positionAt(method.pos.start);
                 const endPos = document.positionAt(method.pos.end);
                 const range = new vscode.Range(startPos, endPos);
-                const uri = vscode.Uri.file(
-                    join(document.uri.fsPath, '../index.ts')
+                const toStart = componentInfo.methodNames?.find(
+                    (i) => i.value === method.value
+                )?.pos.start;
+                const toEnd = componentInfo.methodNames?.find(
+                    (i) => i.value === method.value
+                )?.pos.end;
+                const args = {
+                    filePath: join(document.uri.fsPath, '../index.ts'),
+                    start: toStart,
+                    end: toEnd,
+                };
+                const link = new vscode.DocumentLink(
+                    range,
+                    vscode.Uri.parse(
+                        `command:oak-assistant.jumpToPosition?${encodeURIComponent(
+                            JSON.stringify(args)
+                        )}`
+                    )
                 );
-                const link = new vscode.DocumentLink(range, uri);
                 link.tooltip = 'index.ts中methods的方法之一';
                 documentLinks.push(link);
             }

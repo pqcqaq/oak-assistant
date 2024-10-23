@@ -1,5 +1,5 @@
-import { random, debounce, groupBy, update, get } from 'lodash';
-import { EnhtityComponentMap, EntityComponentDef } from '../types';
+import { random, debounce } from 'lodash';
+import { DocumentValue, EnhtityComponentMap, EntityComponentDef } from '../types';
 import { normalizePath, pathConfig, subscribe } from './paths';
 import ts from 'typescript';
 import { glob } from 'glob';
@@ -100,9 +100,9 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         prop.name.getText() === 'properties'
                 );
 
-                let formDataAttrs: string[] = [];
-                let methodNames: string[] = [];
-                let propertiesAttrs: string[] = [];
+                let formDataAttrs: DocumentValue[] = [];
+                let methodNames: DocumentValue[] = [];
+                let propertiesAttrs: DocumentValue[] = [];
                 // 获取formData下的block 下的 returnStatement 下的ObjectLiteralExpression 下的properties
                 if (formData) {
                     formDataAttrs = getAttrsFromFormData(formData);

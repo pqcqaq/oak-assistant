@@ -51,11 +51,18 @@
       },
       {
         "command": "oak-assistant.insertOakFullpath",
-        "title": "插入oakPath属性"
+        "title": "插入oakPath属性",
+        "when": "editorTextFocus"
       },
       {
         "command": "oak-i18n.addLocaleDefinition",
-        "title": "添加国际化定义"
+        "title": "添加国际化定义",
+        "when": "false"
+      },
+      {
+        "command": "oak-assistant.jumpToPosition",
+        "title": "跳转到指定位置",
+        "when": "false"
       }
     ],
     "menus": {

@@ -10,8 +10,8 @@ import { join } from 'path';
  */
 export const getAttrsFromFormData = (
     formItem: ts.MethodDeclaration | ts.PropertyAssignment
-): string[] => {
-    const attrs: string[] = [];
+): DocumentValue[] => {
+    const attrs: DocumentValue[] = [];
     let element: ts.Node = formItem;
     // 如果是isPropertyAssignment
     if (ts.isPropertyAssignment(element)) {
@@ -35,10 +35,22 @@ export const getAttrsFromFormData = (
                 if (ts.isObjectLiteralExpression(returnChild)) {
                     ts.forEachChild(returnChild, (objectChild) => {
                         if (ts.isShorthandPropertyAssignment(objectChild)) {
-                            attrs.push(objectChild.name.getText());
+                            attrs.push({
+                                value: objectChild.name.getText(),
+                                pos: {
+                                    start: objectChild.name.getStart(),
+                                    end: objectChild.name.getEnd(),
+                                },
+                            });
                         }
                         if (ts.isPropertyAssignment(objectChild)) {
-                            attrs.push(objectChild.name.getText());
+                            attrs.push({
+                                value: objectChild.name.getText(),
+                                pos: {
+                                    start: objectChild.name.getStart(),
+                                    end: objectChild.name.getEnd(),
+                                },
+                            });
                         }
                         if (ts.isSpreadAssignment(objectChild)) {
                             // 这里是展开运算符
@@ -58,7 +70,13 @@ export const getAttrsFromFormData = (
                                                     prop
                                                 )
                                             ) {
-                                                attrs.push(prop.name.getText());
+                                                attrs.push({
+                                                    value: prop.name.getText(),
+                                                    pos: {
+                                                        start: prop.name.getStart(),
+                                                        end: prop.name.getEnd(),
+                                                    },
+                                                });
                                             }
                                         }
                                     );
@@ -94,8 +112,8 @@ export const getAttrsFromFormData = (
  */
 export const getAttrsFromMethods = (
     element: ts.ObjectLiteralElementLike
-): string[] => {
-    const attrs: string[] = [];
+): DocumentValue[] => {
+    const attrs: DocumentValue[] = [];
     ts.forEachChild(element, (child) => {
         if (ts.isObjectLiteralExpression(child)) {
             ts.forEachChild(child, (objectChild) => {
@@ -104,7 +122,13 @@ export const getAttrsFromMethods = (
                     ts.isShorthandPropertyAssignment(objectChild) ||
                     ts.isPropertyAssignment(objectChild)
                 ) {
-                    attrs.push(objectChild.name.getText());
+                    attrs.push({
+                        value: objectChild.name.getText(),
+                        pos: {
+                            start: objectChild.name.getStart(),
+                            end: objectChild.name.getEnd(),
+                        },
+                    });
                 }
             });
         }
@@ -119,8 +143,8 @@ export const getAttrsFromMethods = (
  */
 export const getAttrsFromProperties = (
     element: ts.ObjectLiteralElementLike
-): string[] => {
-    const attrs: string[] = [];
+): DocumentValue[] => {
+    const attrs: DocumentValue[] = [];
     ts.forEachChild(element, (child) => {
         if (ts.isObjectLiteralExpression(child)) {
             ts.forEachChild(child, (objectChild) => {
@@ -128,7 +152,13 @@ export const getAttrsFromProperties = (
                     ts.isPropertyAssignment(objectChild) ||
                     ts.isShorthandPropertyAssignment(objectChild)
                 ) {
-                    attrs.push(objectChild.name.getText());
+                    attrs.push({
+                        value: objectChild.name.getText(),
+                        pos: {
+                            start: objectChild.name.getStart(),
+                            end: objectChild.name.getEnd(),
+                        },
+                    });
                 }
             });
         }
