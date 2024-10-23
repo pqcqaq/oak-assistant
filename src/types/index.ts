@@ -5,6 +5,7 @@ export type CreateComponentConfig = {
     entityName: string;
     isList: boolean;
     autoProjection: boolean;
+    renderFile: string[];
 };
 
 export type IndexTsTemplate = {

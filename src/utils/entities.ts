@@ -246,3 +246,19 @@ export const getEntityLocalePath = (entityName: string) => {
         'locales'
     );
 };
+
+export const genProjections = (name: string): string[] => {
+    const entityAttrs = entityConfig.getEntityDesc(name)?.attributes;
+    return Object.keys(entityAttrs)
+        .map((attr) => {
+            const field = (entityAttrs as any)[attr];
+            if (!field) {
+                return '';
+            }
+            if (!['object', 'ref'].includes(field.type as string)) {
+                return attr;
+            }
+            return '';
+        })
+        .filter((attr) => !!attr);
+};

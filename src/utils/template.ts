@@ -2,14 +2,20 @@ import * as vscode from 'vscode';
 import { join } from 'path';
 import { pluginPaths } from './paths';
 import fs from 'fs';
-import { CreateOakComponent } from '../types';
+import { CreateComponentConfig, CreateOakComponent } from '../types';
 import Handlebars from 'handlebars';
+import { toUpperFirst } from './stringUtils';
+import { genProjections } from './entities';
 
 export const templateNames = {
     index: 'index.ts',
     webPcTsx: 'web.pc.tsx',
     webTsx: 'web.tsx',
     localeZhCN: 'locales\\zh_CN.json',
+    indexXml: 'index.xml',
+    renderNativeTsx: 'render.native.tsx',
+    renderIosTsx: 'render.ios.tsx',
+    renderAndroidTsx: 'render.android.tsx',
     styleLess: 'styles.module.less',
 } as const;
 
@@ -65,9 +71,43 @@ export const outputTemplate = (
     }
 };
 
-export const generateTemplate = (outPath: string, data: CreateOakComponent) => {
-    outputTemplate('webPcTsx', data.webPcTsx, outPath);
-    outputTemplate('webTsx', data.webTsx, outPath);
+export const generateTemplate = (
+    outPath: string,
+    config: CreateComponentConfig
+) => {
+    const data: CreateOakComponent = {
+        index: {
+            entityName: config.entityName,
+            isList: config.isList,
+            autoProjection: config.autoProjection,
+            projectionFields: genProjections(config.entityName),
+        },
+        webPcTsx: {
+            componentName: toUpperFirst(config.folderName),
+            entityName: config.entityName,
+            isList: config.isList,
+        },
+        webTsx: {
+            componentName: toUpperFirst(config.folderName),
+            entityName: config.entityName,
+            isList: config.isList,
+        },
+        localeZhCN: {},
+        styleLess: {},
+    };
+    // render文件
+    config.renderFile.includes('web.pc.tsx') &&
+        outputTemplate('webPcTsx', data.webPcTsx, outPath);
+    config.renderFile.includes('web.tsx') &&
+        outputTemplate('webTsx', data.webTsx, outPath);
+    config.renderFile.includes('index.xml') &&
+        outputTemplate('indexXml', {}, outPath);
+    config.renderFile.includes('render.native.tsx') &&
+        outputTemplate('renderNativeTsx', {}, outPath);
+    config.renderFile.includes('render.ios.tsx') &&
+        outputTemplate('renderIosTsx', {}, outPath);
+    
+    // 其他文件
     outputTemplate('localeZhCN', data.localeZhCN, outPath);
     outputTemplate('styleLess', data.styleLess, outPath);
     // 因为这里涉及到组件的扫描，index.ts 文件需要在最后生成

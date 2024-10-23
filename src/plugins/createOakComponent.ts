@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { isFileInDirectory, normalizePath, pathConfig } from '../utils/paths';
+import { isFileInDirectory, pathConfig } from '../utils/paths';
 import { entityConfig } from '../utils/entities';
-import { CreateComponentConfig, CreateOakComponent } from '../types';
+import { CreateComponentConfig } from '../types';
 import { toUpperFirst } from '../utils/stringUtils';
 import { generateTemplate } from '../utils/template';
 import { join } from 'path';
@@ -12,7 +12,9 @@ type ConfigStep = {
     description: string;
     inputType: 'input' | 'select' | 'confirm';
     options?: string[] | (() => string[] | Promise<string[]>);
+    defaultSelections?: string[];
     result?: string;
+    many?: boolean;
     // 验证内容是否合法
     validate?: (value: string) => boolean;
 };
@@ -33,6 +35,21 @@ const withSelectEntity: ConfigStep[] = [
             }
             return true;
         },
+    },
+    {
+        name: 'renderFile',
+        description: '请选择需要的平台文件',
+        inputType: 'select',
+        options: [
+            'web.tsx',
+            'web.pc.tsx',
+            'render.native.tsx',
+            'render.ios.tsx',
+            'render.android.tsx',
+            'index.xml',
+        ],
+        defaultSelections: ['web.tsx', 'web.pc.tsx'],
+        many: true,
     },
     {
         name: 'entityName',
@@ -72,6 +89,7 @@ const goCreate = async (
         entityName: '',
         isList: false,
         autoProjection: false,
+        renderFile: [],
         ...config,
     };
     for (const step of steps) {
@@ -97,6 +115,8 @@ const goCreate = async (
                 : [];
             const result = await vscode.window.showQuickPick(options, {
                 placeHolder: step.description,
+                canPickMany: step.many,
+                ignoreFocusOut: true,
             });
             if (result) {
                 if (step.validate && !step.validate(result)) {
@@ -109,11 +129,10 @@ const goCreate = async (
                 return;
             }
         } else if (step.inputType === 'confirm') {
-            const result = await vscode.window.showInformationMessage(
-                step.description,
-                '是',
-                '否'
-            );
+            const result = await vscode.window.showQuickPick(['是', '否'], {
+                placeHolder: step.description,
+                ignoreFocusOut: true,
+            });
             if (result === '是') {
                 if (step.validate && !step.validate(result)) {
                     vscode.window.showErrorMessage('输入值不合法，退出创建。');
@@ -126,45 +145,7 @@ const goCreate = async (
         }
     }
 
-    const desc = entityConfig.getEntityDesc(createComponentConfig.entityName);
-
-    const entityAttrs = desc.attributes;
-
-    const genProjections: string[] = Object.keys(entityAttrs)
-        .map((attr) => {
-            const field = (entityAttrs as any)[attr];
-            if (!field) {
-                return '';
-            }
-            if (!['object', 'ref'].includes(field.type as string)) {
-                return attr;
-            }
-            return '';
-        })
-        .filter((attr) => !!attr);
-
-    const data: CreateOakComponent = {
-        index: {
-            entityName: createComponentConfig.entityName,
-            isList: createComponentConfig.isList,
-            autoProjection: createComponentConfig.autoProjection,
-            projectionFields: genProjections,
-        },
-        webPcTsx: {
-            componentName: toUpperFirst(createComponentConfig.folderName),
-            entityName: createComponentConfig.entityName,
-            isList: createComponentConfig.isList,
-        },
-        webTsx: {
-            componentName: toUpperFirst(createComponentConfig.folderName),
-            entityName: createComponentConfig.entityName,
-            isList: createComponentConfig.isList,
-        },
-        localeZhCN: {},
-        styleLess: {},
-    };
-
-	generateTemplate(join(folderPath, createComponentConfig.folderName), data);
+    generateTemplate(join(folderPath, createComponentConfig.folderName), createComponentConfig);
     vscode.window.showInformationMessage(
         `创建组件: ${toUpperFirst(createComponentConfig.folderName)} 成功。`
     );
