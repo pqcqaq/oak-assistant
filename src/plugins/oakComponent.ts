@@ -38,27 +38,41 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
         const diagnostics: vscode.Diagnostic[] = [];
         // 检查entity名称是否相同
         if (node.entityName.value !== componentInfo.entityName) {
-            // 进行错误提示
-            const startPos = document.positionAt(node.entityName.pos.start);
-            const endPos = document.positionAt(node.entityName.pos.end);
-            const range = new vscode.Range(startPos, endPos);
-            const diagnostic = new vscode.Diagnostic(
-                range,
-                `组件Entity与index.tx定义不一致`,
-                vscode.DiagnosticSeverity.Error
-            );
-            diagnostic.code = 'invalid_entity';
-            // 详细信息, 提示index.ts中的信息, 这里没有position
-            diagnostic.relatedInformation = [
-                new vscode.DiagnosticRelatedInformation(
-                    new vscode.Location(
-                        document.uri,
-                        new vscode.Range(0, 0, 0, 0)
+            if (!componentInfo.entityName) {
+                // 是一个虚拟节点，显示info
+                const startPos = document.positionAt(node.entityName.pos.start);
+                const endPos = document.positionAt(node.entityName.pos.end);
+                const range = new vscode.Range(startPos, endPos);
+                const diagnostic = new vscode.Diagnostic(
+                    range,
+                    `当前组件为Virtual虚拟节点`,
+                    vscode.DiagnosticSeverity.Information
+                );
+                diagnostic.code = 'invalid_entity';
+                diagnostics.push(diagnostic);
+            } else {
+                // 进行错误提示
+                const startPos = document.positionAt(node.entityName.pos.start);
+                const endPos = document.positionAt(node.entityName.pos.end);
+                const range = new vscode.Range(startPos, endPos);
+                const diagnostic = new vscode.Diagnostic(
+                    range,
+                    `组件Entity与index.tx定义不一致`,
+                    vscode.DiagnosticSeverity.Error
+                );
+                diagnostic.code = 'invalid_entity';
+                // 详细信息, 提示index.ts中的信息, 这里没有position
+                diagnostic.relatedInformation = [
+                    new vscode.DiagnosticRelatedInformation(
+                        new vscode.Location(
+                            document.uri,
+                            new vscode.Range(0, 0, 0, 0)
+                        ),
+                        'index.ts中定义的Entity为：' + componentInfo.entityName
                     ),
-                    'index.ts中定义的Entity为：' + componentInfo.entityName
-                ),
-            ];
-            diagnostics.push(diagnostic);
+                ];
+                diagnostics.push(diagnostic);
+            }
         } else {
             // 添加documentLink,跳转到index.ts
             const startPos = document.positionAt(node.entityName.pos.start);

@@ -1,5 +1,9 @@
 import { random, debounce } from 'lodash';
-import { DocumentValue, EnhtityComponentMap, EntityComponentDef } from '../types';
+import {
+    DocumentValue,
+    EnhtityComponentMap,
+    EntityComponentDef,
+} from '../types';
 import { normalizePath, pathConfig, subscribe } from './paths';
 import ts from 'typescript';
 import { glob } from 'glob';
@@ -160,6 +164,23 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         path: normalizePath(join(path, '..')),
                         entityName: entity.initializer.getText().slice(1, -1),
                         isList: isList.initializer.getText() === 'true',
+                        components: [],
+                        formDataAttrs: formDataAttrs.length
+                            ? formDataAttrs
+                            : undefined,
+                        methodNames: methodNames.length
+                            ? methodNames
+                            : undefined,
+                        propertiesAttrs: propertiesAttrs.length
+                            ? propertiesAttrs
+                            : undefined,
+                    });
+                } else {
+                    // 是一个Virtual虚拟节点，没有entity和isList
+                    componentList.push({
+                        path: normalizePath(join(path, '..')),
+                        entityName: '',
+                        isList: false,
                         components: [],
                         formDataAttrs: formDataAttrs.length
                             ? formDataAttrs
