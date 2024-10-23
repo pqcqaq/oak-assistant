@@ -14,6 +14,7 @@ import vscode from 'vscode';
 import { entityConfig, getEntityLocalePath, subscribeEntity } from './entities';
 import { normalizePath, pathConfig, subscribe as subsPath } from './paths';
 import { setLoadingLocale } from './status';
+import { componentConfig } from './components';
 
 const locales: LocaleDef = {
     namespaced: new Proxy({} as NamespaceLocale, {
@@ -326,8 +327,19 @@ const setEntityLocales = (name: string) => {
     });
 };
 
+export const preLoadLocales = () => {
+    setNameSpaceLocales();
+    setEntityLocales('');
+    const componentsPath = componentConfig.getAllComponents().map((c) => {
+        return c.path;
+    });
+    componentsPath.forEach((path) => {
+        updatePathCached(path);
+    });
+};
+
 export const reloadCachedPathLocale = (path: string) => {
-    const norPath = normalizePath(join(path, ".."));
+    const norPath = normalizePath(join(path, '..'));
     locales.components[norPath] = {};
     updatePathCached(norPath);
 };

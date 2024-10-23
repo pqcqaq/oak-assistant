@@ -20,6 +20,7 @@ import {
     activateOakComponentPropsLinkProvider,
     deactivateOakComponentPropsLinkProvider,
 } from './plugins/oakComponent';
+import { preLoadLocales } from './utils/locales';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -61,6 +62,13 @@ const afterPathSet = async () => {
             description: '导入所有组件信息',
             function: async () => {
                 loadComponents();
+            },
+        },
+        {
+            name: '加载I18n信息',
+            description: '加载国际化信息',
+            function: async () => {
+                preLoadLocales();
             },
         },
     ];

@@ -1,4 +1,4 @@
-import { random, debounce, groupBy, update } from 'lodash';
+import { random, debounce, groupBy, update, get } from 'lodash';
 import { EnhtityComponentMap, EntityComponentDef } from '../types';
 import { normalizePath, pathConfig, subscribe } from './paths';
 import ts from 'typescript';
@@ -28,6 +28,9 @@ const entityComponents: EnhtityComponentMap = new Proxy(
 export const componentConfig = {
     getEntityComponents: (name: string) => {
         return entityComponents[name] || [];
+    },
+    getAllComponents: () => {
+        return Object.values(entityComponents).flat();
     },
 };
 
