@@ -71,8 +71,8 @@ const withSelectEntity: ConfigStep[] = [
 
 // 从withSelectEntity中排除第二步骤
 const createComponentSteps: ConfigStep[] = withSelectEntity
-    .slice(0, 1)
-    .concat(withSelectEntity.slice(2));
+    .slice(0, 2)
+    .concat(withSelectEntity.slice(3));
 
 const afterCreateComponent = async (folderPath: string) => {
     console.log('执行创建后操作：folderPath:', folderPath);
