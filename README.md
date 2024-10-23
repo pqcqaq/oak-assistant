@@ -14,6 +14,30 @@ oak框架适配性插件，为你的开发助力！
 
 ## 功能
 
+1. Panel面板
+
+    点击左侧按钮，打开oak entities面板
+
+    ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/202410232303793.png)
+
+    ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/202410232303790.png)
+
+    - 你可以点击`切换实体类显示范围`，来指定是显示全部的实体类，还是只显示项目中定义的实体类
+
+    
+
+    - 点击展开某一个entity，可以查看以下信息
+
+        - 项目中所有跟此entity相关联的组件
+
+            ![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/202410232305969.png)
+
+        - 点击某一个组件，可以快速跳转到其index.ts文件
+
+        - 你也可以右键某一个组件，从项目中删除（此操作会删除整个组件所在的文件夹）
+
+    
+
 1. 快速创建OakComponent
 
    - 你可以在src/pages或者src/components目录内的任何文件夹中右键，`创建OAK组件` 接下来会引导你快速创建oak组件
@@ -124,9 +148,17 @@ oak框架适配性插件，为你的开发助力！
 
 在插件市场搜索oak-assistant
 
+![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/202410232301502.png)
+
 启用插件后，在oak项目内，会自动扫描所有的entity
 
-
-
 ![启动项目时分析entity](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/20241021113726.png)
+
+然后会扫描所有的components，i18n信息，等待全部加载完毕之后，就可以开始快乐的编程了~
+
+![](https://cdn.jsdelivr.net/gh/pqcqaq/imageSource/upload/202410232302399.png)
+
+
+
+
 
