@@ -304,6 +304,7 @@ export function activateOakComponentPropsLinkProvider(
     context.subscriptions.push(codeActionProvider);
     context.subscriptions.push(fixAttrProvider);
     context.subscriptions.push(fixMethodProvider);
+    // context.subscriptions.push(completionProvider);
 }
 
 export function deactivateOakComponentPropsLinkProvider() {
@@ -313,4 +314,84 @@ export function deactivateOakComponentPropsLinkProvider() {
     codeActionProvider.dispose();
     fixAttrProvider.dispose();
     fixMethodProvider.dispose();
+    // completionProvider.dispose();
 }
+
+// 代码提示
+// const completionProvider = vscode.languages.registerCompletionItemProvider(
+//     { scheme: 'file', language: 'typescriptreact' },
+//     {
+//         provideCompletionItems(document, position, token, context) {
+//             // 获取当前文档的组件信息
+//             const componentInfo = getComponentInfo(document);
+//             if (!componentInfo) {
+//                 return [];
+//             }
+
+//             // 获取当前光标所在行
+//             const line = document.lineAt(position.line);
+//             const lineText = line.text;
+
+//             // 判断是否在 WebComponentProps 类型定义内
+//             const match = lineText.match(
+//                 /WebComponentProps<[\n\s+]*EntityDict,[\n\s]+['"](\S+)['"],[\n\s]+(true|false)(,([\n\s]*\{([\n\s]+([a-zA-Z0-9_$]*[:?])[\S\s^}]*?;)*[\n\s]*\}(,|\n|)){0,2}[\n\s]*)?>/
+//             );
+//             if (!match) {
+//                 return [];
+//             }
+
+//             // 获取当前光标前的文本
+//             const prefix = lineText.substring(0, position.character);
+
+//             // 获取当前光标后的文本
+//             const suffix = lineText.substring(position.character);
+
+//             // 判断是否在 attrs 或 methods 定义内
+//             if (prefix.endsWith('{') && suffix.startsWith('}')) {
+//                 const completionItems: vscode.CompletionItem[] = [];
+
+//                 // 获取 attrs 和 methods 的信息
+//                 const formDataAttrs = componentInfo.formDataAttrs || [];
+//                 const propertiesAttrs = componentInfo.propertiesAttrs || [];
+//                 const methodNames = componentInfo.methodNames || [];
+
+//                 // 添加 attrs 的代码提示
+//                 formDataAttrs.forEach((attr) => {
+//                     const completionItem = new vscode.CompletionItem(attr);
+//                     completionItem.kind = vscode.CompletionItemKind.Field;
+//                     completionItem.detail = 'formData 属性';
+//                     completionItems.push(completionItem);
+//                 });
+
+//                 // 添加 properties 的代码提示
+//                 propertiesAttrs.forEach((attr) => {
+//                     const completionItem = new vscode.CompletionItem(attr);
+//                     completionItem.kind = vscode.CompletionItemKind.Field;
+//                     completionItem.detail = 'properties 属性';
+//                     completionItems.push(completionItem);
+//                 });
+
+//                 // 添加 methods 的代码提示
+//                 methodNames.forEach((method) => {
+//                     const completionItem = new vscode.CompletionItem(method);
+//                     completionItem.kind = vscode.CompletionItemKind.Method;
+//                     completionItem.detail = 'methods 方法';
+//                     completionItems.push(completionItem);
+//                 });
+
+//                 return completionItems;
+//             }
+
+//             return [];
+//         },
+//     },
+//     // 触发代码提示的字符
+//     ' ',
+//     ',',
+//     ':',
+//     ';',
+//     '}',
+//     '(',
+//     ')',
+//     '\n'
+// );
