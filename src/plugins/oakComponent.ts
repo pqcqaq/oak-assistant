@@ -4,7 +4,11 @@ import fs from 'fs';
 import { getOakComponentData } from '../utils/components';
 import { EntityComponentDef, RenderProps } from '../types';
 import * as ts from 'typescript';
-import { getWebComponentPropsData } from '../utils/ts-utils';
+import {
+    addAttrToFormData,
+    addMethodToMethods,
+    getWebComponentPropsData,
+} from '../utils/ts-utils';
 
 // 创建诊断集合
 const diagnosticCollection =
@@ -55,6 +59,17 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 ),
             ];
             diagnostics.push(diagnostic);
+        } else {
+            // 添加documentLink,跳转到index.ts
+            const startPos = document.positionAt(node.entityName.pos.start);
+            const endPos = document.positionAt(node.entityName.pos.end);
+            const range = new vscode.Range(startPos, endPos);
+            const uri = vscode.Uri.file(
+                join(document.uri.fsPath, '../index.ts')
+            );
+            const link = new vscode.DocumentLink(range, uri);
+            link.tooltip = '跳转到index.ts';
+            documentLinks.push(link);
         }
 
         // 检查isList是否相同
@@ -80,6 +95,17 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 ),
             ];
             diagnostics.push(diagnostic);
+        } else {
+            // 添加documentLink,跳转到index.ts
+            const startPos = document.positionAt(node.isList.pos.start);
+            const endPos = document.positionAt(node.isList.pos.end);
+            const range = new vscode.Range(startPos, endPos);
+            const uri = vscode.Uri.file(
+                join(document.uri.fsPath, '../index.ts')
+            );
+            const link = new vscode.DocumentLink(range, uri);
+            link.tooltip = '跳转到index.ts';
+            documentLinks.push(link);
         }
 
         // 检查attrs是否都在定义中
@@ -94,6 +120,8 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                     vscode.DiagnosticSeverity.Warning
                 );
                 diagnostic.code = 'invalid_attr';
+                // 添加元数据
+                diagnostic.source = attr.value as string;
                 diagnostics.push(diagnostic);
             }
         });
@@ -110,6 +138,8 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                     vscode.DiagnosticSeverity.Error
                 );
                 diagnostic.code = 'invalid_method';
+                // 添加元数据
+                diagnostic.source = method.value as string;
                 diagnostics.push(diagnostic);
             }
         });
@@ -176,12 +206,43 @@ class OakComponentPropsCodeActionProvider implements vscode.CodeActionProvider {
                 );
                 fix.isPreferred = true;
                 codeActions.push(fix);
+            } else if (diagnostic.code === 'invalid_attr') {
+                const fix = new vscode.CodeAction(
+                    '在 index.ts 中添加属性',
+                    vscode.CodeActionKind.QuickFix
+                );
+                fix.command = {
+                    title: '添加属性到 formData',
+                    command: 'oakComponent.addAttrToFormData',
+                    arguments: [document.uri, diagnostic.source],
+                };
+                codeActions.push(fix);
+            } else if (diagnostic.code === 'invalid_method') {
+                const fix = new vscode.CodeAction(
+                    '在 index.ts 中添加方法',
+                    vscode.CodeActionKind.QuickFix
+                );
+                fix.command = {
+                    title: '添加方法到 methods',
+                    command: 'oakComponent.addMethodToMethods',
+                    arguments: [document.uri, diagnostic.source],
+                };
+                codeActions.push(fix);
             }
         }
 
         return codeActions;
     }
 }
+
+const fixAttrProvider = vscode.commands.registerCommand(
+    'oakComponent.addAttrToFormData',
+    addAttrToFormData
+);
+const fixMethodProvider = vscode.commands.registerCommand(
+    'oakComponent.addMethodToMethods',
+    addMethodToMethods
+);
 
 const documentLinkProvider = vscode.languages.registerDocumentLinkProvider(
     { scheme: 'file', language: 'typescriptreact' },
@@ -199,6 +260,8 @@ export function activateOakComponentPropsLinkProvider(
     context.subscriptions.push(documentLinkProvider);
     context.subscriptions.push(diagnosticCollection);
     context.subscriptions.push(codeActionProvider);
+    context.subscriptions.push(fixAttrProvider);
+    context.subscriptions.push(fixMethodProvider);
 }
 
 export function deactivateOakComponentPropsLinkProvider() {
@@ -206,4 +269,6 @@ export function deactivateOakComponentPropsLinkProvider() {
     diagnosticCollection.clear();
     diagnosticCollection.dispose();
     codeActionProvider.dispose();
+    fixAttrProvider.dispose();
+    fixMethodProvider.dispose();
 }

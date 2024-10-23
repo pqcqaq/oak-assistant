@@ -1,5 +1,7 @@
 import ts from 'typescript';
 import { DocumentValue, RenderProps } from '../types';
+import * as vscode from 'vscode';
+import { join } from 'path';
 
 /**
  *  获取函数的返回值的attrs
@@ -252,3 +254,173 @@ export const getWebComponentPropsData = (
 
     return undefined;
 };
+
+export async function addAttrToFormData(
+    documentUri: vscode.Uri,
+    attrName: string
+) {
+    // const attrName = message.match(/属性(\w+)未在index.ts中定义/)?.[1];
+    if (!attrName) {
+        vscode.window.showErrorMessage('无法识别属性名');
+        return;
+    }
+
+    const indexPath = vscode.Uri.file(join(documentUri.fsPath, '../index.ts'));
+    const indexDocument = await vscode.workspace.openTextDocument(indexPath);
+    const indexText = indexDocument.getText();
+
+    const sourceFile = ts.createSourceFile(
+        'index.ts',
+        indexText,
+        ts.ScriptTarget.Latest,
+        true
+    );
+
+    let formDataPos: number | null = null;
+    let insertPos: number | null = null;
+
+    function visitNode(node: ts.Node) {
+        if (
+            ts.isCallExpression(node) &&
+            ts.isIdentifier(node.expression) &&
+            node.expression.text === 'OakComponent'
+        ) {
+            const arg = node.arguments[0];
+            if (ts.isObjectLiteralExpression(arg)) {
+                const formData = arg.properties.find(
+                    (prop): prop is ts.MethodDeclaration =>
+                        ts.isMethodDeclaration(prop) &&
+                        ts.isIdentifier(prop.name) &&
+                        prop.name.text === 'formData'
+                );
+
+                if (formData) {
+                    const returnStatement = formData.body?.statements.find(
+                        ts.isReturnStatement
+                    );
+                    if (
+                        returnStatement &&
+                        ts.isObjectLiteralExpression(
+                            returnStatement.expression!
+                        )
+                    ) {
+                        formDataPos = formData.pos;
+                        insertPos = returnStatement.expression.properties.end;
+                    }
+                }
+            }
+        }
+
+        ts.forEachChild(node, visitNode);
+    }
+
+    visitNode(sourceFile);
+
+    if (formDataPos !== null && insertPos !== null) {
+        const edit = new vscode.WorkspaceEdit();
+
+        // 获取插入位置的前一个字符
+        const prevChar = indexDocument.getText(
+            new vscode.Range(
+                indexDocument.positionAt(insertPos - 1),
+                indexDocument.positionAt(insertPos)
+            )
+        );
+
+        // 根据前一个字符是否为逗号来决定插入的文本
+        let insertText;
+        if (prevChar.trim() === ',') {
+            insertText = `\n            ${attrName}: this.props.${attrName}`;
+        } else {
+            insertText = `,\n            ${attrName}: this.props.${attrName}`;
+        }
+
+        edit.insert(indexPath, indexDocument.positionAt(insertPos), insertText);
+        await vscode.workspace.applyEdit(edit);
+        // vscode.window.showInformationMessage(`属性 ${attrName} 已添加到 formData`);
+    } else {
+        vscode.window.showErrorMessage('无法在 index.ts 中找到合适的插入位置');
+    }
+}
+
+export async function addMethodToMethods(
+    documentUri: vscode.Uri,
+    methodName: string
+) {
+    if (!methodName) {
+        vscode.window.showErrorMessage('无法识别方法名');
+        return;
+    }
+
+    const indexPath = vscode.Uri.file(join(documentUri.fsPath, '../index.ts'));
+    const indexDocument = await vscode.workspace.openTextDocument(indexPath);
+    const indexText = indexDocument.getText();
+
+    const sourceFile = ts.createSourceFile(
+        'index.ts',
+        indexText,
+        ts.ScriptTarget.Latest,
+        true
+    );
+
+    let methodsPos: number | null = null;
+    let insertPos: number | null = null;
+
+    function visitNode(node: ts.Node) {
+        if (
+            ts.isCallExpression(node) &&
+            ts.isIdentifier(node.expression) &&
+            node.expression.text === 'OakComponent'
+        ) {
+            const arg = node.arguments[0];
+            if (ts.isObjectLiteralExpression(arg)) {
+                const methods = arg.properties.find(
+                    (prop): prop is ts.PropertyAssignment =>
+                        ts.isPropertyAssignment(prop) &&
+                        ts.isIdentifier(prop.name) &&
+                        prop.name.text === 'methods'
+                );
+
+                if (
+                    methods &&
+                    ts.isObjectLiteralExpression(methods.initializer)
+                ) {
+                    methodsPos = methods.pos;
+                    insertPos = methods.initializer.properties.end;
+                }
+            }
+        }
+
+        ts.forEachChild(node, visitNode);
+    }
+
+    visitNode(sourceFile);
+
+    if (methodsPos !== null && insertPos !== null) {
+        const edit = new vscode.WorkspaceEdit();
+
+        // 获取插入位置的前一个字符
+        const prevChar = indexDocument.getText(
+            new vscode.Range(
+                indexDocument.positionAt(insertPos - 1),
+                indexDocument.positionAt(insertPos)
+            )
+        );
+
+        // 根据前一个字符是否为逗号来决定插入的文本
+        let insertText;
+        if (prevChar.trim() === ',') {
+            insertText = `\n        ${methodName}() {},`;
+        } else {
+            insertText = `,\n        ${methodName}() {},`;
+        }
+
+        edit.insert(indexPath, indexDocument.positionAt(insertPos), insertText);
+        await vscode.workspace.applyEdit(edit);
+        // vscode.window.showInformationMessage(
+        //     `方法 ${methodName} 已添加到 methods`
+        // );
+    } else {
+        vscode.window.showErrorMessage('无法在 index.ts 中找到合适的插入位置');
+    }
+}
