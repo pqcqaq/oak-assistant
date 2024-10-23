@@ -225,7 +225,7 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
         disposeComponentWatcher = () => {
             cpns();
             pages();
-        }
+        };
     });
 
     // 监控entities目录，只在新增或者删除的时候更新ProjectEntityList
@@ -252,7 +252,6 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
             handleProjectEntityChange
         );
     });
-
 
     // 监控所有的**/locales目录，如果发生变化，则重新解析locales
     let disposeLocaleWatcher: (() => void) | null = null;
