@@ -363,6 +363,7 @@ export async function addMethodToMethods(
         true
     );
 
+    let oakCreateObj: ts.ObjectLiteralExpression | null = null;
     let methodsPos: number | null = null;
     let insertPos: number | null = null;
 
@@ -374,6 +375,7 @@ export async function addMethodToMethods(
         ) {
             const arg = node.arguments[0];
             if (ts.isObjectLiteralExpression(arg)) {
+                oakCreateObj = arg;
                 const methods = arg.properties.find(
                     (prop): prop is ts.PropertyAssignment =>
                         ts.isPropertyAssignment(prop) &&
@@ -396,31 +398,53 @@ export async function addMethodToMethods(
 
     visitNode(sourceFile);
 
-    if (methodsPos !== null && insertPos !== null) {
-        const edit = new vscode.WorkspaceEdit();
-
-        // 获取插入位置的前一个字符
-        const prevChar = indexDocument.getText(
-            new vscode.Range(
-                indexDocument.positionAt(insertPos - 1),
-                indexDocument.positionAt(insertPos)
-            )
-        );
-
-        // 根据前一个字符是否为逗号来决定插入的文本
-        let insertText;
-        if (prevChar.trim() === ',') {
-            insertText = `\n        ${methodName}() {},`;
-        } else {
-            insertText = `,\n        ${methodName}() {},`;
+    if (methodsPos === null || insertPos === null) {
+        if (!oakCreateObj) {
+            vscode.window.showErrorMessage('无法在 index.ts 中找到 OakComponent 调用');
         }
-
-        edit.insert(indexPath, indexDocument.positionAt(insertPos), insertText);
+        // 在oakCreateObj找到最后一个属性的位置，并中创建一个属性为methods的对象字面量
+        let lastPropPos = oakCreateObj!.properties.end;
+        let insertText = `\n    methods: {\n        ${methodName}() {},\n    }`;
+        if (oakCreateObj!.properties.length) {
+            const lastProp = oakCreateObj!.properties[
+                oakCreateObj!.properties.length - 1
+            ];
+            lastPropPos = lastProp.end;
+            insertText = `,${insertText}`;
+        }
+        const edit = new vscode.WorkspaceEdit();
+        edit.insert(indexPath, indexDocument.positionAt(lastPropPos), insertText);
         await vscode.workspace.applyEdit(edit);
-        // vscode.window.showInformationMessage(
-        //     `方法 ${methodName} 已添加到 methods`
-        // );
-    } else {
-        vscode.window.showErrorMessage('无法在 index.ts 中找到合适的插入位置');
+        //保存
+        await indexDocument.save();
+        vscode.window.showTextDocument(indexDocument.uri);
+        return;
     }
+
+    const edit = new vscode.WorkspaceEdit();
+
+    // 获取插入位置的前一个字符
+    const prevChar = indexDocument.getText(
+        new vscode.Range(
+            indexDocument.positionAt(insertPos - 1),
+            indexDocument.positionAt(insertPos)
+        )
+    );
+
+    // 根据前一个字符是否为逗号来决定插入的文本
+    let insertText;
+    if (prevChar.trim() === ',') {
+        insertText = `\n        ${methodName}() {},`;
+    } else {
+        insertText = `,\n        ${methodName}() {},`;
+    }
+
+    edit.insert(indexPath, indexDocument.positionAt(insertPos), insertText);
+    await vscode.workspace.applyEdit(edit);
+    // vscode.window.showInformationMessage(
+    //     `方法 ${methodName} 已添加到 methods`
+    // );
+    await indexDocument.save();
+    // 跳转文件
+    vscode.window.showTextDocument(indexDocument.uri);
 }

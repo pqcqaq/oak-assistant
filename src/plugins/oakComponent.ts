@@ -2,7 +2,7 @@ import { join } from 'path';
 import * as vscode from 'vscode';
 import fs from 'fs';
 import { getOakComponentData } from '../utils/components';
-import { EntityComponentDef, RenderProps } from '../types';
+import { EntityComponentDef } from '../types';
 import * as ts from 'typescript';
 import {
     addAttrToFormData,
@@ -253,6 +253,9 @@ const codeActionProvider = vscode.languages.registerCodeActionsProvider(
     { scheme: 'file', language: 'typescriptreact' },
     new OakComponentPropsCodeActionProvider()
 );
+
+
+// 当工作区有任何文件保存的时候，重新
 
 export function activateOakComponentPropsLinkProvider(
     context: vscode.ExtensionContext
