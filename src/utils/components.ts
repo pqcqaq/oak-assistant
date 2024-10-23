@@ -6,7 +6,11 @@ import { glob } from 'glob';
 import fs from 'fs';
 import { join } from 'path';
 import { onEntityLoaded } from './status';
-import { getAttrsFromFormData, getAttrsFromMethods } from './ts-utils';
+import {
+    getAttrsFromFormData,
+    getAttrsFromMethods,
+    getAttrsFromProperties,
+} from './ts-utils';
 
 const entityComponents: EnhtityComponentMap = new Proxy(
     {} as EnhtityComponentMap,
@@ -84,8 +88,15 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         prop.name.getText() === 'methods'
                 );
 
+                const property = properties.find(
+                    (prop) =>
+                        ts.isPropertyAssignment(prop) &&
+                        prop.name.getText() === 'properties'
+                );
+
                 let formDataAttrs: string[] = [];
                 let methodNames: string[] = [];
+                let propertiesAttrs: string[] = [];
                 // 获取formData下的block 下的 returnStatement 下的ObjectLiteralExpression 下的properties
                 if (formData) {
                     formDataAttrs = getAttrsFromFormData(formData);
@@ -93,6 +104,10 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
 
                 if (method) {
                     methodNames = getAttrsFromMethods(method);
+                }
+
+                if (property) {
+                    propertiesAttrs = getAttrsFromProperties(property);
                 }
 
                 if (entity && isList) {
@@ -143,7 +158,12 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         formDataAttrs: formDataAttrs.length
                             ? formDataAttrs
                             : undefined,
-                        methodNames: methodNames.length ? methodNames : undefined,
+                        methodNames: methodNames.length
+                            ? methodNames
+                            : undefined,
+                        propertiesAttrs: propertiesAttrs.length
+                            ? propertiesAttrs
+                            : undefined,
                     });
                 }
             }

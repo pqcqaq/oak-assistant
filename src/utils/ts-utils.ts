@@ -104,6 +104,30 @@ export const getAttrsFromMethods = (
 
 /**
  *  获取函数的返回值的attrs
+ * @param element  函数体节点
+ * @returns    返回值的attrs
+ */
+export const getAttrsFromProperties = (
+    element: ts.ObjectLiteralElementLike
+): string[] => {
+    const attrs: string[] = [];
+    ts.forEachChild(element, (child) => {
+        if (ts.isObjectLiteralExpression(child)) {
+            ts.forEachChild(child, (objectChild) => {
+                if (
+                    ts.isPropertyAssignment(objectChild) ||
+                    ts.isShorthandPropertyAssignment(objectChild)
+                ) {
+                    attrs.push(objectChild.name.getText());
+                }
+            });
+        }
+    });
+    return attrs;
+};
+
+/**
+ *  获取函数的返回值的attrs
  * @param sourceFile    源文件
  * @returns  返回值的attrs
  *
@@ -400,20 +424,25 @@ export async function addMethodToMethods(
 
     if (methodsPos === null || insertPos === null) {
         if (!oakCreateObj) {
-            vscode.window.showErrorMessage('无法在 index.ts 中找到 OakComponent 调用');
+            vscode.window.showErrorMessage(
+                '无法在 index.ts 中找到 OakComponent 调用'
+            );
         }
         // 在oakCreateObj找到最后一个属性的位置，并中创建一个属性为methods的对象字面量
         let lastPropPos = oakCreateObj!.properties.end;
         let insertText = `\n    methods: {\n        ${methodName}() {},\n    }`;
         if (oakCreateObj!.properties.length) {
-            const lastProp = oakCreateObj!.properties[
-                oakCreateObj!.properties.length - 1
-            ];
+            const lastProp =
+                oakCreateObj!.properties[oakCreateObj!.properties.length - 1];
             lastPropPos = lastProp.end;
             insertText = `,${insertText}`;
         }
         const edit = new vscode.WorkspaceEdit();
-        edit.insert(indexPath, indexDocument.positionAt(lastPropPos), insertText);
+        edit.insert(
+            indexPath,
+            indexDocument.positionAt(lastPropPos),
+            insertText
+        );
         await vscode.workspace.applyEdit(edit);
         //保存
         await indexDocument.save();

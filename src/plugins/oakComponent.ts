@@ -111,6 +111,24 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
         // 检查attrs是否都在定义中
         node.attrList?.forEach((attr) => {
             if (!componentInfo.formDataAttrs?.includes(attr.value as string)) {
+                // 这里还需要判断在不在propertiesAttrs里面
+                if (
+                    componentInfo.propertiesAttrs?.includes(
+                        attr.value as string
+                    )
+                ) {
+                    // 创建文档链接
+                    const startPos = document.positionAt(attr.pos.start);
+                    const endPos = document.positionAt(attr.pos.end);
+                    const range = new vscode.Range(startPos, endPos);
+                    const uri = vscode.Uri.file(
+                        join(document.uri.fsPath, '../index.ts')
+                    );
+                    const link = new vscode.DocumentLink(range, uri);
+                    link.tooltip = 'index.ts中的properties之一';
+                    documentLinks.push(link);
+                    return;
+                }
                 const startPos = document.positionAt(attr.pos.start);
                 const endPos = document.positionAt(attr.pos.end);
                 const range = new vscode.Range(startPos, endPos);
@@ -123,6 +141,17 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 // 添加元数据
                 diagnostic.source = attr.value as string;
                 diagnostics.push(diagnostic);
+            } else {
+                // 添加文档链接
+                const startPos = document.positionAt(attr.pos.start);
+                const endPos = document.positionAt(attr.pos.end);
+                const range = new vscode.Range(startPos, endPos);
+                const uri = vscode.Uri.file(
+                    join(document.uri.fsPath, '../index.ts')
+                );
+                const link = new vscode.DocumentLink(range, uri);
+                link.tooltip = 'index.ts中formData的返回值之一';
+                documentLinks.push(link);
             }
         });
 
@@ -141,6 +170,17 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 // 添加元数据
                 diagnostic.source = method.value as string;
                 diagnostics.push(diagnostic);
+            } else {
+                // 添加文档链接
+                const startPos = document.positionAt(method.pos.start);
+                const endPos = document.positionAt(method.pos.end);
+                const range = new vscode.Range(startPos, endPos);
+                const uri = vscode.Uri.file(
+                    join(document.uri.fsPath, '../index.ts')
+                );
+                const link = new vscode.DocumentLink(range, uri);
+                link.tooltip = 'index.ts中methods的方法之一';
+                documentLinks.push(link);
             }
         });
 
@@ -253,7 +293,6 @@ const codeActionProvider = vscode.languages.registerCodeActionsProvider(
     { scheme: 'file', language: 'typescriptreact' },
     new OakComponentPropsCodeActionProvider()
 );
-
 
 // 当工作区有任何文件保存的时候，重新
 
