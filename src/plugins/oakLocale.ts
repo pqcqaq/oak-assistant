@@ -109,13 +109,14 @@ const oakLocalesProvider = vscode.languages.registerCompletionItemProvider(
                 prefix
             );
 
-            return localeItems.map((item) => {
+            return localeItems.map((item, index) => {
                 const completionItem = new vscode.CompletionItem(
                     item.label,
                     vscode.CompletionItemKind.Text
                 );
                 completionItem.detail = item.desc;
                 completionItem.insertText = item.value;
+                completionItem.sortText = index.toString();
                 return completionItem;
             });
         },

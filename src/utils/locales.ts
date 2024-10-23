@@ -262,11 +262,13 @@ const getCachedComponentItems = (path: string): LocaleItem[] => {
  * @returns  返回一个LocaleItem数组
  */
 export const getLocalesData = (
-    path: string,
+    rawPath: string,
     prefix: string = '',
     force?: boolean
 ): LocaleItem[] => {
     setLoadingLocale(true);
+
+    const path = normalizePath(rawPath);
 
     if (force) {
         updatePathCached(path);
