@@ -1,5 +1,10 @@
 import * as vscode from 'vscode';
-import { setProjectHome, pathConfig, subscribe } from './utils/paths';
+import {
+    setProjectHome,
+    pathConfig,
+    subscribe,
+    normalizePath,
+} from './utils/paths';
 import { join } from 'path';
 import checkPagesAndNamespace from './plugins/checkPagesAndNamespace';
 import { OakConfiog } from './types/OakConfig';
@@ -15,7 +20,7 @@ import oakPathHighlighter from './plugins/oakPathDecoration';
 import entityProviders from './plugins/entityJump';
 import { activateOakLocale, deactivateOakLocale } from './plugins/oakLocale';
 import { startWorker, stopWorker, waitWorkerReady } from './utils/workers';
-import { loadComponents } from './utils/components';
+import { loadComponents, updateEntityComponent } from './utils/components';
 import {
     activateOakComponentPropsLinkProvider,
     deactivateOakComponentPropsLinkProvider,
@@ -70,6 +75,19 @@ const afterPathSet = async () => {
             description: '加载国际化信息',
             function: async () => {
                 preLoadLocales();
+            },
+        },
+        {
+            name: '加载当前文件数据',
+            description: '加载当前文件数据',
+            function: async () => {
+                const currentFilePath =
+                    vscode.window.activeTextEditor?.document.uri.fsPath;
+                if (!currentFilePath) {
+                    return;
+                }
+                const norPath = normalizePath(currentFilePath);
+                updateEntityComponent(norPath);
             },
         },
     ];
