@@ -99,7 +99,11 @@ export const getAttrsFromMethods = (
     ts.forEachChild(element, (child) => {
         if (ts.isObjectLiteralExpression(child)) {
             ts.forEachChild(child, (objectChild) => {
-                if (ts.isMethodDeclaration(objectChild)) {
+                if (
+                    ts.isMethodDeclaration(objectChild) ||
+                    ts.isShorthandPropertyAssignment(objectChild) ||
+                    ts.isPropertyAssignment(objectChild)
+                ) {
                     attrs.push(objectChild.name.getText());
                 }
             });
