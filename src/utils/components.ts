@@ -3,6 +3,7 @@ import {
     DocumentValue,
     EnhtityComponentMap,
     EntityComponentDef,
+    MPConfig,
 } from '../types';
 import { normalizePath, pathConfig, subscribe } from './paths';
 import ts from 'typescript';
@@ -104,6 +105,19 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         prop.name.getText() === 'properties'
                 );
 
+                let mpConfig: MPConfig | undefined;
+
+                const configPath = join(path, '../index.json');
+
+                if (fs.existsSync(configPath)) {
+                    try {
+                        mpConfig = JSON.parse(
+                            fs.readFileSync(configPath, 'utf-8')
+                        );
+                    } catch (e) {
+                        console.log('读取配置文件失败', e);
+                    }
+                }
                 let formDataAttrs: DocumentValue[] = [];
                 let methodNames: DocumentValue[] = [];
                 let propertiesAttrs: DocumentValue[] = [];
@@ -161,7 +175,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                     }
                     // 这里的path是整个文件夹的路径
                     componentList.push({
-                        path: normalizePath(join(path, '..')),
+                        path: join(path, '..'),
                         entityName: entity.initializer.getText().slice(1, -1),
                         isList: isList.initializer.getText() === 'true',
                         components: [],
@@ -174,11 +188,12 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         propertiesAttrs: propertiesAttrs.length
                             ? propertiesAttrs
                             : undefined,
+                        mpConfig,
                     });
                 } else {
                     // 是一个Virtual虚拟节点，没有entity和isList
                     componentList.push({
-                        path: normalizePath(join(path, '..')),
+                        path: join(path, '..'),
                         entityName: '',
                         isList: false,
                         components: [],
@@ -191,6 +206,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         propertiesAttrs: propertiesAttrs.length
                             ? propertiesAttrs
                             : undefined,
+                        mpConfig,
                     });
                 }
             }

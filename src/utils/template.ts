@@ -17,6 +17,7 @@ export const templateNames = {
     renderIosTsx: 'render.ios.tsx',
     renderAndroidTsx: 'render.android.tsx',
     styleLess: 'styles.module.less',
+    indexJson: 'index.json',
 } as const;
 
 export type TemplateName = keyof typeof templateNames;
@@ -106,7 +107,11 @@ export const generateTemplate = (
         outputTemplate('renderNativeTsx', {}, outPath);
     config.renderFile.includes('render.ios.tsx') &&
         outputTemplate('renderIosTsx', {}, outPath);
+    config.renderFile.includes('render.android.tsx') &&
+        outputTemplate('renderAndroidTsx', {}, outPath);
     
+    // index.json
+    outputTemplate('indexJson', {}, outPath);
     // 其他文件
     outputTemplate('localeZhCN', data.localeZhCN, outPath);
     outputTemplate('styleLess', data.styleLess, outPath);

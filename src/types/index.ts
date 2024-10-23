@@ -63,6 +63,13 @@ export type ComponentDef = {
     children: EntityComponentDef[];
 };
 
+export type MPConfig = {
+    enablePullDownRefresh: boolean;
+    usingComponents: {
+        [name: string]: string;
+    };
+};
+
 export type EntityComponentDef = {
     path: string;
     entityName: string;
@@ -71,6 +78,7 @@ export type EntityComponentDef = {
     formDataAttrs?: DocumentValue[];
     methodNames?: DocumentValue[];
     propertiesAttrs?: DocumentValue[];
+    mpConfig?: MPConfig;
 };
 
 export type EnhtityComponentMap = {
@@ -83,7 +91,7 @@ export type DocumentValue = {
         start: number;
         end: number;
     };
-}
+};
 
 export type RenderProps = {
     dictName: DocumentValue;
@@ -91,7 +99,7 @@ export type RenderProps = {
     isList: DocumentValue;
     attrList?: DocumentValue[];
     methodList?: DocumentValue[];
-}
+};
 
 export type TriggerDef = {
     entity: string;
