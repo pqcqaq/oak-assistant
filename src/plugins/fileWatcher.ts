@@ -207,13 +207,25 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
         }
 
         const componentPath = pathConfig.componentsHome;
-        disposeComponentWatcher = watchDirectory(
+        const pagesHome = pathConfig.pagesHome;
+        const cpns = watchDirectory(
             componentPath,
             context,
             handleComponentChange,
             handleComponentChange,
             handleComponentChange
         );
+        const pages = watchDirectory(
+            pagesHome,
+            context,
+            handleComponentChange,
+            handleComponentChange,
+            handleComponentChange
+        );
+        disposeComponentWatcher = () => {
+            cpns();
+            pages();
+        }
     });
 
     // 监控entities目录，只在新增或者删除的时候更新ProjectEntityList
