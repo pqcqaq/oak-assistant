@@ -145,6 +145,7 @@ export async function activate(context: vscode.ExtensionContext) {
             activateOakLocale(context);
             activateOakComponentPropsLinkProvider(context);
             commonCommands.activate(context);
+            entityProviders.activate(context);
             context.subscriptions.push(
                 helloOak,
                 reload,
@@ -156,7 +157,6 @@ export async function activate(context: vscode.ExtensionContext) {
                 oakPathCompletion.oakPathCompletion,
                 oakPathCompletion.oakPathDocumentLinkProvider,
                 ...oakPathHighlighter,
-                entityProviders.documentLinkProvider
             );
             createFileWatcher(context);
         } catch (error) {

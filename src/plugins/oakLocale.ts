@@ -1,3 +1,4 @@
+import { getAvailableKeys } from './../utils/locales';
 import { join } from 'path';
 import {
     getCachedLocaleItemByKey,
@@ -294,6 +295,13 @@ const addLocaleToData = (
 };
 
 export function activateOakLocale(context: vscode.ExtensionContext) {
+    const enabledI18n = vscode.workspace
+        .getConfiguration('oak-assistant')
+        .get('i18n');
+    if (!enabledI18n) {
+        console.log('i18n 相关功能已禁用');
+        return;
+    }
     context.subscriptions.push(oakLocalesProvider);
     context.subscriptions.push(documentChangeListener);
     context.subscriptions.push(documentOpenListener);
@@ -313,6 +321,26 @@ export function deactivateOakLocale() {
     addLocaleActionProvider.dispose();
     addLocaleCommand.dispose();
 }
+
+// 监控配置项修改
+vscode.workspace.onDidChangeConfiguration((event) => {
+    if (event.affectsConfiguration('oak-assistant.i18n')) {
+        // 提示重新加载
+        vscode.window
+            .showInformationMessage(
+                '配置已更新，是否重新加载以应用更改？',
+                '是',
+                '否'
+            )
+            .then((selection) => {
+                if (selection === '是') {
+                    vscode.commands.executeCommand(
+                        'workbench.action.reloadWindow'
+                    );
+                }
+            });
+    }
+});
 
 onEntityLoaded(() => {
     // 第一次加载完先激活一次

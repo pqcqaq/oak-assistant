@@ -65,6 +65,22 @@
         "when": "false"
       }
     ],
+    "configuration": {
+      "type": "object",
+      "title": "OAK Assistant",
+      "properties": {
+        "oak-assistant.i18n": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用国际化相关功能"
+        },
+        "oak-assistant.entityJump": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用实体跳转功能"
+        }
+      }
+    },
     "menus": {
       "explorer/context": [
         {
