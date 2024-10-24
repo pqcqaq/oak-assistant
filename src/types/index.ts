@@ -77,6 +77,7 @@ export type EntityComponentDef = {
     isList: boolean;
     components: ComponentDef[];
     formDataAttrs?: DocumentValue[];
+    datas?: DocumentValue[];
     methodNames?: DocumentValue[];
     propertiesAttrs?: DocumentValue[];
     mpConfig?: MPConfig;

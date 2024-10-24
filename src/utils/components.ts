@@ -12,11 +12,13 @@ import fs from 'fs';
 import { join } from 'path';
 import { onEntityLoaded } from './status';
 import {
+    getAttrsFromDatas,
     getAttrsFromFormData,
     getAttrsFromMethods,
     getAttrsFromProperties,
 } from './ts-utils';
 
+// attrs preset，在isList为false的时候，默认有一个oakId的属性，注释先写在这里，具体在下面处理，怕自己忘了
 const entityComponents: EnhtityComponentMap = new Proxy(
     {} as EnhtityComponentMap,
     {
@@ -105,6 +107,12 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         prop.name.getText() === 'properties'
                 );
 
+                const datas = properties.find(
+                    (prop) =>
+                        ts.isPropertyAssignment(prop) &&
+                        prop.name.getText() === 'data'
+                );
+
                 let mpConfig: MPConfig | undefined;
 
                 const configPath = join(path, '../index.json');
@@ -121,6 +129,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                 let formDataAttrs: DocumentValue[] = [];
                 let methodNames: DocumentValue[] = [];
                 let propertiesAttrs: DocumentValue[] = [];
+                let datasAttrs: DocumentValue[] = [];
                 // 获取formData下的block 下的 returnStatement 下的ObjectLiteralExpression 下的properties
                 if (formData) {
                     formDataAttrs = getAttrsFromFormData(formData);
@@ -132,6 +141,10 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
 
                 if (property) {
                     propertiesAttrs = getAttrsFromProperties(property);
+                }
+
+                if (datas) {
+                    datasAttrs = getAttrsFromDatas(datas);
                 }
 
                 if (entity && isList) {
@@ -173,11 +186,22 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         console.log('SetAccessorDeclaration 还不支持');
                         return;
                     }
+                    const listed = isList.initializer.getText() === 'true';
+                    if (!listed) {
+                        // 如果不是列表，那么默认有一个oakId属性
+                        formDataAttrs.push({
+                            value: 'oakId',
+                            pos: {
+                                start: 0,
+                                end: 0,
+                            },
+                        });
+                    }
                     // 这里的path是整个文件夹的路径
                     componentList.push({
                         path: join(path, '..'),
                         entityName: entity.initializer.getText().slice(1, -1),
-                        isList: isList.initializer.getText() === 'true',
+                        isList: listed,
                         components: [],
                         formDataAttrs: formDataAttrs.length
                             ? formDataAttrs
@@ -188,6 +212,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         propertiesAttrs: propertiesAttrs.length
                             ? propertiesAttrs
                             : undefined,
+                        datas: datasAttrs.length ? datasAttrs : undefined,
                         mpConfig,
                     });
                 } else {
@@ -206,6 +231,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         propertiesAttrs: propertiesAttrs.length
                             ? propertiesAttrs
                             : undefined,
+                        datas: datasAttrs.length ? datasAttrs : undefined,
                         mpConfig,
                     });
                 }

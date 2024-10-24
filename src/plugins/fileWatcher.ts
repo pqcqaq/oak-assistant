@@ -83,6 +83,11 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
             .substring(pathConfig.entityHome.length + 1)
             .replace('.ts', '');
 
+        // 不知道为什么可能存在.git
+        if (entityName.includes('.git')) {
+            return;
+        }
+
         // 设置标志为true，表示正在显示提示框
         isPromptShowing = true;
 
@@ -100,6 +105,8 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
                     // 执行npm run make:domain命令
                     const terminal =
                         vscode.window.createTerminal('Make Domain');
+                    const projectPath = pathConfig.projectHome;
+                    terminal.sendText(`cd ${projectPath}`);
                     terminal.sendText('npm run make:domain');
                     terminal.show();
                 }

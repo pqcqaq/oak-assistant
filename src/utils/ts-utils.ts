@@ -12,98 +12,186 @@ import { pathConfig } from './paths';
 export const getAttrsFromFormData = (
     formItem: ts.MethodDeclaration | ts.PropertyAssignment
 ): DocumentValue[] => {
-    const attrs: DocumentValue[] = [];
     let element: ts.Node = formItem;
+    const attrList: DocumentValue[] = [];
     // 如果是isPropertyAssignment
     if (ts.isPropertyAssignment(element)) {
         element = element.initializer;
     }
 
-    element.getChildren().forEach((child) => {
-        if (ts.isBlock(child)) {
-            // 拿到block的returnStatement
-            let returnStatement: ts.ReturnStatement | null = null;
-            ts.forEachChild(child, (grandChild) => {
-                if (ts.isReturnStatement(grandChild)) {
-                    // 处理 return 语句
-                    returnStatement = grandChild;
-                }
-            });
-            if (!returnStatement) {
-                return;
+    const getFromBlock = (block: ts.Block): DocumentValue[] => {
+        const attrs: DocumentValue[] = [];
+        // 拿到block的returnStatement
+        let returnStatement: ts.ReturnStatement | null = null;
+        ts.forEachChild(block, (grandChild) => {
+            if (ts.isReturnStatement(grandChild)) {
+                // 处理 return 语句
+                returnStatement = grandChild;
             }
-            ts.forEachChild(returnStatement, (returnChild) => {
-                if (ts.isObjectLiteralExpression(returnChild)) {
-                    ts.forEachChild(returnChild, (objectChild) => {
-                        if (ts.isShorthandPropertyAssignment(objectChild)) {
-                            attrs.push({
-                                value: objectChild.name.getText(),
-                                pos: {
-                                    start: objectChild.name.getStart(),
-                                    end: objectChild.name.getEnd(),
-                                },
-                            });
-                        }
-                        if (ts.isPropertyAssignment(objectChild)) {
-                            attrs.push({
-                                value: objectChild.name.getText(),
-                                pos: {
-                                    start: objectChild.name.getStart(),
-                                    end: objectChild.name.getEnd(),
-                                },
-                            });
-                        }
+        });
+        if (!returnStatement) {
+            return [];
+        }
+        ts.forEachChild(returnStatement, (returnChild) => {
+            if (ts.isObjectLiteralExpression(returnChild)) {
+                ts.forEachChild(returnChild, (objectChild) => {
+                    if (ts.isShorthandPropertyAssignment(objectChild)) {
+                        attrs.push({
+                            value: objectChild.name.getText(),
+                            pos: {
+                                start: objectChild.name.getStart(),
+                                end: objectChild.name.getEnd(),
+                            },
+                        });
+                    }
+                    if (ts.isPropertyAssignment(objectChild)) {
+                        attrs.push({
+                            value: objectChild.name.getText(),
+                            pos: {
+                                start: objectChild.name.getStart(),
+                                end: objectChild.name.getEnd(),
+                            },
+                        });
+                    }
+                    if (ts.isSpreadAssignment(objectChild)) {
+                        // 这里是展开运算符
                         if (ts.isSpreadAssignment(objectChild)) {
-                            // 这里是展开运算符
-                            if (ts.isSpreadAssignment(objectChild)) {
-                                // 处理展开运算符
-                                if (
-                                    ts.isObjectLiteralExpression(
-                                        objectChild.expression
-                                    )
-                                ) {
-                                    // 如果展开的是一个对象字面量表达式
-                                    objectChild.expression.properties.forEach(
-                                        (prop) => {
-                                            if (
-                                                ts.isPropertyAssignment(prop) ||
-                                                ts.isShorthandPropertyAssignment(
-                                                    prop
-                                                )
-                                            ) {
-                                                attrs.push({
-                                                    value: prop.name.getText(),
-                                                    pos: {
-                                                        start: prop.name.getStart(),
-                                                        end: prop.name.getEnd(),
-                                                    },
-                                                });
-                                            }
+                            // 处理展开运算符
+                            if (
+                                ts.isObjectLiteralExpression(
+                                    objectChild.expression
+                                )
+                            ) {
+                                // 如果展开的是一个对象字面量表达式
+                                objectChild.expression.properties.forEach(
+                                    (prop) => {
+                                        if (
+                                            ts.isPropertyAssignment(prop) ||
+                                            ts.isShorthandPropertyAssignment(
+                                                prop
+                                            )
+                                        ) {
+                                            attrs.push({
+                                                value: prop.name.getText(),
+                                                pos: {
+                                                    start: prop.name.getStart(),
+                                                    end: prop.name.getEnd(),
+                                                },
+                                            });
                                         }
-                                    );
-                                } else if (
-                                    ts.isIdentifier(objectChild.expression)
-                                ) {
-                                    // 如果展开的是一个标识符，我们可能需要查找它的定义
-                                    console.error(
-                                        'Spread assignment with identifier:',
-                                        objectChild.expression.text
-                                    );
-                                } else {
-                                    // 处理其他可能的情况
-                                    console.error(
-                                        'Spread assignment with expression type:',
-                                        objectChild.expression.kind
-                                    );
+                                    }
+                                );
+                            } else if (
+                                ts.isIdentifier(objectChild.expression)
+                            ) {
+                                // 如果展开的是一个标识符，我们可能需要查找它的定义
+                                console.error(
+                                    'Spread assignment with identifier:',
+                                    objectChild.expression.text
+                                );
+                            } else {
+                                // 处理其他可能的情况
+                                console.error(
+                                    'Spread assignment with expression type:',
+                                    objectChild.expression.kind
+                                );
+                            }
+                        }
+                    }
+                });
+            }
+            // 特殊情况，直接返回某一个变量
+            if (
+                ts.isIdentifier(returnChild) ||
+                ts.isBinaryExpression(returnChild)
+            ) {
+                const addData = () => {
+                    attrs.push({
+                        value: '_$$data',
+                        pos: {
+                            start: returnChild.getStart(),
+                            end: returnChild.getEnd(),
+                        },
+                    });
+                };
+                if (ts.isIdentifier(returnChild)) {
+                    if (returnChild.text === 'data') {
+                        addData();
+                    }
+                } else {
+                    if (ts.isIdentifier(returnChild.left)) {
+                        if (returnChild.left.text === 'data') {
+                            addData();
+                        } else {
+                            if (ts.isIdentifier(returnChild.right)) {
+                                if (returnChild.right.text === 'data') {
+                                    addData();
                                 }
                             }
                         }
+                    }
+                }
+            }
+            // 联合对象
+            if (ts.isBinaryExpression(returnChild)) {
+            }
+        });
+
+        // 这里额外处理block中存在ifif或者switch的情况
+        ts.forEachChild(block, (node) => {
+            if (ts.isIfStatement(node)) {
+                const blocks: ts.Block[] = [];
+                node.forEachChild((ifChild) => {
+                    if (ts.isBlock(ifChild)) {
+                        blocks.push(ifChild);
+                    }
+                });
+                blocks.forEach((b) => {
+                    attrs.push(...getFromBlock(b));
+                });
+            } else {
+                if (ts.isSwitchStatement(node)) {
+                    const blocks: ts.Block[] = [];
+                    node.forEachChild((switchChild) => {
+                        if (ts.isCaseBlock(switchChild)) {
+                            const caseClause: (
+                                | ts.CaseClause
+                                | ts.DefaultClause
+                            )[] = [];
+                            switchChild.forEachChild((caseChild) => {
+                                if (ts.isCaseClause(caseChild)) {
+                                    caseClause.push(caseChild);
+                                } else {
+                                    if (ts.isDefaultClause(caseChild)) {
+                                        caseClause.push(caseChild);
+                                    }
+                                }
+                            });
+                            caseClause.forEach((c) => {
+                                c.forEachChild((caseChild) => {
+                                    if (ts.isBlock(caseChild)) {
+                                        blocks.push(caseChild);
+                                    }
+                                });
+                            });
+                        }
+                    });
+                    blocks.forEach((b) => {
+                        attrs.push(...getFromBlock(b));
                     });
                 }
-            });
+            }
+        });
+
+        return attrs;
+    };
+
+    element.getChildren().forEach((child) => {
+        if (ts.isBlock(child)) {
+            attrList.push(...getFromBlock(child));
         }
     });
-    return attrs;
+    return attrList;
 };
 
 /**
@@ -112,6 +200,32 @@ export const getAttrsFromFormData = (
  * @returns    返回值的attrs
  */
 export const getAttrsFromMethods = (
+    element: ts.ObjectLiteralElementLike
+): DocumentValue[] => {
+    const attrs: DocumentValue[] = [];
+    ts.forEachChild(element, (child) => {
+        if (ts.isObjectLiteralExpression(child)) {
+            ts.forEachChild(child, (objectChild) => {
+                if (
+                    ts.isMethodDeclaration(objectChild) ||
+                    ts.isShorthandPropertyAssignment(objectChild) ||
+                    ts.isPropertyAssignment(objectChild)
+                ) {
+                    attrs.push({
+                        value: objectChild.name.getText(),
+                        pos: {
+                            start: objectChild.name.getStart(),
+                            end: objectChild.name.getEnd(),
+                        },
+                    });
+                }
+            });
+        }
+    });
+    return attrs;
+};
+
+export const getAttrsFromDatas = (
     element: ts.ObjectLiteralElementLike
 ): DocumentValue[] => {
     const attrs: DocumentValue[] = [];
