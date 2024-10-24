@@ -18,6 +18,7 @@ import {
     getAttrsFromProperties,
 } from './ts-utils';
 
+// attrs preset，在isList为false的时候，默认有一个oakId的属性，注释先写在这里，具体在下面处理，怕自己忘了
 const entityComponents: EnhtityComponentMap = new Proxy(
     {} as EnhtityComponentMap,
     {
@@ -185,11 +186,22 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         console.log('SetAccessorDeclaration 还不支持');
                         return;
                     }
+                    const listed = isList.initializer.getText() === 'true';
+                    if (!listed) {
+                        // 如果不是列表，那么默认有一个oakId属性
+                        formDataAttrs.push({
+                            value: 'oakId',
+                            pos: {
+                                start: 0,
+                                end: 0,
+                            },
+                        });
+                    }
                     // 这里的path是整个文件夹的路径
                     componentList.push({
                         path: join(path, '..'),
                         entityName: entity.initializer.getText().slice(1, -1),
-                        isList: isList.initializer.getText() === 'true',
+                        isList: listed,
                         components: [],
                         formDataAttrs: formDataAttrs.length
                             ? formDataAttrs
