@@ -28,6 +28,7 @@ import {
 import { preLoadLocales } from './utils/locales';
 import { createCommonPlugin } from './plugins/common';
 import { initTriggerProgram } from './utils/triggers';
+import { activateTriggerPlugin, deactivateTriggerPlugin, startAnaylizeAll } from './plugins/oakTriggers';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -96,6 +97,7 @@ const afterPathSet = async () => {
             description: '初始化trigger信息',
             function: async () => {
                 initTriggerProgram();
+                // startAnaylizeAll(); // 现在只在打开文件的时候检查避免性能损耗
             },
         },
     ];
@@ -154,6 +156,7 @@ export async function activate(context: vscode.ExtensionContext) {
             activateOakComponentPropsLinkProvider(context);
             commonCommands.activate(context);
             entityProviders.activate(context);
+            activateTriggerPlugin(context);
             context.subscriptions.push(
                 helloOak,
                 reload,
@@ -225,6 +228,7 @@ export function deactivate() {
     checkPagesAndNamespacePlugin.dispose();
     createOakComponentPlugin.dispose();
     createOakTreePanelPlugin.dispose();
+    deactivateTriggerPlugin();
     treePanelCommands.forEach((command) => {
         command.dispose();
     });

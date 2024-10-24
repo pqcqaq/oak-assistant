@@ -103,17 +103,20 @@ export type RenderProps = {
 };
 
 export type TriggerDef = {
+    path: string;
     name: string;
     entity: string;
     action: string[];
     when: string;
     asRoot?: boolean;
     priority?: number;
+    cs?: boolean;
     tsInfo: {
         sourceFile: ts.SourceFile;
         program: ts.Program;
         typeChecker: ts.TypeChecker;
-    }
+        node: ts.ObjectLiteralExpression;
+    };
 };
 
 export type EntityLocale = {

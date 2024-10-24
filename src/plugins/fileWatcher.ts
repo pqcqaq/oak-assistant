@@ -14,6 +14,7 @@ import {
     updateEntityComponent,
 } from '../utils/components';
 import { reloadCachedPathLocale } from '../utils/locales';
+import { updateTriggerByPath } from '../utils/triggers';
 
 /**
  * 监听指定目录下的所有文件变化
@@ -277,4 +278,29 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
             '**/*.json'
         );
     });
+
+    // 先不监控，延迟到打开文件的时候自动扫描
+    // // 监控triggers目录，如果发生变化，则重新解析triggers
+    // let disposeTriggerWatcher: (() => void) | null = null;
+
+    // const handleTriggerChange = async (path: vscode.Uri) => {
+    //     updateTriggerByPath(path.fsPath);
+    // };
+
+    // // 监听triggers目录
+    // subscribe(() => {
+    //     if (disposeTriggerWatcher) {
+    //         disposeTriggerWatcher();
+    //     }
+
+    //     const triggerPath = pathConfig.triggerHome;
+    //     disposeTriggerWatcher = watchDirectory(
+    //         triggerPath,
+    //         context,
+    //         handleTriggerChange,
+    //         handleTriggerChange,
+    //         handleTriggerChange,
+    //         '**/*.ts'
+    //     );
+    // });
 }
