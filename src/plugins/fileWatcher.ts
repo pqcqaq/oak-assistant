@@ -104,6 +104,8 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
                     // 执行npm run make:domain命令
                     const terminal =
                         vscode.window.createTerminal('Make Domain');
+                    const projectPath = pathConfig.projectHome;
+                    terminal.sendText(`cd ${projectPath}`);
                     terminal.sendText('npm run make:domain');
                     terminal.show();
                 }
