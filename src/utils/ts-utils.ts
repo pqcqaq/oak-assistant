@@ -100,6 +100,41 @@ export const getAttrsFromFormData = (
                     }
                 });
             }
+            // 特殊情况，直接返回某一个变量
+            if (
+                ts.isIdentifier(returnChild) ||
+                ts.isBinaryExpression(returnChild)
+            ) {
+                const addData = () => {
+                    attrs.push({
+                        value: '_$$data',
+                        pos: {
+                            start: returnChild.getStart(),
+                            end: returnChild.getEnd(),
+                        },
+                    });
+                };
+                if (ts.isIdentifier(returnChild)) {
+                    if (returnChild.text === 'data') {
+                        addData();
+                    }
+                } else {
+                    if (ts.isIdentifier(returnChild.left)) {
+                        if (returnChild.left.text === 'data') {
+                            addData();
+                        } else {
+                            if (ts.isIdentifier(returnChild.right)) {
+                                if (returnChild.right.text === 'data') {
+                                    addData();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // 联合对象
+            if (ts.isBinaryExpression(returnChild)) {
+            }
         });
 
         // 这里额外处理block中存在ifif或者switch的情况
@@ -119,8 +154,10 @@ export const getAttrsFromFormData = (
                     const blocks: ts.Block[] = [];
                     node.forEachChild((switchChild) => {
                         if (ts.isCaseBlock(switchChild)) {
-                            const caseClause: (ts.CaseClause | ts.DefaultClause)[] =
-                                [];
+                            const caseClause: (
+                                | ts.CaseClause
+                                | ts.DefaultClause
+                            )[] = [];
                             switchChild.forEachChild((caseChild) => {
                                 if (ts.isCaseClause(caseChild)) {
                                     caseClause.push(caseChild);
