@@ -28,7 +28,11 @@ import {
 import { preLoadLocales } from './utils/locales';
 import { createCommonPlugin } from './plugins/common';
 import { initTriggerProgram } from './utils/triggers';
-import { activateTriggerPlugin, deactivateTriggerPlugin, startAnaylizeAll } from './plugins/oakTriggers';
+import {
+    activateTriggerPlugin,
+    deactivateTriggerPlugin,
+    startAnaylizeAll,
+} from './plugins/oakTriggers';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -96,6 +100,13 @@ const afterPathSet = async () => {
             name: '初始化trigger信息',
             description: '初始化trigger信息',
             function: async () => {
+                const enabled = vscode.workspace
+                    .getConfiguration('oak-assistant')
+                    .get('enableTriggerCheck');
+                if (!enabled) {
+                    console.log('triggers检查未启用');
+                    return;
+                }
                 initTriggerProgram();
                 // startAnaylizeAll(); // 现在只在打开文件的时候检查避免性能损耗
             },

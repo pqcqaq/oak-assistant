@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
-import { checkAllTriggers, checkPathTrigger, updateTriggerByPath } from '../utils/triggers';
+import {
+    checkAllTriggers,
+    checkPathTrigger,
+    updateTriggerByPath,
+} from '../utils/triggers';
 
 const triggersDiagnostics =
     vscode.languages.createDiagnosticCollection('oakTriggers');
@@ -31,10 +35,33 @@ export const startAnaylizeAll = () => {
 };
 
 export const activateTriggerPlugin = (context: vscode.ExtensionContext) => {
+    const enabled = vscode.workspace
+        .getConfiguration('oak-assistant')
+        .get('enableTriggerCheck');
+    if (!enabled) {
+        console.log('triggers检查未启用');
+        return;
+    }
     context.subscriptions.push(triggersDiagnostics);
     context.subscriptions.push(documentLinkProvider);
     console.log('triggers检查启用');
 };
+
+// 如果配置修改，申请重新加载工作区
+vscode.workspace.onDidChangeConfiguration((e) => {
+    if (e.affectsConfiguration('oak-assistant.enableTriggerCheck')) {
+        deactivateTriggerPlugin();
+        vscode.window
+            .showInformationMessage('配置已修改，请重新加载', '重新加载')
+            .then((res) => {
+                if (res === '重新加载') {
+                    vscode.commands.executeCommand(
+                        'workbench.action.reloadWindow'
+                    );
+                }
+            });
+    }
+});
 
 // 取消注册
 export const deactivateTriggerPlugin = () => {

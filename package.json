@@ -79,10 +79,15 @@
           "default": true,
           "description": "启用实体跳转功能"
         },
-        "oak-assistant.triggerUpdateCount":{
+        "oak-assistant.triggerUpdateCount": {
           "type": "number",
           "default": 30,
           "description": "触发Trigger重载的最小更新次数"
+        },
+        "oak-assistant.enableTriggerCheck": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用Trigger检查（极其消耗性能）"
         }
       }
     },

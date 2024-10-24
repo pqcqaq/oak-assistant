@@ -390,18 +390,18 @@ let updateCount = 0;
 export const updateTriggerByPath = (path: string) => {
     updateCount++;
 
+    const norPath = normalizePath(path);
+    if (!triggerProgram) {
+        console.error('trigger program not initialized');
+        return;
+    }
+
     const maxCount = vscode.workspace
         .getConfiguration('oak-assistant')
         .get('triggerUpdateCount', 30);
     if (updateCount > maxCount) {
         console.log('更新次数过多，将重新扫描全部trigger');
         initTriggerProgram();
-        return;
-    }
-
-    const norPath = normalizePath(path);
-    if (!triggerProgram) {
-        console.error('trigger program not initialized');
         return;
     }
 
