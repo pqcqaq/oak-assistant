@@ -12,6 +12,7 @@ import fs from 'fs';
 import { join } from 'path';
 import { onEntityLoaded } from './status';
 import {
+    getAttrsFromDatas,
     getAttrsFromFormData,
     getAttrsFromMethods,
     getAttrsFromProperties,
@@ -105,6 +106,12 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         prop.name.getText() === 'properties'
                 );
 
+                const datas = properties.find(
+                    (prop) =>
+                        ts.isPropertyAssignment(prop) &&
+                        prop.name.getText() === 'data'
+                );
+
                 let mpConfig: MPConfig | undefined;
 
                 const configPath = join(path, '../index.json');
@@ -121,6 +128,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                 let formDataAttrs: DocumentValue[] = [];
                 let methodNames: DocumentValue[] = [];
                 let propertiesAttrs: DocumentValue[] = [];
+                let datasAttrs: DocumentValue[] = [];
                 // 获取formData下的block 下的 returnStatement 下的ObjectLiteralExpression 下的properties
                 if (formData) {
                     formDataAttrs = getAttrsFromFormData(formData);
@@ -132,6 +140,10 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
 
                 if (property) {
                     propertiesAttrs = getAttrsFromProperties(property);
+                }
+
+                if (datas) {
+                    datasAttrs = getAttrsFromDatas(datas);
                 }
 
                 if (entity && isList) {
@@ -188,6 +200,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         propertiesAttrs: propertiesAttrs.length
                             ? propertiesAttrs
                             : undefined,
+                        datas: datasAttrs.length ? datasAttrs : undefined,
                         mpConfig,
                     });
                 } else {
@@ -206,6 +219,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                         propertiesAttrs: propertiesAttrs.length
                             ? propertiesAttrs
                             : undefined,
+                        datas: datasAttrs.length ? datasAttrs : undefined,
                         mpConfig,
                     });
                 }

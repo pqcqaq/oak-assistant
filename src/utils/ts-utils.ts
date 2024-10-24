@@ -137,6 +137,32 @@ export const getAttrsFromMethods = (
     return attrs;
 };
 
+export const getAttrsFromDatas = (
+    element: ts.ObjectLiteralElementLike
+): DocumentValue[] => {
+    const attrs: DocumentValue[] = [];
+    ts.forEachChild(element, (child) => {
+        if (ts.isObjectLiteralExpression(child)) {
+            ts.forEachChild(child, (objectChild) => {
+                if (
+                    ts.isMethodDeclaration(objectChild) ||
+                    ts.isShorthandPropertyAssignment(objectChild) ||
+                    ts.isPropertyAssignment(objectChild)
+                ) {
+                    attrs.push({
+                        value: objectChild.name.getText(),
+                        pos: {
+                            start: objectChild.name.getStart(),
+                            end: objectChild.name.getEnd(),
+                        },
+                    });
+                }
+            });
+        }
+    });
+    return attrs;
+};
+
 /**
  *  获取函数的返回值的attrs
  * @param element  函数体节点

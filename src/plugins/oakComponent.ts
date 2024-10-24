@@ -161,6 +161,40 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                     link.tooltip = 'index.ts中的properties之一';
                     documentLinks.push(link);
                     return;
+                } else {
+                    // 再判断在不在data里面
+                    if (
+                        componentInfo.datas
+                            ?.map((i) => i.value)
+                            .includes(attr.value as string)
+                    ) {
+                        // 创建文档链接
+                        const startPos = document.positionAt(attr.pos.start);
+                        const endPos = document.positionAt(attr.pos.end);
+                        const range = new vscode.Range(startPos, endPos);
+                        const toStart = componentInfo.datas?.find(
+                            (i) => i.value === attr.value
+                        )?.pos.start;
+                        const toEnd = componentInfo.datas?.find(
+                            (i) => i.value === attr.value
+                        )?.pos.end;
+                        const args = {
+                            filePath: join(document.uri.fsPath, '../index.ts'),
+                            start: toStart,
+                            end: toEnd,
+                        };
+                        const link = new vscode.DocumentLink(
+                            range,
+                            vscode.Uri.parse(
+                                `command:oak-assistant.jumpToPosition?${encodeURIComponent(
+                                    JSON.stringify(args)
+                                )}`
+                            )
+                        );
+                        link.tooltip = 'index.ts中的data之一';
+                        documentLinks.push(link);
+                        return;
+                    }
                 }
                 const startPos = document.positionAt(attr.pos.start);
                 const endPos = document.positionAt(attr.pos.end);
