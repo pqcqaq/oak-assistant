@@ -27,6 +27,7 @@ import {
 } from './plugins/oakComponent';
 import { preLoadLocales } from './utils/locales';
 import { createCommonPlugin } from './plugins/common';
+import { initTriggerProgram } from './utils/triggers';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -88,6 +89,13 @@ const afterPathSet = async () => {
                 }
                 const norPath = normalizePath(currentFilePath);
                 updateEntityComponent(norPath);
+            },
+        },
+        {
+            name: '初始化trigger信息',
+            description: '初始化trigger信息',
+            function: async () => {
+                initTriggerProgram();
             },
         },
     ];
@@ -156,7 +164,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 oakPathInline,
                 oakPathCompletion.oakPathCompletion,
                 oakPathCompletion.oakPathDocumentLinkProvider,
-                ...oakPathHighlighter,
+                ...oakPathHighlighter
             );
             createFileWatcher(context);
         } catch (error) {

@@ -1,3 +1,4 @@
+import * as ts from 'typescript';
 import { EntityShape, StorageDesc } from 'oak-domain/lib/types';
 
 export type CreateComponentConfig = {
@@ -102,10 +103,17 @@ export type RenderProps = {
 };
 
 export type TriggerDef = {
+    name: string;
     entity: string;
-    action: string;
+    action: string[];
     when: string;
-    path: string;
+    asRoot?: boolean;
+    priority?: number;
+    tsInfo: {
+        sourceFile: ts.SourceFile;
+        program: ts.Program;
+        typeChecker: ts.TypeChecker;
+    }
 };
 
 export type EntityLocale = {

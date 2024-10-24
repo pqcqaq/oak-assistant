@@ -1,7 +1,8 @@
 import ts from 'typescript';
 import { DocumentValue, RenderProps } from '../types';
 import * as vscode from 'vscode';
-import { join } from 'path';
+import path, { join } from 'path';
+import { pathConfig } from './paths';
 
 /**
  *  获取函数的返回值的attrs
@@ -427,7 +428,10 @@ export async function addAttrToFormData(
             start: insertPos,
             end: insertPos + insertText.length,
         };
-        await vscode.commands.executeCommand('oak-assistant.jumpToPosition', args);
+        await vscode.commands.executeCommand(
+            'oak-assistant.jumpToPosition',
+            args
+        );
     } else {
         vscode.window.showErrorMessage('无法在 index.ts 中找到合适的插入位置');
     }
@@ -558,3 +562,47 @@ export async function addMethodToMethods(
     };
     await vscode.commands.executeCommand('oak-assistant.jumpToPosition', args);
 }
+
+/**
+ *  创建项目的程序
+ * @param filePath  要检查的文件路径
+ */
+export const createProjectProgram = (filePath: string) => {
+    const projectRoot = pathConfig.projectHome;
+
+    // 查找配置文件
+    const configFileName = ts.findConfigFile(
+        projectRoot,
+        ts.sys.fileExists,
+        'tsconfig.json'
+    );
+
+    if (!configFileName) {
+        throw new Error("Could not find a valid 'tsconfig.json'.");
+    }
+
+    // 读取配置文件
+    const configFile = ts.readConfigFile(configFileName, ts.sys.readFile);
+
+    // 解析配置文件内容
+    const { options, fileNames, projectReferences } =
+        ts.parseJsonConfigFileContent(
+            configFile.config,
+            ts.sys,
+            path.dirname(configFileName)
+        );
+
+    // 确保文件路径是绝对路径
+    const absoluteFilePath = path.isAbsolute(filePath)
+        ? filePath
+        : path.join(projectRoot, filePath);
+
+    // 创建程序
+    const program = ts.createProgram({
+        rootNames: [absoluteFilePath],
+        options,
+        projectReferences,
+    });
+
+    return program;
+};
