@@ -45,10 +45,10 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 const range = new vscode.Range(startPos, endPos);
                 const diagnostic = new vscode.Diagnostic(
                     range,
-                    `当前组件为Virtual虚拟节点`,
+                    `提示：当前组件为Virtual虚拟节点`,
                     vscode.DiagnosticSeverity.Information
                 );
-                diagnostic.code = 'invalid_entity';
+                diagnostic.code = 'virtual_entity';
                 diagnostics.push(diagnostic);
             } else {
                 // 进行错误提示
