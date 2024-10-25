@@ -58,30 +58,135 @@ function resolveImportedTriggers(
     }
 
     if (ts.isIdentifier(node)) {
+        const name = node.getText();
+        console.log('identifier', name);
         const symbol = typeChecker.getSymbolAtLocation(node);
         if (symbol && symbol.declarations && symbol.declarations.length > 0) {
             const declaration = symbol.declarations[0];
-            if (
-                ts.isImportSpecifier(declaration) ||
-                ts.isImportClause(declaration)
-            ) {
-                const importClause = declaration.parent
-                    .parent as ts.ImportClause;
-                //ImportDeclaration
-                //   ImportClause
-                //      NamedImports
-                //          ImportSpecifier
-                //              Identifier
-                //              Identifier
-                //    StringLiteral
-                const importPath = importClause.parent.moduleSpecifier
-                    .getText(sourceFile)
-                    .slice(1, -1);
+            if (ts.isImportClause(declaration)) {
+                // 检查是否为命名导入，还是默认导入
+
+                let named: ts.ImportSpecifier | undefined;
+
+                ts.forEachChild(declaration, (child) => {
+                    if (ts.isNamedImports(child)) {
+                        named = child.elements.find(
+                            (element) => element.name.getText() === name
+                        );
+                    }
+                });
+
+                if (named) {
+                    const importClause = named.parent.parent;
+                    const importPath = importClause.parent.moduleSpecifier
+                        .getText(sourceFile)
+                        .slice(1, -1);
+
+                    const importMeta = {
+                        // 在目标文件中的名称
+                        identifier: '',
+                        // 导入到当前文件的名称
+                        importName: '',
+                        isDefault: false,
+                    };
+
+                    ts.forEachChild(importClause, (child) => {
+                        if (ts.isNamedImports(child)) {
+                            child.elements.forEach((element) => {
+                                if (element.name.getText() === node.getText()) {
+                                    importMeta.identifier =
+                                        element.name.getText();
+                                    importMeta.importName = element.propertyName
+                                        ? element.propertyName.getText()
+                                        : element.name.getText();
+                                }
+                            });
+                        } else if (ts.isNamespaceImport(child)) {
+                            importMeta.identifier = child.name.getText();
+                            importMeta.importName = child.name.getText();
+                        } else if (ts.isImportSpecifier(child)) {
+                            if (child.name.getText() === node.getText()) {
+                                importMeta.identifier = child.name.getText();
+                                importMeta.importName = child.propertyName
+                                    ? child.propertyName.getText()
+                                    : child.name.getText();
+                            }
+                        }
+                    });
+
+                    const resolvedPath = join(
+                        dirname(sourceFile.fileName),
+                        importPath
+                    );
+
+                    if (visited.has(resolvedPath)) {
+                        return []; // 防止循环引用
+                    }
+                    visited.add(resolvedPath);
+
+                    const importedSourceFile = program.getSourceFile(
+                        resolvedPath.endsWith('.ts')
+                            ? resolvedPath
+                            : resolvedPath + '.ts'
+                    );
+                    if (importedSourceFile) {
+                        return getTriggersFromSourceFile(
+                            importedSourceFile,
+                            typeChecker,
+                            program,
+                            visited,
+                            importMeta
+                        );
+                    }
+                } else {
+                    if (!declaration.name) {
+                        console.log('declaration name not found');
+                    } else {
+                        // 这里是默认导入
+                        const importDeclaration = declaration.parent;
+                        const name = declaration.name.getText();
+                        const meta = {
+                            identifier: name,
+                            importName: name,
+                            isDefault: true,
+                        };
+                        const importPath =
+                            importDeclaration.moduleSpecifier.getText(
+                                sourceFile
+                            );
+                        const resolvedPath = join(
+                            dirname(sourceFile.fileName),
+                            importPath.slice(1, -1)
+                        );
+                        if (visited.has(resolvedPath)) {
+                            return [];
+                        }
+                        visited.add(resolvedPath);
+                        const importedSourceFile = program.getSourceFile(
+                            resolvedPath.endsWith('.ts')
+                                ? resolvedPath
+                                : resolvedPath + '.ts'
+                        );
+                        if (importedSourceFile) {
+                            return getTriggersFromSourceFile(
+                                importedSourceFile,
+                                typeChecker,
+                                program,
+                                visited,
+                                meta
+                            );
+                        }
+                    }
+                }
+            } else if (ts.isImportSpecifier(declaration)) {
+                // 这里是命名导入
+                const importClause = declaration.parent.parent;
+                const importPath = importClause.parent.moduleSpecifier.getText(
+                    sourceFile
+                );
 
                 const importMeta = {
-                    // 在目标文件中的名称
                     identifier: '',
-                    // 导入到当前文件的名称
                     importName: '',
                     isDefault: false,
                 };
@@ -111,7 +216,7 @@ function resolveImportedTriggers(
 
                 const resolvedPath = join(
                     dirname(sourceFile.fileName),
-                    importPath
+                    importPath.slice(1, -1)
                 );
 
                 if (visited.has(resolvedPath)) {
@@ -133,7 +238,8 @@ function resolveImportedTriggers(
                         importMeta
                     );
                 }
-            } else if (
+            }
+            else if (
                 ts.isVariableDeclaration(declaration) &&
                 declaration.initializer
             ) {
@@ -255,6 +361,14 @@ function getTriggersFromSourceFile(
 ): TriggerDef[] {
     let triggers: TriggerDef[] = [];
 
+    // 记录一下文件路径和导入的名称的对应关系
+    console.debug('记录文件路径和导入的名称的对应关系', sourceFile.fileName);
+    filePathToImportName[normalizePath(sourceFile.fileName)] = {
+        importName: meta.importName,
+        identifier: meta.identifier,
+        isDefault: meta.isDefault,
+    };
+
     ts.forEachChild(sourceFile, (node) => {
         if (!meta.isDefault) {
             if (ts.isVariableStatement(node)) {
@@ -271,12 +385,6 @@ function getTriggersFromSourceFile(
                         program,
                         visited
                     );
-                    // 记录一下文件路径和导入的名称的对应关系
-                    filePathToImportName[normalizePath(sourceFile.fileName)] = {
-                        importName: meta.importName,
-                        identifier: meta.identifier,
-                        isDefault: meta.isDefault,
-                    };
                 }
             }
         } else {
