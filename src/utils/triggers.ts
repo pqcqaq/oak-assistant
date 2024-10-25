@@ -3,8 +3,9 @@ import * as ts from 'typescript';
 import { normalizePath, pathConfig } from './paths';
 import { dirname, join } from 'path';
 import { createProjectProgram } from './ts-utils';
-import { TriggerDef } from '../types';
+import { TriggerDef, TriggerInfo } from '../types';
 import fs from 'fs';
+import { debounce, random } from 'lodash';
 
 /**
  * 记录主文件当前的trigger程序
@@ -36,6 +37,7 @@ export const initTriggerProgram = () => {
     }
     triggerProgram = open;
     triggers = getDefaultExport(triggerProgram, pathConfig.triggerHome);
+    updateDeounced();
 };
 
 // 下面用于搜索trigger
@@ -594,6 +596,7 @@ export const updateTriggerByPath = (path: string) => {
     triggers.push(...newTriggers);
 
     console.log(`Updated ${newTriggers.length} triggers from ${norPath}`);
+    updateDeounced();
 };
 
 export const checkTrigger = (
@@ -890,5 +893,51 @@ export const checkPathTrigger = (path: string) => {
     return {
         path: norPath,
         diagnostics,
+    };
+};
+
+export const getTriggerCountByEntity = (entity: string): number => {
+    return triggers.filter((t) => t.entity === entity).length;
+};
+
+export const getTrigersInfoByEntity = (entity: string): TriggerInfo[] => {
+    return triggers
+        .filter((t) => t.entity === entity)
+        .map((t) => {
+            return {
+                name: t.name,
+                when: t.when,
+                action: t.action,
+                entity: t.entity,
+                path: t.path,
+                pos: {
+                    start: t.tsInfo.node.getStart(),
+                    end: t.tsInfo.node.getEnd(),
+                },
+            };
+        });
+};
+
+// 发布订阅trigger的更新
+const triggerSubscribers: Map<number, () => void> = new Map();
+
+const updateDeounced = debounce(() => {
+    triggerSubscribers.forEach((callback) => callback());
+}, 200);
+
+export const subscribeTrigger = (callback: () => void) => {
+    const setToSubscribers = (callback: () => void) => {
+        const key = random(0, 100000);
+        if (triggerSubscribers.has(key)) {
+            return setToSubscribers(callback);
+        }
+        triggerSubscribers.set(key, callback);
+        return key;
+    };
+
+    const key = setToSubscribers(callback);
+
+    return () => {
+        triggerSubscribers.delete(key);
     };
 };

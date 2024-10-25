@@ -7,10 +7,17 @@ import {
 } from '../utils/entities';
 import { componentConfig, subscribeAll } from '../utils/components';
 import { join } from 'path';
+import {
+    getTrigersInfoByEntity,
+    getTriggerCountByEntity,
+    subscribeTrigger,
+} from '../utils/triggers';
+import { TriggerInfo } from '../types';
 
 class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private disposeGlobal: (() => void) | null = null;
     private disposeComponentSub: (() => void) | null = null;
+    private disposeTriggerSub: (() => void) | null = null;
     private showAllEntities: boolean = true; // 控制是否显示全部实体类
 
     // 切换显示全部实体类的方法
@@ -43,6 +50,9 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         });
         this.disposeComponentSub = subscribeAll((name) => {
             // this.reloadNode(name);
+            this.refresh();
+        });
+        this.disposeTriggerSub = subscribeTrigger(() => {
             this.refresh();
         });
     }
@@ -94,19 +104,27 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         }
         if (element instanceof EntityItem) {
             const children: TreeItem[] = [];
-            // children.push(new TriggersItem(element.getEntityName()));
             children.push(new ComponentsItem(element.getEntityName()));
+            children.push(new TriggersItem(element.getEntityName()));
             return children;
         }
         if (element instanceof TriggersItem) {
-            return entityConfig
-                .getEntityDesc(element.getEntityName())
-                .projectionList.map((projection) => {
-                    return new TreeItem(
-                        projection,
+            // return entityConfig
+            //     .getEntityDesc(element.getEntityName())
+            //     .projectionList.map((projection) => {
+            //         return new TreeItem(
+            //             projection,
+            //             vscode.TreeItemCollapsibleState.None
+            //         );
+            //     });
+            return getTrigersInfoByEntity(element.getEntityName()).map(
+                (trigger) => {
+                    return new TriggerItem(
+                        trigger,
                         vscode.TreeItemCollapsibleState.None
                     );
-                });
+                }
+            );
         }
         if (element instanceof ComponentsItem) {
             return componentConfig
@@ -127,6 +145,9 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         }
         if (this.disposeComponentSub) {
             this.disposeComponentSub();
+        }
+        if (this.disposeTriggerSub) {
+            this.disposeTriggerSub();
         }
     }
 }
@@ -161,7 +182,12 @@ export class EntityItem extends TreeItem {
 
 export class ComponentsItem extends TreeItem {
     constructor(public readonly entity: string) {
-        super('项目组件', vscode.TreeItemCollapsibleState.Collapsed, entity);
+        const count = componentConfig.getEntityComponents(entity).length;
+        super(
+            `项目组件 (${count})`,
+            vscode.TreeItemCollapsibleState.Collapsed,
+            entity
+        );
         this.contextValue = 'componentsItem'; // 添加这行，用于识别右键菜单项
     }
 }
@@ -189,8 +215,34 @@ export class ComponentItem extends TreeItem {
 
 export class TriggersItem extends TreeItem {
     constructor(public readonly entity: string) {
-        super('Triggers', vscode.TreeItemCollapsibleState.Collapsed, entity);
+        const count = getTriggerCountByEntity(entity);
+        super(
+            `Triggers (${count})`,
+            vscode.TreeItemCollapsibleState.Collapsed,
+            entity
+        );
         this.contextValue = 'triggersItem'; // 添加这行，用于识别右键菜单项
+    }
+}
+
+export class TriggerItem extends TreeItem {
+    constructor(
+        public readonly trigger: TriggerInfo,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState
+    ) {
+        super(trigger.name, collapsibleState);
+        this.contextValue = 'triggerItem'; // 添加这行，用于识别右键菜单项
+        // 命令点击后跳转到指定文件的指定位置
+        const args = {
+            filePath: trigger.path,
+            start: trigger.pos.start,
+            end: trigger.pos.end,
+        };
+        this.command = {
+            command: 'oak-assistant.jumpToPosition',
+            title: '定位到文件',
+            arguments: [args],
+        };
     }
 }
 

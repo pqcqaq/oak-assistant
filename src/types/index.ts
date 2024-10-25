@@ -120,6 +120,18 @@ export type TriggerDef = {
     };
 };
 
+export type TriggerInfo = {
+    name: string;
+    when: string;
+    action: string[];
+    entity: string;
+    path: string;
+    pos: {
+        start: number;
+        end: number;
+    };
+};
+
 export type EntityLocale = {
     [key: string]: LanguageValue;
 };
