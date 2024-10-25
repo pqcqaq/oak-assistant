@@ -348,6 +348,15 @@ const analyzeTriggerObj = (
     return def;
 };
 
+/**
+ *  从源文件中查找triggers定义
+ * @param sourceFile  源文件
+ * @param typeChecker  类型检查器
+ * @param program  ts程序
+ * @param visited  访问过的文件
+ * @param meta  导入信息
+ * @returns  triggers定义
+ */
 function getTriggersFromSourceFile(
     sourceFile: ts.SourceFile,
     typeChecker: ts.TypeChecker,
@@ -434,6 +443,12 @@ function getTriggersFromSourceFile(
     return triggers;
 }
 
+/**
+ *  获取默认导出的trigger
+ * @param program  ts程序
+ * @param sourcePath  源文件路径
+ * @returns  triggers定义
+ */
 const getDefaultExport = (
     program: ts.Program | undefined,
     sourcePath: string
@@ -493,6 +508,10 @@ const getDefaultExport = (
     return [];
 };
 
+/**
+ * 这里为了防止频繁扫描导致的性能损耗，并且如果不及时更新可能会导致一些问题
+ * 所以这里设置一个计数器，当更新次数超过一定值时，重新扫描全部trigger
+ */
 let updateCount = 0;
 // 下面进行trigger的更新
 export const updateTriggerByPath = (path: string) => {
@@ -599,6 +618,11 @@ export const updateTriggerByPath = (path: string) => {
     updateDeounced();
 };
 
+/**
+ *  检查trigger
+ * @param trigger  trigger定义
+ * @returns  返回uri和诊断信息
+ */
 export const checkTrigger = (
     trigger: TriggerDef
 ): {
@@ -832,6 +856,16 @@ export const checkTrigger = (
     };
 };
 
+/**
+ *  创建诊断信息
+ * @param sourceFile  源文件
+ * @param start  开始位置
+ * @param end  结束位置
+ * @param key  诊断key
+ * @param message   诊断信息
+ * @param level  诊断级别
+ * @returns     诊断信息
+ */
 const createDiagnostic = (
     sourceFile: ts.SourceFile,
     start: number,
@@ -861,6 +895,10 @@ const createDiagnostic = (
     return dia;
 };
 
+/**
+ *  检查所有的trigger
+ * @returns  返回uri和诊断信息
+ */
 export const checkAllTriggers = (): {
     [uri: string]: vscode.Diagnostic[];
 } => {
@@ -871,6 +909,11 @@ export const checkAllTriggers = (): {
     return checkTriggers(triggers);
 };
 
+/**
+ *  检查所有的trigger
+ * @param ts  trigger定义
+ * @returns  返回uri和诊断信息
+ */
 export const checkTriggers = (ts: TriggerDef[]) => {
     const diagnostics: {
         [uri: string]: vscode.Diagnostic[];
@@ -886,6 +929,11 @@ export const checkTriggers = (ts: TriggerDef[]) => {
     return diagnostics;
 };
 
+/**
+ *  检查指定路径的trigger
+ * @param path  路径
+ * @returns   返回路径和诊断信息
+ */
 export const checkPathTrigger = (path: string) => {
     const norPath = normalizePath(path);
     const trigger = triggers.filter((t) => t.path === norPath);
@@ -904,10 +952,20 @@ export const checkPathTrigger = (path: string) => {
     };
 };
 
+/**
+ *  获取某一个entity的trigger数量
+ * @param entity  entity名称
+ * @returns  trigger数量
+ */
 export const getTriggerCountByEntity = (entity: string): number => {
     return triggers.filter((t) => t.entity === entity).length;
 };
 
+/**
+ *  获取某一个entity的trigger信息
+ * @param entity  entity名称
+ * @returns  trigger信息
+ */
 export const getTrigersInfoByEntity = (entity: string): TriggerInfo[] => {
     return triggers
         .filter((t) => t.entity === entity)
@@ -933,6 +991,11 @@ const updateDeounced = debounce(() => {
     triggerSubscribers.forEach((callback) => callback());
 }, 200);
 
+/**
+ *  订阅trigger的更新，当trigger更新时，会调用callback
+ * @param callback  回调函数
+ * @returns  返回一个取消订阅的函数
+ */
 export const subscribeTrigger = (callback: () => void) => {
     const setToSubscribers = (callback: () => void) => {
         const key = random(0, 100000);

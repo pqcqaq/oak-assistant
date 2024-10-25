@@ -37,14 +37,13 @@ import { initTriggerProgram } from './utils/triggers';
 import {
     activateTriggerPlugin,
     deactivateTriggerPlugin,
-    startAnaylizeAll,
 } from './plugins/oakTriggers';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
 const exclude: vscode.GlobPattern = new vscode.RelativePattern(
     '**',
-    '{src,node_modules,lib,configuration}'
+    '{src,node_modules,lib,configuration,native,web,wechatMp}'
 );
 
 subscribe(() => {
@@ -195,7 +194,7 @@ export async function activate(context: vscode.ExtensionContext) {
         'Congratulations, your extension "oak-assistant" is now active!'
     );
 
-    const uris = await vscode.workspace.findFiles('oak.config.json', exclude);
+    const uris = await vscode.workspace.findFiles('oak.config.json', exclude, 1);
     const fs = vscode.workspace.fs;
     if (uris.length === 0) {
         // 获取当前工作区
