@@ -181,9 +181,8 @@ function resolveImportedTriggers(
             } else if (ts.isImportSpecifier(declaration)) {
                 // 这里是命名导入
                 const importClause = declaration.parent.parent;
-                const importPath = importClause.parent.moduleSpecifier.getText(
-                    sourceFile
-                );
+                const importPath =
+                    importClause.parent.moduleSpecifier.getText(sourceFile);
 
                 const importMeta = {
                     identifier: '',
@@ -238,8 +237,7 @@ function resolveImportedTriggers(
                         importMeta
                     );
                 }
-            }
-            else if (
+            } else if (
                 ts.isVariableDeclaration(declaration) &&
                 declaration.initializer
             ) {
@@ -713,6 +711,11 @@ export const checkTrigger = (
                     }
                 }
 
+                // 如果是一个block，递归其内部的内容
+                if (ts.isBlock(child)) {
+                    walkBlock(child);
+                }
+
                 // 如果是if或者switch，继续递归
                 if (ts.isIfStatement(child)) {
                     walkBlock(child.thenStatement);
@@ -732,22 +735,9 @@ export const checkTrigger = (
 
                 if (ts.isVariableStatement(child)) {
                     walkBlock(child.declarationList);
-                }
-                if (ts.isVariableDeclarationList(child)) {
-                    if (!child.declarations) {
-                        console.log('declarations not found on', child);
-                    } else {
-                        child.declarations.forEach((declaration) => {
-                            if (!declaration.initializer) {
-                                console.log(
-                                    'initializer not found on',
-                                    declaration
-                                );
-                            } else {
-                                walkBlock(declaration.initializer);
-                            }
-                        });
-                    }
+                    ts.forEachChild(child.declarationList, (declaration) => {
+                        walkBlock(declaration);
+                    });
                 }
                 if (ts.isVariableDeclaration(child)) {
                     if (child.initializer) {
@@ -776,12 +766,28 @@ export const checkTrigger = (
                         walkBlock(child.finallyBlock);
                     }
                 }
+                if (ts.isExpressionStatement(child)) {
+                    walkBlock(child.expression);
+                }
                 if (ts.isCallExpression(child)) {
                     // 这里判断一下是不是context.xxx的调用
+                    console.log('call expression', child.expression.getText());
+
                     const expression = child.expression;
                     if (ts.isPropertyAccessExpression(expression)) {
-                        // 如果是context.xxx
+                        // 如果是context.xxx的调用
                         if (expression.expression.getText() === 'context') {
+                            // // 无论如何显示一个警告先，debug
+                            // diagnostics.push(
+                            //     createDiagnostic(
+                            //         trigger.tsInfo.sourceFile,
+                            //         child.getStart(),
+                            //         child.getEnd(),
+                            //         'trigger.invalidContextCall',
+                            //         'test warning',
+                            //         vscode.DiagnosticSeverity.Warning
+                            //     )
+                            // );
                             // 检查是不是await的调用，否则出现警告
                             const parent = child.parent;
                             if (
@@ -799,17 +805,6 @@ export const checkTrigger = (
                                     )
                                 );
                             }
-                            // // 无论如何显示一个警告先，debug
-                            // diagnostics.push(
-                            //     createDiagnostic(
-                            //         trigger.tsInfo.sourceFile,
-                            //         child.getStart(),
-                            //         child.getEnd(),
-                            //         'trigger.invalidContextCall',
-                            //         'test warning',
-                            //         vscode.DiagnosticSeverity.Warning
-                            //     )
-                            // );
                         }
                     }
                 }
