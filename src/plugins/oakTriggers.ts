@@ -16,6 +16,7 @@ class TriggerDocumentLinkProvider implements vscode.DocumentLinkProvider {
         updateTriggerByPath(document.uri.fsPath);
         const res = checkPathTrigger(document.uri.fsPath);
         if (res) {
+            triggersDiagnostics.clear();
             triggersDiagnostics.set(vscode.Uri.file(res.path), res.diagnostics);
         }
         return [];

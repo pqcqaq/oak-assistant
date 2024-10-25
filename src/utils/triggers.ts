@@ -786,17 +786,17 @@ export const checkTrigger = (
                     if (ts.isPropertyAccessExpression(expression)) {
                         // 如果是context.xxx的调用
                         if (expression.expression.getText() === 'context') {
-                            // 无论如何显示一个警告先，debug
-                            diagnostics.push(
-                                createDiagnostic(
-                                    trigger.tsInfo.sourceFile,
-                                    child.getStart(),
-                                    child.getEnd(),
-                                    'trigger.invalidContextCall',
-                                    'test warning',
-                                    vscode.DiagnosticSeverity.Warning
-                                )
-                            );
+                            // // 无论如何显示一个警告先，debug
+                            // diagnostics.push(
+                            //     createDiagnostic(
+                            //         trigger.tsInfo.sourceFile,
+                            //         child.getStart(),
+                            //         child.getEnd(),
+                            //         'trigger.invalidContextCall',
+                            //         'test warning',
+                            //         vscode.DiagnosticSeverity.Warning
+                            //     )
+                            // );
                             // 检查是不是await的调用，否则出现警告
                             const parent = child.parent;
                             if (
