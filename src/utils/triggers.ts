@@ -771,8 +771,6 @@ export const checkTrigger = (
                 }
                 if (ts.isCallExpression(child)) {
                     // 这里判断一下是不是context.xxx的调用
-                    console.log('call expression', child.expression.getText());
-
                     const expression = child.expression;
                     if (ts.isPropertyAccessExpression(expression)) {
                         // 如果是context.xxx的调用
