@@ -716,7 +716,9 @@ export const checkTrigger = (
 
                 // 如果是一个block，递归其内部的内容
                 if (ts.isBlock(child)) {
-                    walkBlock(child);
+                    ts.forEachChild(child, (c) => {
+                        walkBlock(c);
+                    });
                 }
 
                 // 如果是if或者switch，继续递归
@@ -759,6 +761,12 @@ export const checkTrigger = (
                     ts.isForStatement(child)
                 ) {
                     walkBlock(child.statement);
+                    ts.forEachChild(child.statement, (c) => {
+                        walkBlock(c);
+                    });
+                }
+                if (ts.isWhileStatement(child)) {
+                    walkBlock(child.statement);
                 }
                 if (ts.isTryStatement(child)) {
                     walkBlock(child.tryBlock);
@@ -778,17 +786,17 @@ export const checkTrigger = (
                     if (ts.isPropertyAccessExpression(expression)) {
                         // 如果是context.xxx的调用
                         if (expression.expression.getText() === 'context') {
-                            // // 无论如何显示一个警告先，debug
-                            // diagnostics.push(
-                            //     createDiagnostic(
-                            //         trigger.tsInfo.sourceFile,
-                            //         child.getStart(),
-                            //         child.getEnd(),
-                            //         'trigger.invalidContextCall',
-                            //         'test warning',
-                            //         vscode.DiagnosticSeverity.Warning
-                            //     )
-                            // );
+                            // 无论如何显示一个警告先，debug
+                            diagnostics.push(
+                                createDiagnostic(
+                                    trigger.tsInfo.sourceFile,
+                                    child.getStart(),
+                                    child.getEnd(),
+                                    'trigger.invalidContextCall',
+                                    'test warning',
+                                    vscode.DiagnosticSeverity.Warning
+                                )
+                            );
                             // 检查是不是await的调用，否则出现警告
                             const parent = child.parent;
                             if (
