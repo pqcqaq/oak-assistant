@@ -210,7 +210,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const rootPath = workspaceFolders[0].uri.fsPath;
             const projectPath = join(rootPath, './');
             // 在根目录下创建oak.config.json文件
-            const content = JSON.stringify({ projectHome: './' }, null, 2);
+            const content = JSON.stringify({ projectDir: './' }, null, 2);
             fs.writeFile(
                 vscode.Uri.file(join(projectPath, 'oak.config.json')),
                 Buffer.from(content)
@@ -227,7 +227,13 @@ export async function activate(context: vscode.ExtensionContext) {
     const uri = uris[0];
     const contextFile = await fs.readFile(uri);
     const config = JSON.parse(contextFile.toString()) as OakConfiog;
-    const projectHome = join(uri.fsPath, '..', config.projectHome);
+    if (!config.projectDir) {
+        vscode.window.showErrorMessage(
+            'oak.config.json文件中缺少projectDir字段'
+        );
+        return;
+    }
+    const projectHome = join(uri.fsPath, '..', config.projectDir);
     // 设置projectHome
     setProjectHome(projectHome);
     // 通知已经启用

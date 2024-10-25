@@ -1,3 +1,3 @@
 export type OakConfiog = {
-    projectHome: string;
+    projectDir: string;
 }
