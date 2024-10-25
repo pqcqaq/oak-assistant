@@ -8,13 +8,19 @@ import {
 import { join } from 'path';
 import checkPagesAndNamespace from './plugins/checkPagesAndNamespace';
 import { OakConfiog } from './types/OakConfig';
-import createOakComponent from './plugins/createOakComponent';
+import {
+    activateOakComponent,
+    disposeOakComponent,
+} from './plugins/createOakComponent';
 import { analyzeOakAppDomain } from './utils/entities';
 import { createOakTreePanel } from './plugins/oakTreePanel';
 import { setLoadingEntities } from './utils/status';
 import { treePanelCommands } from './plugins/treePanelCommands';
 import { createFileWatcher } from './plugins/fileWatcher';
-import oakPathInline from './plugins/oakPathInline';
+import {
+    activateOakPathInline,
+    deposeOakPathInline,
+} from './plugins/oakPathInline';
 import oakPathCompletion from './plugins/oakPathCompletion';
 import oakPathHighlighter from './plugins/oakPathDecoration';
 import entityProviders from './plugins/entityJump';
@@ -157,7 +163,6 @@ const reload = vscode.commands.registerCommand('oak-assistant.reload', () => {
 const commonCommands = createCommonPlugin();
 
 const checkPagesAndNamespacePlugin = checkPagesAndNamespace();
-const createOakComponentPlugin = createOakComponent();
 const createOakTreePanelPlugin = createOakTreePanel();
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -168,14 +173,14 @@ export async function activate(context: vscode.ExtensionContext) {
             commonCommands.activate(context);
             entityProviders.activate(context);
             activateTriggerPlugin(context);
+            activateOakComponent(context);
+            activateOakPathInline(context);
             context.subscriptions.push(
                 helloOak,
                 reload,
                 checkPagesAndNamespacePlugin,
-                createOakComponentPlugin,
                 createOakTreePanelPlugin,
                 ...treePanelCommands,
-                oakPathInline,
                 oakPathCompletion.oakPathCompletion,
                 oakPathCompletion.oakPathDocumentLinkProvider,
                 ...oakPathHighlighter
@@ -243,9 +248,10 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     commonCommands.dispose();
     checkPagesAndNamespacePlugin.dispose();
-    createOakComponentPlugin.dispose();
     createOakTreePanelPlugin.dispose();
     deactivateTriggerPlugin();
+    disposeOakComponent();
+    deposeOakPathInline();
     treePanelCommands.forEach((command) => {
         command.dispose();
     });
@@ -254,7 +260,6 @@ export function deactivate() {
     });
     helloOak.dispose();
     reload.dispose();
-    oakPathInline.dispose();
     entityProviders.dispose();
     oakPathCompletion.dispose();
     deactivateOakLocale();

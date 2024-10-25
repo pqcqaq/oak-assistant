@@ -145,7 +145,10 @@ const goCreate = async (
         }
     }
 
-    generateTemplate(join(folderPath, createComponentConfig.folderName), createComponentConfig);
+    generateTemplate(
+        join(folderPath, createComponentConfig.folderName),
+        createComponentConfig
+    );
     vscode.window.showInformationMessage(
         `创建组件: ${toUpperFirst(createComponentConfig.folderName)} 成功。`
     );
@@ -153,45 +156,44 @@ const goCreate = async (
     afterCreateComponent(join(folderPath, createComponentConfig.folderName));
 };
 
-const createOakComponent = () => {
-    const plugin = vscode.commands.registerCommand(
-        'oak-assistant.create-oak-component',
-        async (uri: vscode.Uri | ComponentsItem) => {
-            if (uri instanceof ComponentsItem) {
-                const entityName = uri.getEntityName();
-                const componentsPath = join(
-                    pathConfig.componentsHome,
-                    entityName
-                );
-                goCreate(componentsPath, createComponentSteps, {
-                    entityName,
-                });
-                return;
-            }
-            if (!uri) {
-                vscode.window.showErrorMessage('请在文件夹上右键选择此命令。');
-                return;
-            }
-
-            const folderPath = uri.fsPath;
-            const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-
-            if (!workspaceFolder) {
-                vscode.window.showErrorMessage('无法确定工作区文件夹。');
-                return;
-            }
-
-            if (!isFileInDirectory(folderPath, 'pagesHome', 'componentsHome')) {
-                vscode.window.showWarningMessage(
-                    '选择的文件夹不在 pages或components 目录下，无法创建 OAK 组件。'
-                );
-            }
-
-            goCreate(folderPath, withSelectEntity);
+const plugin = vscode.commands.registerCommand(
+    'oak-assistant.create-oak-component',
+    async (uri: vscode.Uri | ComponentsItem) => {
+        if (uri instanceof ComponentsItem) {
+            const entityName = uri.getEntityName();
+            const componentsPath = join(pathConfig.componentsHome, entityName);
+            goCreate(componentsPath, createComponentSteps, {
+                entityName,
+            });
+            return;
         }
-    );
+        if (!uri) {
+            vscode.window.showErrorMessage('请在文件夹上右键选择此命令。');
+            return;
+        }
 
-    return plugin;
+        const folderPath = uri.fsPath;
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+
+        if (!workspaceFolder) {
+            vscode.window.showErrorMessage('无法确定工作区文件夹。');
+            return;
+        }
+
+        if (!isFileInDirectory(folderPath, 'pagesHome', 'componentsHome')) {
+            vscode.window.showWarningMessage(
+                '选择的文件夹不在 pages或components 目录下，无法创建 OAK 组件。'
+            );
+        }
+
+        goCreate(folderPath, withSelectEntity);
+    }
+);
+
+export const activateOakComponent = (context: vscode.ExtensionContext) => {
+    context.subscriptions.push(plugin);
 };
 
-export default createOakComponent;
+export const disposeOakComponent = () => {
+    plugin.dispose();
+};

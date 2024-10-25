@@ -93,7 +93,9 @@ vscode.commands.registerCommand(COMMAND_ID, async () => {
 
     // 遍历 AST 查找 oakFullpath 声明和组件函数定义
     function checkForOakFullpath(node: ts.Node): void {
-        if (hasOakFullpath) {return;} // 如果已经找到，就不再继续查找
+        if (hasOakFullpath) {
+            return;
+        } // 如果已经找到，就不再继续查找
 
         if (ts.isVariableDeclaration(node)) {
             // 检查普通变量声明
@@ -171,4 +173,10 @@ vscode.commands.registerCommand(COMMAND_ID, async () => {
     }
 });
 
-export default oakPathInline;
+export const activateOakPathInline = (context: vscode.ExtensionContext) => {
+    context.subscriptions.push(oakPathInline);
+};
+
+export const deposeOakPathInline = () => {
+    oakPathInline.dispose();
+};
