@@ -165,7 +165,11 @@ const checkPagesAndNamespacePlugin = checkPagesAndNamespace();
 const createOakTreePanelPlugin = createOakTreePanel();
 
 export async function activate(context: vscode.ExtensionContext) {
-    const loadPlugin = () => {
+    const loadPlugin = (config: OakConfiog) => {
+        // activateWxmlLanguageSupport(
+        //     context,
+        //     Object.assign({}, config.wxml, defaultWxmlConfig)
+        // );
         try {
             activateOakLocale(context);
             activateOakComponentPropsLinkProvider(context);
@@ -194,7 +198,11 @@ export async function activate(context: vscode.ExtensionContext) {
         'Congratulations, your extension "oak-assistant" is now active!'
     );
 
-    const uris = await vscode.workspace.findFiles('oak.config.json', exclude, 1);
+    const uris = await vscode.workspace.findFiles(
+        'oak.config.json',
+        exclude,
+        1
+    );
     const fs = vscode.workspace.fs;
     if (uris.length === 0) {
         // 获取当前工作区
@@ -223,7 +231,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.window.showInformationMessage(
                     `已将项目主目录设置为: ${projectPath}`
                 );
-                loadPlugin();
+                loadPlugin({ projectDir: './' });
             });
         }
         return;
@@ -241,10 +249,11 @@ export async function activate(context: vscode.ExtensionContext) {
     // 设置projectHome
     setProjectHome(projectHome);
     // 通知已经启用
-    loadPlugin();
+    loadPlugin(config);
 }
 
 export function deactivate() {
+    // deactivateWxmlLanguageSupport();
     commonCommands.dispose();
     checkPagesAndNamespacePlugin.dispose();
     createOakTreePanelPlugin.dispose();
