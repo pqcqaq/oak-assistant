@@ -315,14 +315,14 @@ function analyzeOakAppDomain(path: string) {
     const storageFile = join(path, 'Storage.ts');
     if (!fs.existsSync(storageFile)) {
         console.log('Storage.ts file does not exist in path', storageFile);
-        return { error: 'Storage.ts file does not exist' };
+        return { error: '没有找到实体存储定义，请在make:domain之后重新启动插件' };
     }
 
     const program = ts.createProgram([storageFile], {});
     const sourceFile = program.getSourceFile(storageFile);
 
     if (!sourceFile) {
-        return { error: 'Unable to parse Storage.ts file' };
+        return { error: '解析Storage.ts失败，请拿作者祭天' };
     }
 
     let storageSchemaNode: ts.Node | undefined;
