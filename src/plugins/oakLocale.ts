@@ -60,7 +60,9 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                         range,
                         vscode.Uri.file(filePath)
                     );
-                    documentLink.tooltip = '点击跳转到定义';
+                    documentLink.tooltip = localePath.desc
+                        ? `CN: ${localePath.desc}`
+                        : `[未找到中文] 跳转到定义`;
                     documentLinks.push(documentLink);
                 }
             }

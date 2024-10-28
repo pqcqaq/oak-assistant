@@ -139,7 +139,7 @@ export const findValueByKey = (
  * @param key  key
  * @returns  返回一个string
  */
-export const getLocaleItem = (key: string): LocaleItem | undefined => {
+const getLocaleItem = (key: string): LocaleItem | undefined => {
     // 如果是namespace，则为xxxx::开头
     if (key.includes('::')) {
         // 从cachedLocaleItems中找到对应的值
@@ -186,8 +186,10 @@ const getNamespacedLocaleItems = (
                 label: key,
                 value: key,
                 desc:
-                    findValueByKey(locales.namespaced[namespaceName], key) ||
-                    '',
+                    findValueByKey(
+                        locales.namespaced[namespaceName],
+                        key.split('::')[1]
+                    ) || '',
                 path: join(pathConfig.localesHome, namespaceName),
             };
         }),
@@ -211,7 +213,11 @@ const getEntityLocaleItems = (
                 return {
                     label: key,
                     value: key,
-                    desc: findValueByKey(locales.entities[name], key) || '',
+                    desc:
+                        findValueByKey(
+                            locales.entities[name],
+                            key.split(':')[1]
+                        ) || '',
                     path: getEntityLocalePath(key.split(':')[0]),
                 };
             }
