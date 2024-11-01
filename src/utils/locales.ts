@@ -139,7 +139,7 @@ export const findValueByKey = (
  * @param key  key
  * @returns  返回一个string
  */
-export const getLocaleItem = (key: string): LocaleItem | undefined => {
+const getLocaleItem = (key: string): LocaleItem | undefined => {
     // 如果是namespace，则为xxxx::开头
     if (key.includes('::')) {
         // 从cachedLocaleItems中找到对应的值
@@ -186,8 +186,10 @@ const getNamespacedLocaleItems = (
                 label: key,
                 value: key,
                 desc:
-                    findValueByKey(locales.namespaced[namespaceName], key) ||
-                    '',
+                    findValueByKey(
+                        locales.namespaced[namespaceName],
+                        key.split('::')[1]
+                    ) || '',
                 path: join(pathConfig.localesHome, namespaceName),
             };
         }),
@@ -211,7 +213,11 @@ const getEntityLocaleItems = (
                 return {
                     label: key,
                     value: key,
-                    desc: findValueByKey(locales.entities[name], key) || '',
+                    desc:
+                        findValueByKey(
+                            locales.entities[name],
+                            key.split(':')[1]
+                        ) || '',
                     path: getEntityLocalePath(key.split(':')[0]),
                 };
             }
@@ -350,6 +356,90 @@ export const getCachedLocaleItemByKey = (
     key: string
 ): LocaleItem | undefined => {
     return getLocaleItem(key);
+};
+
+export const addLocaleToData = (
+    localeData: any,
+    key: string,
+    value: string = ''
+): void => {
+    const keys = key.split('.');
+    let current = localeData;
+
+    for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+
+        if (i === keys.length - 1) {
+            // 最后一个键，直接赋值
+            current[k] = value;
+        } else {
+            // 不是最后一个键，检查下一级
+            if (!(k in current)) {
+                // 如果键不存在，创建一个新的对象
+                current[k] = {};
+            } else if (typeof current[k] !== 'object') {
+                // 如果存在但不是对象，抛出错误
+                throw new Error(
+                    `Cannot add key "${key}". "${k}" is not an object.`
+                );
+            }
+            // 移动到下一级
+            current = current[k];
+        }
+    }
+};
+
+export const addKeyToLocale = (
+    keyPath: string,
+    value: string
+): {
+    path?: string;
+    error?: string;
+} => {
+    // 如果是namespace，则为xxxx::开头
+    if (keyPath.includes('::')) {
+        const [namespace, key] = keyPath.split('::');
+        const path = join(pathConfig.localesHome, namespace);
+        // 如果文件不存在则创建
+        if (!fs.existsSync(path)) {
+            fs.mkdirSync(path);
+        }
+        // 判断是否存在 zh_CN.json 文件，如果不存在则使用 zh-CN.json
+        let localeFilePath = join(path, 'zh-CN.json');
+        if (!fs.existsSync(localeFilePath)) {
+            localeFilePath = join(path, 'zh_CN.json');
+            if (!fs.existsSync(localeFilePath)) {
+                // 如果两个都不存在，创建一个新的 zh_CN.json 文件
+                fs.writeFileSync(localeFilePath, '{}');
+            }
+        }
+        // 尝试读取文件
+        let localeData = {};
+        try {
+            localeData = JSON.parse(fs.readFileSync(localeFilePath, 'utf-8'));
+        } catch (error) {
+            // 如果读取文件失败，直接返回
+            return {
+                error: '读取文件失败',
+            };
+        }
+        // 添加新的键值对
+        addLocaleToData(localeData, key, value);
+        // 写入文件
+        fs.writeFileSync(localeFilePath, JSON.stringify(localeData, null, 2));
+        // 更新缓存
+        locales.namespaced[namespace] = localeData;
+        return {
+            path: localeFilePath,
+        };
+    } else if (keyPath.includes(':')) {
+        return {
+            error: '暂不支持entity的locales编辑',
+        };
+    }
+    return {
+        error: '这个函数只用于处理namespace的locales',
+    };
 };
 
 subscribeEntity('#all', (name) => {

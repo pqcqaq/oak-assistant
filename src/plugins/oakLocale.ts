@@ -1,4 +1,8 @@
-import { getAvailableKeys } from './../utils/locales';
+import {
+    addKeyToLocale,
+    addLocaleToData,
+    getAvailableKeys,
+} from './../utils/locales';
 import { join } from 'path';
 import {
     getCachedLocaleItemByKey,
@@ -41,9 +45,9 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
             if (isKeyExist(key)) {
                 const localePath = getCachedLocaleItemByKey(key);
                 if (localePath && localePath.path) {
-                    const startPos = document.positionAt(match.index);
+                    const startPos = document.positionAt(match.index + 2);
                     const endPos = document.positionAt(
-                        match.index + match[0].length
+                        match.index + match[0].length - 1
                     );
                     const range = new vscode.Range(startPos, endPos);
 
@@ -56,7 +60,9 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                         range,
                         vscode.Uri.file(filePath)
                     );
-                    documentLink.tooltip = '点击跳转到定义';
+                    documentLink.tooltip = localePath.desc
+                        ? `CN: ${localePath.desc}`
+                        : `[未找到中文] 跳转到定义`;
                     documentLinks.push(documentLink);
                 }
             }
@@ -175,8 +181,11 @@ async function validateDocument(document: vscode.TextDocument) {
         }
 
         if (!isKeyExist(key)) {
-            const startPos = document.positionAt(match.index);
-            const endPos = document.positionAt(match.index + match[0].length);
+            // range需要排除掉t(的部分和最后的 ) 部分
+            const startPos = document.positionAt(match.index + 2);
+            const endPos = document.positionAt(
+                match.index + match[0].length - 1
+            );
             const range = new vscode.Range(startPos, endPos);
             const diagnostic = new vscode.Diagnostic(
                 range,
@@ -227,6 +236,17 @@ const addLocaleActionProvider = vscode.languages.registerCodeActionsProvider(
 const addLocaleCommand = vscode.commands.registerCommand(
     'oak-i18n.addLocaleDefinition',
     (document: vscode.TextDocument, range: vscode.Range, key: string) => {
+        // 先判断key是不是命名空间的形式或者entity的形式
+        if (key.includes(':')) {
+            console.log('命名空间形式的key需要找到对应的文件');
+            const { path, error } = addKeyToLocale(key, '');
+            if (error) {
+                vscode.window.showErrorMessage(error);
+                return;
+            }
+            vscode.window.showTextDocument(vscode.Uri.file(path!));
+            return;
+        }
         // 得到文档的位置
         const filePath = document.uri.fsPath;
         // 得到 locale 文件的路径
@@ -263,37 +283,6 @@ const addLocaleCommand = vscode.commands.registerCommand(
         getLocalesData(localeDir, '', true);
     }
 );
-
-const addLocaleToData = (
-    localeData: any,
-    key: string,
-    value: string = ''
-): void => {
-    const keys = key.split('.');
-    let current = localeData;
-
-    for (let i = 0; i < keys.length; i++) {
-        const k = keys[i];
-
-        if (i === keys.length - 1) {
-            // 最后一个键，直接赋值
-            current[k] = value;
-        } else {
-            // 不是最后一个键，检查下一级
-            if (!(k in current)) {
-                // 如果键不存在，创建一个新的对象
-                current[k] = {};
-            } else if (typeof current[k] !== 'object') {
-                // 如果存在但不是对象，抛出错误
-                throw new Error(
-                    `Cannot add key "${key}". "${k}" is not an object.`
-                );
-            }
-            // 移动到下一级
-            current = current[k];
-        }
-    }
-};
 
 export function activateOakLocale(context: vscode.ExtensionContext) {
     const enabledI18n = vscode.workspace
