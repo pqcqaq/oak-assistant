@@ -38,7 +38,7 @@ import {
     activateTriggerPlugin,
     deactivateTriggerPlugin,
 } from './plugins/oakTriggers';
-import { activateStyleConvert, deactivateStyleConvert } from './plugins/StyleConvert';
+import { activateStyleConvert, deactivateStyleConvert } from './plugins/styleConvert';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
