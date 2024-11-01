@@ -38,6 +38,7 @@ import {
     activateTriggerPlugin,
     deactivateTriggerPlugin,
 } from './plugins/oakTriggers';
+import { activateStyleConvert, deactivateStyleConvert } from './plugins/StyleConvert';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -189,6 +190,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 ...oakPathHighlighter
             );
             createFileWatcher(context);
+            activateStyleConvert(context);
         } catch (error) {
             console.error('激活插件时出错:', error);
         }
@@ -273,4 +275,5 @@ export function deactivate() {
     deactivateOakLocale();
     deactivateOakComponentPropsLinkProvider();
     stopWorker();
+    deactivateStyleConvert();
 }
