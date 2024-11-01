@@ -75,6 +75,10 @@ async function main() {
             'src/extension.ts',
             'src/utils/analyzeWorker.ts',
             // 'src/server/xmlLanguageServer.ts',
+            // 所有src/typescript下面的文件
+            ...(
+                await fs.readdir('src/typescript')
+            ).map((file) => `src/typescript/${file}`),
         ],
         bundle: true,
         format: 'cjs',
