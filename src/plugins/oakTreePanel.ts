@@ -16,12 +16,15 @@ import { CheckerInfo, TriggerInfo } from '../types';
 import {
     getCheckerCountByEntity,
     getCheckersInfoByEntity,
+    subscribeChecker,
 } from '../utils/checkers';
 
 class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private disposeGlobal: (() => void) | null = null;
     private disposeComponentSub: (() => void) | null = null;
     private disposeTriggerSub: (() => void) | null = null;
+    // checker的更新
+    private disposeCheckerSub: (() => void) | null = null;
     private showAllEntities: boolean = true; // 控制是否显示全部实体类
 
     // 切换显示全部实体类的方法
@@ -57,6 +60,9 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             this.refresh();
         });
         this.disposeTriggerSub = subscribeTrigger(() => {
+            this.refresh();
+        });
+        this.disposeCheckerSub = subscribeChecker(() => {
             this.refresh();
         });
     }
@@ -155,6 +161,9 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         }
         if (this.disposeTriggerSub) {
             this.disposeTriggerSub();
+        }
+        if (this.disposeCheckerSub) {
+            this.disposeCheckerSub();
         }
     }
 }
