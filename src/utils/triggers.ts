@@ -61,7 +61,6 @@ function resolveImportedTriggers(
 
     if (ts.isIdentifier(node)) {
         const name = node.getText();
-        console.log('identifier', name);
         const symbol = typeChecker.getSymbolAtLocation(node);
         if (symbol && symbol.declarations && symbol.declarations.length > 0) {
             const declaration = symbol.declarations[0];
@@ -277,7 +276,7 @@ function resolveImportedTriggers(
     }
 
     if (ts.isObjectLiteralExpression(node)) {
-        return [analyzeTriggerObj(node, sourceFile, program, typeChecker)];
+        return [analyzeTriggerObj(node, sourceFile, program)];
     }
 
     return [];
@@ -294,8 +293,7 @@ function resolveImportedTriggers(
 const analyzeTriggerObj = (
     node: ts.ObjectLiteralExpression,
     sourceFile: ts.SourceFile,
-    program: ts.Program,
-    typeChecker: ts.TypeChecker
+    program: ts.Program
 ) => {
     const def: TriggerDef = {
         path: normalizePath(sourceFile.fileName),
@@ -307,7 +305,7 @@ const analyzeTriggerObj = (
         tsInfo: {
             sourceFile,
             program,
-            typeChecker,
+            typeChecker: program.getTypeChecker(),
             node,
         },
     };
@@ -371,7 +369,6 @@ function getTriggersFromSourceFile(
     let triggers: TriggerDef[] = [];
 
     // 记录一下文件路径和导入的名称的对应关系
-    console.debug('记录文件路径和导入的名称的对应关系', sourceFile.fileName);
     filePathToImportName[normalizePath(sourceFile.fileName)] = {
         importName: meta.importName,
         identifier: meta.identifier,
@@ -614,7 +611,6 @@ export const updateTriggerByPath = (path: string) => {
 
     triggers.push(...newTriggers);
 
-    console.log(`Updated ${newTriggers.length} triggers from ${norPath}`);
     updateDeounced();
 };
 
@@ -724,6 +720,12 @@ export const checkTrigger = (
                             ts.isStringLiteral(child.expression) ||
                             ts.isObjectLiteralExpression(child.expression)
                         ) {
+                            // 如果返回值是0，就跳过
+                            if (ts.isNumericLiteral(child.expression)) {
+                                if (child.expression.text === '0') {
+                                    return;
+                                }
+                            }
                             diagnostics.push(
                                 createDiagnostic(
                                     trigger.tsInfo.sourceFile,
@@ -809,24 +811,80 @@ export const checkTrigger = (
                     const expression = child.expression;
                     if (ts.isPropertyAccessExpression(expression)) {
                         // 如果是context.xxx的调用
+                        // 判断一下context的类型名称是不是BackendRuntimeContext
+                        // const typeChecker = trigger.tsInfo.typeChecker;
+                        // const type = typeChecker.getTypeAtLocation(
+                        //     expression.expression
+                        // );
+                        // const typeName = typeChecker.typeToString(type);
+                        // if (typeName.includes('BackendRuntimeContext')) {
+                        //     // // 无论如何显示一个警告先，debug
+                        //     // diagnostics.push(
+                        //     //     createDiagnostic(
+                        //     //         trigger.tsInfo.sourceFile,
+                        //     //         child.getStart(),
+                        //     //         child.getEnd(),
+                        //     //         'trigger.invalidContextCall',
+                        //     //         'test warning',
+                        //     //         vscode.DiagnosticSeverity.Warning
+                        //     //     )
+                        //     // );
+                        //     // 检查是不是await的调用，否则出现警告
+                        //     const parent = child.parent;
+                        //     if (
+                        //         !ts.isAwaitExpression(parent) &&
+                        //         !ts.isReturnStatement(parent)
+                        //     ) {
+                        //         // 获取方法调用的类型信息
+                        //         const signature =
+                        //             typeChecker.getResolvedSignature(child);
+                        //         if (!signature) {
+                        //             return;
+                        //         }
+                        //         const returnType =
+                        //             typeChecker.getReturnTypeOfSignature(
+                        //                 signature
+                        //             );
+                        //         const returnTypeString =
+                        //             typeChecker.typeToString(returnType);
+                        //         if (!isPromiseType(returnType, typeChecker)) {
+                        //             // 如果返回值是Promise类型，那么就是正确的
+                        //             return;
+                        //         }
+                        //         diagnostics.push(
+                        //             createDiagnostic(
+                        //                 trigger.tsInfo.sourceFile,
+                        //                 child.getStart(),
+                        //                 child.getEnd(),
+                        //                 'trigger.invalidContextCall',
+                        //                 'context调用应该使用await',
+                        //                 vscode.DiagnosticSeverity.Warning
+                        //             )
+                        //         );
+                        //     }
+                        // }
                         if (expression.expression.getText() === 'context') {
-                            // // 无论如何显示一个警告先，debug
-                            // diagnostics.push(
-                            //     createDiagnostic(
-                            //         trigger.tsInfo.sourceFile,
-                            //         child.getStart(),
-                            //         child.getEnd(),
-                            //         'trigger.invalidContextCall',
-                            //         'test warning',
-                            //         vscode.DiagnosticSeverity.Warning
-                            //     )
-                            // );
-                            // 检查是不是await的调用，否则出现警告
                             const parent = child.parent;
                             if (
                                 !ts.isAwaitExpression(parent) &&
                                 !ts.isReturnStatement(parent)
                             ) {
+                                // 现在只检查select， operate， commit，rollback
+                                if (
+                                    ![
+                                        'select',
+                                        'operate',
+                                        'commit',
+                                        'rollback',
+                                        'aggregate',
+                                        'count',
+                                        'exec',
+                                        'begin',
+                                        'on',
+                                    ].includes(expression.name.getText())
+                                ) {
+                                    return;
+                                }
                                 diagnostics.push(
                                     createDiagnostic(
                                         trigger.tsInfo.sourceFile,

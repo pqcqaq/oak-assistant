@@ -720,3 +720,27 @@ export const createProjectProgram = (filePath: string) => {
 
     return program;
 };
+
+// 判断类型是否是 Promise
+export function isPromiseType(
+    type: ts.Type,
+    typeChecker: ts.TypeChecker
+): boolean {
+    // 检查是否直接是 Promise 类型
+    if (type.symbol && type.symbol.name === 'Promise') {
+        return true;
+    }
+
+    // 检查是否是联合类型中的 Promise
+    if (type.isUnion()) {
+        return type.types.some((t) => isPromiseType(t, typeChecker));
+    }
+
+    // 检查基类
+    const baseTypes = type.getBaseTypes();
+    if (baseTypes) {
+        return baseTypes.some((t) => isPromiseType(t, typeChecker));
+    }
+
+    return false;
+}
