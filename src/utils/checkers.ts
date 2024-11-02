@@ -620,47 +620,61 @@ export const checkChecker = (
 } => {
     const diagnostics: vscode.Diagnostic[] = [];
     const checkFn = (node: ts.Node): void => {
-        let fnBlock: ts.Block | undefined;
+        const fnMeta: {
+            block: ts.Block | undefined;
+            contextIdentifier: string | undefined;
+        } = {
+            block: undefined,
+            contextIdentifier: undefined,
+        };
         ts.forEachChild(node, (child) => {
             if (
                 ts.isPropertyAssignment(child) &&
                 child.name.getText() === 'checker'
             ) {
                 ts.forEachChild(child, (c) => {
-                    // if (ts.isFunctionExpression(c) || ts.isArrowFunction(c)) {
-                    //     // 检查是否为async
-                    //     if (c.modifiers) {
-                    //         const isAsync = c.modifiers.find(
-                    //             (m) => m.kind === ts.SyntaxKind.AsyncKeyword
-                    //         );
-                    //         if (!isAsync) {
-                    //             diagnostics.push(
-                    //                 createDiagnostic(
-                    //                     checker.tsInfo.sourceFile,
-                    //                     c.getStart(),
-                    //                     c.getEnd(),
-                    //                     'checker.invalidAsync',
-                    //                     'fn必须是async'
-                    //                 )
-                    //             );
-                    //         }
-                    //     } else {
-                    //         diagnostics.push(
-                    //             createDiagnostic(
-                    //                 checker.tsInfo.sourceFile,
-                    //                 c.getStart(),
-                    //                 c.getEnd(),
-                    //                 'checker.invalidAsync',
-                    //                 'fn必须是async'
-                    //             )
-                    //         );
-                    //     }
-                    //     fnBlock = c.forEachChild((c) => {
-                    //         if (ts.isBlock(c)) {
-                    //             return c;
-                    //         }
-                    //     });
-                    // }
+                    if (ts.isFunctionExpression(c) || ts.isArrowFunction(c)) {
+                        //     // 检查是否为async
+                        //     if (c.modifiers) {
+                        //         const isAsync = c.modifiers.find(
+                        //             (m) => m.kind === ts.SyntaxKind.AsyncKeyword
+                        //         );
+                        //         if (!isAsync) {
+                        //             diagnostics.push(
+                        //                 createDiagnostic(
+                        //                     checker.tsInfo.sourceFile,
+                        //                     c.getStart(),
+                        //                     c.getEnd(),
+                        //                     'checker.invalidAsync',
+                        //                     'fn必须是async'
+                        //                 )
+                        //             );
+                        //         }
+                        //     } else {
+                        //         diagnostics.push(
+                        //             createDiagnostic(
+                        //                 checker.tsInfo.sourceFile,
+                        //                 c.getStart(),
+                        //                 c.getEnd(),
+                        //                 'checker.invalidAsync',
+                        //                 'fn必须是async'
+                        //             )
+                        //         );
+                        //     }
+                        fnMeta.block = c.forEachChild((c) => {
+                            if (ts.isBlock(c)) {
+                                return c;
+                            }
+                        });
+                        // contextIdentifier是函数的第二个参数
+                        if (c.parameters.length > 1) {
+                            const context = c.parameters[1];
+                            if (ts.isIdentifier(context.name)) {
+                                fnMeta.contextIdentifier =
+                                    context.name.getText();
+                            }
+                        }
+                    }
                 });
             } else if (
                 ts.isMethodDeclaration(child) &&
@@ -682,7 +696,14 @@ export const checkChecker = (
                 //     );
                 // }
                 // 检查函数体的内容
-                fnBlock = child.body;
+                fnMeta.block = child.body;
+                // contextIdentifier是函数的第二个参数
+                if (child.parameters.length > 1) {
+                    const context = child.parameters[1];
+                    if (ts.isIdentifier(context.name)) {
+                        fnMeta.contextIdentifier = context.name.getText();
+                    }
+                }
             }
         });
         const walkBlock = (block: ts.Node) => {
@@ -856,7 +877,10 @@ export const checkChecker = (
                         //         );
                         //     }
                         // }
-                        if (expression.expression.getText() === 'context') {
+                        if (
+                            expression.expression.getText() ===
+                            fnMeta.contextIdentifier
+                        ) {
                             const parent = child.parent;
                             if (
                                 !ts.isAwaitExpression(parent) &&
@@ -894,8 +918,8 @@ export const checkChecker = (
                 }
             });
         };
-        if (fnBlock) {
-            walkBlock(fnBlock);
+        if (fnMeta.block) {
+            walkBlock(fnMeta.block);
         }
     };
 
