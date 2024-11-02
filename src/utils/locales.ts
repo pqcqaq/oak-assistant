@@ -232,7 +232,7 @@ const getEntityLocaleItems = (
  * 只能在proxy中使用
  */
 const getLocaleItemsByPath = (path: string): LocaleItem[] => {
-    console.log('更新componentItems缓存', path);
+    // console.log('更新componentItems缓存', path);
     const norPath = normalizePath(path);
     return getAvailableKeys(locales.components[norPath]).map((key) => {
         return {

@@ -44,6 +44,7 @@ import {
 } from './plugins/styleConvert';
 import { initCheckerProgram } from './utils/checkers';
 import { activateCheckerPlugin, deactivateCheckerPlugin } from './plugins/oakCheckers';
+import { log } from './utils/logger';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -269,6 +270,7 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
     const projectHome = join(uri.fsPath, '..', config.projectDir);
+    log('projectHome:', projectHome);
     // 设置projectHome
     setProjectHome(projectHome);
     // 通知已经启用
