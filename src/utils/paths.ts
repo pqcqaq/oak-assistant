@@ -147,3 +147,8 @@ export function normalizePath(path: string): string {
     const outPath = normalizedParts.join('\\');
     return outPath.endsWith('\\') ? outPath.slice(0, -1) : outPath;
 }
+
+// 判断一个路径是不是相对路径
+export function isRelativePath(path: string): boolean {
+    return path.startsWith('.') || path.startsWith('..');
+}

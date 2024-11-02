@@ -5,11 +5,11 @@ import {
     EntityComponentDef,
     MPConfig,
 } from '../types';
-import { normalizePath, pathConfig, subscribe } from './paths';
+import { isRelativePath, normalizePath, pathConfig, subscribe } from './paths';
 import ts from 'typescript';
 import { glob } from 'glob';
 import fs from 'fs';
-import { join } from 'path';
+import path, { join } from 'path';
 import { onEntityLoaded } from './status';
 import {
     getAttrsFromDatas,
@@ -245,8 +245,9 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
 
     scanPath.forEach((dirPath) => {
         const files = glob.sync(`${dirPath}/**/index.ts`);
-
-        files.forEach((filePath) => {
+        // 保证路径是绝对路径
+        const absoluteFiles = files.map(filePath => path.resolve(filePath));
+        absoluteFiles.forEach((filePath) => {
             // 因为涉及到路径的比较，所以需要规范化路径
             const normalizedPath = normalizePath(filePath);
             const sourceFile = ts.createSourceFile(
