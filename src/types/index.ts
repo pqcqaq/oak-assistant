@@ -1,5 +1,10 @@
 import * as ts from 'typescript';
-import { EntityShape, StorageDesc } from 'oak-domain/lib/types';
+import {
+    CheckerType,
+    EntityShape,
+    ModiTurn,
+    StorageDesc,
+} from 'oak-domain/lib/types';
 
 export type CreateComponentConfig = {
     folderName: string;
@@ -123,6 +128,31 @@ export type TriggerDef = {
 export type TriggerInfo = {
     name: string;
     when: string;
+    action: string[];
+    entity: string;
+    path: string;
+    pos: {
+        start: number;
+        end: number;
+    };
+};
+
+export type CheckerDef = {
+    path: string;
+    entity: string;
+    action: string[];
+    priority?: number;
+    type: CheckerType;
+    mt?: ModiTurn;
+    tsInfo: {
+        sourceFile: ts.SourceFile;
+        program: ts.Program;
+        typeChecker: ts.TypeChecker;
+        node: ts.ObjectLiteralExpression;
+    };
+};
+
+export type CheckerInfo = {
     action: string[];
     entity: string;
     path: string;

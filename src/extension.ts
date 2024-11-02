@@ -38,7 +38,12 @@ import {
     activateTriggerPlugin,
     deactivateTriggerPlugin,
 } from './plugins/oakTriggers';
-import { activateStyleConvert, deactivateStyleConvert } from './plugins/styleConvert';
+import {
+    activateStyleConvert,
+    deactivateStyleConvert,
+} from './plugins/styleConvert';
+import { initCheckerProgram } from './utils/checkers';
+import { activateCheckerPlugin, deactivateCheckerPlugin } from './plugins/oakCheckers';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -117,6 +122,21 @@ const afterPathSet = async () => {
                 // startAnaylizeAll(); // 现在只在打开文件的时候检查避免性能损耗
             },
         },
+        // 初始化checker信息
+        {
+            name: '初始化checker信息',
+            description: '初始化checker信息',
+            function: async () => {
+                const enabled = vscode.workspace
+                    .getConfiguration('oak-assistant')
+                    .get('enableCheckerCheck');
+                if (!enabled) {
+                    console.log('checker检查未启用');
+                    return;
+                }
+                initCheckerProgram();
+            },
+        },
     ];
 
     await vscode.window.withProgress(
@@ -177,6 +197,7 @@ export async function activate(context: vscode.ExtensionContext) {
             commonCommands.activate(context);
             entityProviders.activate(context);
             activateTriggerPlugin(context);
+            activateCheckerPlugin(context);
             activateOakComponent(context);
             activateOakPathInline(context);
             context.subscriptions.push(
@@ -260,6 +281,7 @@ export function deactivate() {
     checkPagesAndNamespacePlugin.dispose();
     createOakTreePanelPlugin.dispose();
     deactivateTriggerPlugin();
+    deactivateCheckerPlugin();
     disposeOakComponent();
     deposeOakPathInline();
     treePanelCommands.forEach((command) => {

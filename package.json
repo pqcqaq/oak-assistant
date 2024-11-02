@@ -88,6 +88,11 @@
           "type": "boolean",
           "default": true,
           "description": "启用Trigger检查（极其消耗性能）"
+        },
+        "oak-assistant.enableCheckerCheck": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用Checker检查（极其消耗性能）"
         }
       }
     },
