@@ -1061,7 +1061,7 @@ export const getCheckerCountByEntity = (entity: string): number => {
  * @param entity  entity名称
  * @returns  checker信息
  */
-export const getTrigersInfoByEntity = (entity: string): CheckerInfo[] => {
+export const getCheckersInfoByEntity = (entity: string): CheckerInfo[] => {
     return checkers
         .filter((t) => t.entity === entity)
         .map((t) => {

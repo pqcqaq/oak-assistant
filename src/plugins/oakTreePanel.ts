@@ -12,7 +12,11 @@ import {
     getTriggerCountByEntity,
     subscribeTrigger,
 } from '../utils/triggers';
-import { TriggerInfo } from '../types';
+import { CheckerInfo, TriggerInfo } from '../types';
+import {
+    getCheckerCountByEntity,
+    getCheckersInfoByEntity,
+} from '../utils/checkers';
 
 class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private disposeGlobal: (() => void) | null = null;
@@ -106,21 +110,24 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             const children: TreeItem[] = [];
             children.push(new ComponentsItem(element.getEntityName()));
             children.push(new TriggersItem(element.getEntityName()));
+            children.push(new CheckersItem(element.getEntityName()));
             return children;
         }
         if (element instanceof TriggersItem) {
-            // return entityConfig
-            //     .getEntityDesc(element.getEntityName())
-            //     .projectionList.map((projection) => {
-            //         return new TreeItem(
-            //             projection,
-            //             vscode.TreeItemCollapsibleState.None
-            //         );
-            //     });
             return getTrigersInfoByEntity(element.getEntityName()).map(
                 (trigger) => {
                     return new TriggerItem(
                         trigger,
+                        vscode.TreeItemCollapsibleState.None
+                    );
+                }
+            );
+        }
+        if (element instanceof CheckersItem) {
+            return getCheckersInfoByEntity(element.getEntityName()).map(
+                (checker) => {
+                    return new CheckerItem(
+                        checker,
                         vscode.TreeItemCollapsibleState.None
                     );
                 }
@@ -213,6 +220,8 @@ export class ComponentItem extends TreeItem {
     }
 }
 
+// Trigger相关的选项
+
 export class TriggersItem extends TreeItem {
     constructor(public readonly entity: string) {
         const count = getTriggerCountByEntity(entity);
@@ -237,6 +246,41 @@ export class TriggerItem extends TreeItem {
             filePath: trigger.path,
             start: trigger.pos.start,
             end: trigger.pos.end,
+        };
+        this.command = {
+            command: 'oak-assistant.jumpToPosition',
+            title: '定位到文件',
+            arguments: [args],
+        };
+    }
+}
+
+// Checker相关的选项
+
+export class CheckersItem extends TreeItem {
+    constructor(public readonly entity: string) {
+        const count = getCheckerCountByEntity(entity);
+        super(
+            `Checkers (${count})`,
+            vscode.TreeItemCollapsibleState.Collapsed,
+            entity
+        );
+        this.contextValue = 'checkersItem'; // 添加这行，用于识别右键菜单项
+    }
+}
+
+export class CheckerItem extends TreeItem {
+    constructor(
+        public readonly checker: CheckerInfo,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState
+    ) {
+        super(`${checker.action.join(',')}`, collapsibleState);
+        this.contextValue = 'checkerItem'; // 添加这行，用于识别右键菜单项
+        // 命令点击后跳转到指定文件的指定位置
+        const args = {
+            filePath: checker.path,
+            start: checker.pos.start,
+            end: checker.pos.end,
         };
         this.command = {
             command: 'oak-assistant.jumpToPosition',
