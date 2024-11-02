@@ -824,94 +824,43 @@ export const checkChecker = (
                     // 这里判断一下是不是context.xxx的调用
                     const expression = child.expression;
                     if (ts.isPropertyAccessExpression(expression)) {
-                        // 如果是context.xxx的调用
-                        // 判断一下context的类型名称是不是BackendRuntimeContext
-                        // const typeChecker = checker.tsInfo.typeChecker;
-                        // const type = typeChecker.getTypeAtLocation(
-                        //     expression.expression
-                        // );
-                        // const typeName = typeChecker.typeToString(type);
-                        // if (typeName.includes('BackendRuntimeContext')) {
-                        //     // // 无论如何显示一个警告先，debug
-                        //     // diagnostics.push(
-                        //     //     createDiagnostic(
-                        //     //         checker.tsInfo.sourceFile,
-                        //     //         child.getStart(),
-                        //     //         child.getEnd(),
-                        //     //         'checker.invalidContextCall',
-                        //     //         'test warning',
-                        //     //         vscode.DiagnosticSeverity.Warning
-                        //     //     )
-                        //     // );
-                        //     // 检查是不是await的调用，否则出现警告
-                        //     const parent = child.parent;
-                        //     if (
-                        //         !ts.isAwaitExpression(parent) &&
-                        //         !ts.isReturnStatement(parent)
-                        //     ) {
-                        //         // 获取方法调用的类型信息
-                        //         const signature =
-                        //             typeChecker.getResolvedSignature(child);
-                        //         if (!signature) {
-                        //             return;
-                        //         }
-                        //         const returnType =
-                        //             typeChecker.getReturnTypeOfSignature(
-                        //                 signature
-                        //             );
-                        //         const returnTypeString =
-                        //             typeChecker.typeToString(returnType);
-                        //         if (!isPromiseType(returnType, typeChecker)) {
-                        //             // 如果返回值是Promise类型，那么就是正确的
-                        //             return;
-                        //         }
-                        //         diagnostics.push(
-                        //             createDiagnostic(
-                        //                 checker.tsInfo.sourceFile,
-                        //                 child.getStart(),
-                        //                 child.getEnd(),
-                        //                 'checker.invalidContextCall',
-                        //                 'context调用应该使用await',
-                        //                 vscode.DiagnosticSeverity.Warning
-                        //             )
-                        //         );
-                        //     }
-                        // }
                         if (
                             expression.expression.getText() ===
                             fnMeta.contextIdentifier
                         ) {
-                            const parent = child.parent;
+                            // 现在只检查select， operate， commit，rollback
                             if (
-                                !ts.isAwaitExpression(parent) &&
-                                !ts.isReturnStatement(parent)
+                                ![
+                                    'select',
+                                    'operate',
+                                    'commit',
+                                    'rollback',
+                                    'aggregate',
+                                    'count',
+                                    'exec',
+                                    'begin',
+                                    'on',
+                                ].includes(expression.name.getText())
                             ) {
-                                // 现在只检查select， operate， commit，rollback
-                                if (
-                                    ![
-                                        'select',
-                                        'operate',
-                                        'commit',
-                                        'rollback',
-                                        'aggregate',
-                                        'count',
-                                        'exec',
-                                        'begin',
-                                        'on',
-                                    ].includes(expression.name.getText())
-                                ) {
-                                    return;
-                                }
-                                diagnostics.push(
-                                    createDiagnostic(
-                                        checker.tsInfo.sourceFile,
-                                        child.getStart(),
-                                        child.getEnd(),
-                                        'checker.invalidContextCall',
-                                        'context调用应该使用await',
-                                        vscode.DiagnosticSeverity.Warning
-                                    )
-                                );
+                                return;
+                            }
+                            const parent = child.parent;
+                            // diagnostics.push(
+                            //     createDiagnostic(
+                            //         checker.tsInfo.sourceFile,
+                            //         child.getStart(),
+                            //         child.getEnd(),
+                            //         'checker.invalidContextCall',
+                            //         'context调用应该使用await',
+                            //         vscode.DiagnosticSeverity.Warning
+                            //     )
+                            // );
+                            if (ts.isReturnStatement(parent)) {
+                                handleReturn(parent, diagnostics);
+                            }
+                            // VariableDeclaration
+                            if (ts.isVariableDeclaration(parent)) {
+                                handleVariable(parent, diagnostics);
                             }
                         }
                     }
@@ -929,6 +878,77 @@ export const checkChecker = (
         uri: checker.path,
         diagnostics,
     };
+};
+
+// 针对不同的代码块，要执行不同的操作，下面定义不同操作的函数，检查context调用的不同父情况
+const handleReturn = (
+    node: ts.ReturnStatement,
+    diagnostics: vscode.Diagnostic[]
+) => {
+    // context的父节点是return，需要判断在哪里return的，这里先不管
+};
+
+const handleVariable = (
+    node: ts.VariableDeclaration,
+    diagnostics: vscode.Diagnostic[]
+) => {
+    // 首先，不能是{ans} 的解构或者[]的解构
+    if (ts.isArrayBindingPattern(node.name) || ts.isObjectBindingPattern(node.name)) {
+        diagnostics.push(
+            createDiagnostic(
+                node.getSourceFile(),
+                node.getStart(),
+                node.getEnd(),
+                'checker.invalidDestruct',
+                'Checker中的context调用不能是解构赋值',
+                vscode.DiagnosticSeverity.Error
+            )
+        );
+        return;
+    }
+    // context的父节点是变量声明，需要判断下面有没有identifter instanceof Promise的判断
+    const identifier = node.name.getText();
+    // 找到这个作用域的block(VariableDeclaration -> VariableDeclarationList -> VariableStatement -> Block)
+    const block = node.parent.parent.parent;
+    // debug一下内容
+    const walkBlock = (block: ts.Node) => {
+        let hasPromise = false;
+        ts.forEachChild(block, (child) => {
+            if (ts.isIfStatement(child)) {
+                // 如果是if语句，判断条件是否是identifier instanceof Promise
+                if (ts.isBinaryExpression(child.expression)) {
+                    const left = child.expression.left;
+                    const right = child.expression.right;
+                    if (
+                        ts.isIdentifier(left) &&
+                        ts.isIdentifier(right) &&
+                        left.getText() === identifier &&
+                        right.getText() === 'Promise'
+                    ) {
+                        hasPromise = true;
+                        return;
+                    }
+                }
+            }
+
+            if (ts.isBlock(child)) {
+                walkBlock(child);
+            }
+        });
+        if (!hasPromise) {
+            diagnostics.push(
+                createDiagnostic(
+                    node.getSourceFile(),
+                    node.getStart(),
+                    node.getEnd(),
+                    'checker.invalidPromise',
+                    'context调用需要判断是否为Promise',
+                    vscode.DiagnosticSeverity.Error
+                )
+            );
+        }
+    };
+    walkBlock(block);
 };
 
 /**
