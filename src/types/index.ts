@@ -156,6 +156,7 @@ export type CheckerInfo = {
     action: string[];
     entity: string;
     path: string;
+    type: CheckerType;
     pos: {
         start: number;
         end: number;

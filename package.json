@@ -1,210 +1,215 @@
 {
-  "activationEvents": [
-    "onStartupFinished",
-    "workspaceContains:oak.config.json"
-  ],
-  "author": {
-    "name": "oak-team"
-  },
-  "categories": [
-    "Other"
-  ],
-  "contributes": {
-    "commands": [
-      {
-        "command": "oak-assistant.hello-oak",
-        "title": "Hello Oak"
-      },
-      {
-        "command": "oak-assistant.check-pages-and-namespace",
-        "title": "检查page和namespace对应关系"
-      },
-      {
-        "command": "oak-assistant.create-oak-component",
-        "title": "创建OAK组件"
-      },
-      {
-        "command": "oak-entities.jumpToDefinition",
-        "group": "navigation",
-        "title": "跳转到entity定义",
-        "when": "view == oak-entities && viewItem == entityItem"
-      },
-      {
-        "command": "oak-entities.jumpToSchema",
-        "group": "navigation",
-        "title": "跳转到Schema目录",
-        "when": "view == oak-entities && viewItem == entityItem"
-      },
-      {
-        "command": "oak-assistant.reload",
-        "title": "重新加载oak-assistant"
-      },
-      {
-        "command": "oak-entities.deleteComponent",
-        "group": "navigation",
-        "title": "删除组件",
-        "when": "view == oak-entities && viewItem == componentItem"
-      },
-      {
-        "command": "oak-entities.toggleShowAllEntities",
-        "title": "切换实体类显示范围"
-      },
-      {
-        "command": "oak-assistant.insertOakFullpath",
-        "title": "插入oakPath属性",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "oak-i18n.addLocaleDefinition",
-        "title": "添加国际化定义",
-        "when": "false"
-      },
-      {
-        "command": "oak-assistant.jumpToPosition",
-        "title": "跳转到指定位置",
-        "when": "false"
-      }
+    "activationEvents": [
+        "onStartupFinished",
+        "workspaceContains:oak.config.json"
     ],
-    "configuration": {
-      "type": "object",
-      "title": "OAK Assistant",
-      "properties": {
-        "oak-assistant.i18n": {
-          "type": "boolean",
-          "default": true,
-          "description": "启用国际化相关功能"
-        },
-        "oak-assistant.entityJump": {
-          "type": "boolean",
-          "default": true,
-          "description": "启用实体跳转功能"
-        },
-        "oak-assistant.triggerUpdateCount": {
-          "type": "number",
-          "default": 30,
-          "description": "触发Trigger重载的最小更新次数"
-        },
-        "oak-assistant.enableTriggerCheck": {
-          "type": "boolean",
-          "default": true,
-          "description": "启用Trigger检查（极其消耗性能）"
-        },
-        "oak-assistant.enableCheckerCheck": {
-          "type": "boolean",
-          "default": true,
-          "description": "启用Checker检查（极其消耗性能）"
-        }
-      }
+    "author": {
+        "name": "oak-team"
     },
-    "menus": {
-      "explorer/context": [
-        {
-          "command": "oak-assistant.create-oak-component",
-          "group": "navigation",
-          "when": "explorerResourceIsFolder"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "oak-entities.jumpToDefinition",
-          "group": "navigation",
-          "when": "view == oak-entities && viewItem == entityItem"
+    "categories": [
+        "Other"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "oak-assistant.hello-oak",
+                "title": "Hello Oak"
+            },
+            {
+                "command": "oak-assistant.check-pages-and-namespace",
+                "title": "检查page和namespace对应关系"
+            },
+            {
+                "command": "oak-assistant.create-oak-component",
+                "title": "创建OAK组件"
+            },
+            {
+                "command": "oak-entities.jumpToDefinition",
+                "group": "navigation",
+                "title": "跳转到entity定义",
+                "when": "view == oak-entities && viewItem == entityItem"
+            },
+            {
+                "command": "oak-entities.jumpToSchema",
+                "group": "navigation",
+                "title": "跳转到Schema目录",
+                "when": "view == oak-entities && viewItem == entityItem"
+            },
+            {
+                "command": "oak-assistant.reload",
+                "title": "重新加载oak-assistant"
+            },
+            {
+                "command": "oak-entities.deleteComponent",
+                "group": "navigation",
+                "title": "删除组件",
+                "when": "view == oak-entities && viewItem == componentItem"
+            },
+            {
+                "command": "oak-entities.toggleShowAllEntities",
+                "title": "切换实体类显示范围"
+            },
+            {
+                "command": "oak-assistant.insertOakFullpath",
+                "title": "插入oakPath属性",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "oak-i18n.addLocaleDefinition",
+                "title": "添加国际化定义",
+                "when": "false"
+            },
+            {
+                "command": "oak-assistant.jumpToPosition",
+                "title": "跳转到指定位置",
+                "when": "false"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "OAK Assistant",
+            "properties": {
+                "oak-assistant.i18n": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "启用国际化相关功能"
+                },
+                "oak-assistant.entityJump": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "启用实体跳转功能"
+                },
+                "oak-assistant.triggerUpdateCount": {
+                    "type": "number",
+                    "default": 30,
+                    "description": "触发Trigger重载的最小更新次数"
+                },
+                "oak-assistant.checkerUpdateCount": {
+                    "type": "number",
+                    "default": 30,
+                    "description": "触发Trigger重载的最小更新次数"
+                },
+                "oak-assistant.enableTriggerCheck": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "启用Trigger检查（极其消耗性能）"
+                },
+                "oak-assistant.enableCheckerCheck": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "启用Checker检查（极其消耗性能）"
+                }
+            }
         },
-        {
-          "command": "oak-entities.jumpToSchema",
-          "group": "navigation",
-          "when": "view == oak-entities && viewItem == entityItem"
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "oak-assistant.create-oak-component",
+                    "group": "navigation",
+                    "when": "explorerResourceIsFolder"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "oak-entities.jumpToDefinition",
+                    "group": "navigation",
+                    "when": "view == oak-entities && viewItem == entityItem"
+                },
+                {
+                    "command": "oak-entities.jumpToSchema",
+                    "group": "navigation",
+                    "when": "view == oak-entities && viewItem == entityItem"
+                },
+                {
+                    "command": "oak-assistant.create-oak-component",
+                    "group": "navigation",
+                    "when": "view == oak-entities && viewItem == componentsItem"
+                },
+                {
+                    "command": "oak-entities.deleteComponent",
+                    "group": "navigation",
+                    "when": "view == oak-entities && viewItem == componentItem"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "oak-entities.toggleShowAllEntities",
+                    "group": "navigation",
+                    "when": "view == oak-entities"
+                }
+            ]
         },
-        {
-          "command": "oak-assistant.create-oak-component",
-          "group": "navigation",
-          "when": "view == oak-entities && viewItem == componentsItem"
+        "views": {
+            "oak-entities": [
+                {
+                    "id": "oak-entities",
+                    "name": "Oak Entities"
+                }
+            ]
         },
-        {
-          "command": "oak-entities.deleteComponent",
-          "group": "navigation",
-          "when": "view == oak-entities && viewItem == componentItem"
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "icon": "assets/oak-icon.svg",
+                    "id": "oak-entities",
+                    "title": "Oak Entities"
+                }
+            ]
         }
-      ],
-      "view/title": [
-        {
-          "command": "oak-entities.toggleShowAllEntities",
-          "group": "navigation",
-          "when": "view == oak-entities"
-        }
-      ]
     },
-    "views": {
-      "oak-entities": [
-        {
-          "id": "oak-entities",
-          "name": "Oak Entities"
-        }
-      ]
+    "dependencies": {
+        "glob": "^11.0.0",
+        "handlebars": "^4.7.8",
+        "lodash": "^4.17.21",
+        "vscode-languageclient": "^9.0.1",
+        "vscode-languageserver": "^9.0.1",
+        "vscode-languageserver-textdocument": "^1.0.12"
     },
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "icon": "assets/oak-icon.svg",
-          "id": "oak-entities",
-          "title": "Oak Entities"
-        }
-      ]
-    }
-  },
-  "dependencies": {
-    "glob": "^11.0.0",
-    "handlebars": "^4.7.8",
-    "lodash": "^4.17.21",
-    "vscode-languageclient": "^9.0.1",
-    "vscode-languageserver": "^9.0.1",
-    "vscode-languageserver-textdocument": "^1.0.12"
-  },
-  "description": "OAK框架辅助开发插件",
-  "devDependencies": {
-    "@types/lodash": "^4.17.12",
-    "@types/mocha": "^10.0.8",
-    "@types/node": "20.x",
-    "@types/node-schedule": "^2.1.7",
-    "@types/vscode": "^1.94.0",
-    "@typescript-eslint/eslint-plugin": "^8.7.0",
-    "@typescript-eslint/parser": "^8.7.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
-    "@vscode/vsce": "^3.2.0",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.11.1",
-    "npm-run-all": "^4.1.5",
-    "oak-domain": "^5.1.6",
-    "typescript": "^5.6.2"
-  },
-  "displayName": "oak-assistant",
-  "engines": {
-    "vscode": "^1.94.0"
-  },
-  "icon": "assets/oak_tree.png",
-  "main": "./dist/extension.js",
-  "name": "oak-assistant",
-  "publisher": "QCQCQC",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/pqcqaq/oak-assistant"
-  },
-  "scripts": {
-    "check-types": "tsc --noEmit",
-    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
-    "compile-tests": "tsc -p . --outDir out",
-    "lint": "eslint src",
-    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
-    "package:vsce": "pnpm vsce package --no-dependencies",
-    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
-    "test": "vscode-test",
-    "vscode:prepublish": "pnpm run package",
-    "watch": "npm-run-all -p watch:*",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "watch:esbuild": "node esbuild.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "publish": "vsce publish --no-dependencies"
-  },
-  "version": "0.5.2"
+    "description": "OAK框架辅助开发插件",
+    "devDependencies": {
+        "@types/lodash": "^4.17.12",
+        "@types/mocha": "^10.0.8",
+        "@types/node": "20.x",
+        "@types/node-schedule": "^2.1.7",
+        "@types/vscode": "^1.94.0",
+        "@typescript-eslint/eslint-plugin": "^8.7.0",
+        "@typescript-eslint/parser": "^8.7.0",
+        "@vscode/test-cli": "^0.0.10",
+        "@vscode/test-electron": "^2.4.1",
+        "@vscode/vsce": "^3.2.0",
+        "esbuild": "^0.24.0",
+        "eslint": "^9.11.1",
+        "npm-run-all": "^4.1.5",
+        "oak-domain": "^5.1.6",
+        "typescript": "^5.6.2"
+    },
+    "displayName": "oak-assistant",
+    "engines": {
+        "vscode": "^1.94.0"
+    },
+    "icon": "assets/oak_tree.png",
+    "main": "./dist/extension.js",
+    "name": "oak-assistant",
+    "publisher": "QCQCQC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/pqcqaq/oak-assistant"
+    },
+    "scripts": {
+        "check-types": "tsc --noEmit",
+        "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+        "compile-tests": "tsc -p . --outDir out",
+        "lint": "eslint src",
+        "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+        "package:vsce": "pnpm vsce package --no-dependencies",
+        "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+        "test": "vscode-test",
+        "vscode:prepublish": "pnpm run package",
+        "watch": "npm-run-all -p watch:*",
+        "watch-tests": "tsc -p . -w --outDir out",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "publish": "vsce publish --no-dependencies"
+    },
+    "version": "0.5.2"
 }

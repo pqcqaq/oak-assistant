@@ -283,7 +283,7 @@ export class CheckerItem extends TreeItem {
         public readonly checker: CheckerInfo,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState
     ) {
-        super(`${checker.action.join(',')}`, collapsibleState);
+        super(`${checker.action.join(',')}-${checker.type}`, collapsibleState);
         this.contextValue = 'checkerItem'; // 添加这行，用于识别右键菜单项
         // 命令点击后跳转到指定文件的指定位置
         const args = {

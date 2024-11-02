@@ -734,22 +734,27 @@ export const checkChecker = (
                             ts.isStringLiteral(child.expression) ||
                             ts.isObjectLiteralExpression(child.expression)
                         ) {
-                            // 如果返回值是0，就跳过
-                            if (ts.isNumericLiteral(child.expression)) {
-                                if (child.expression.text === '0') {
-                                    return;
-                                }
-                            }
+                            // // 如果返回值是0，就跳过
+                            // if (ts.isNumericLiteral(child.expression)) {
+                            //     if (child.expression.text === '0') {
+                            //         return;
+                            //     }
+                            // }
                             diagnostics.push(
                                 createDiagnostic(
                                     checker.tsInfo.sourceFile,
                                     child.getStart(),
                                     child.getEnd(),
                                     'checker.invalidReturn',
-                                    'checker应该返回执行结果，而不是字面量',
+                                    'checker应该返回执行链或者结果',
                                     vscode.DiagnosticSeverity.Warning
                                 )
                             );
+                            // 如果返回值是一个函数调用，继续递归
+                        } else if (ts.isCallExpression(child.expression)) {
+                            ts.forEachChild(child.expression, (c) => {
+                                walkBlock(c);
+                            });
                         }
                     }
                 }
@@ -862,6 +867,10 @@ export const checkChecker = (
                             if (ts.isVariableDeclaration(parent)) {
                                 handleVariable(parent, diagnostics);
                             }
+                            // ArrowFunction
+                            if (ts.isArrowFunction(parent)) {
+                                handleArrowFunc(parent, diagnostics);
+                            }
                         }
                     }
                 }
@@ -872,7 +881,10 @@ export const checkChecker = (
         }
     };
 
-    checkFn(checker.tsInfo.node);
+    if (checker.type !== 'row') {
+        checkFn(checker.tsInfo.node);
+    }
+    // 其他情况另作处理
 
     return {
         uri: checker.path,
@@ -885,7 +897,42 @@ const handleReturn = (
     node: ts.ReturnStatement,
     diagnostics: vscode.Diagnostic[]
 ) => {
-    // context的父节点是return，需要判断在哪里return的，这里先不管
+    // context的父节点是return，需要判断在哪里return的
+    // 如果是pipline的，则ppp是CallExpression
+    // 输出一下内容
+    console.debug(node.getText());
+    const p = node.parent.parent.parent;
+    if (p && ts.isCallExpression(p)) {
+        // 如果是pipline的，则ppp是CallExpression
+        // 这里得到的p是pipline的调用
+        handleContextCallReturnInFuncCall(p, diagnostics);
+    }
+    // 其他情况先不管
+};
+
+const handleArrowFunc = (
+    node: ts.ArrowFunction,
+    diagnostics: vscode.Diagnostic[]
+) => {
+    // context的父节点是箭头函数，按照目前的情况来看，只判断一下是不是pipline的
+    const p = node.parent;
+    if (p && ts.isCallExpression(p)) {
+        // 如果是pipline的，则ppp是CallExpression
+        // 这里得到的p是pipline的调用
+        handleContextCallReturnInFuncCall(p, diagnostics);
+    }
+};
+
+/**
+ *  处理在函数调用中返回了context调用
+ * @param node  函数调用
+ * @param diagnostics  诊断信息
+ */
+const handleContextCallReturnInFuncCall = (
+    node: ts.CallExpression,
+    diagnostics: vscode.Diagnostic[]
+) => {
+    console.debug(node.getText());
 };
 
 const handleVariable = (
@@ -893,7 +940,10 @@ const handleVariable = (
     diagnostics: vscode.Diagnostic[]
 ) => {
     // 首先，不能是{ans} 的解构或者[]的解构
-    if (ts.isArrayBindingPattern(node.name) || ts.isObjectBindingPattern(node.name)) {
+    if (
+        ts.isArrayBindingPattern(node.name) ||
+        ts.isObjectBindingPattern(node.name)
+    ) {
         diagnostics.push(
             createDiagnostic(
                 node.getSourceFile(),
@@ -1069,6 +1119,7 @@ export const getCheckersInfoByEntity = (entity: string): CheckerInfo[] => {
                 action: t.action,
                 entity: t.entity,
                 path: t.path,
+                type: t.type,
                 pos: {
                     start: t.tsInfo.node.getStart(),
                     end: t.tsInfo.node.getEnd(),
