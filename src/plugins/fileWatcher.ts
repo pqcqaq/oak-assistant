@@ -14,7 +14,7 @@ import {
     updateEntityComponent,
 } from '../utils/components';
 import { reloadCachedPathLocale } from '../utils/locales';
-import { updateTriggerByPath } from '../utils/triggers';
+import { loadConfig } from '../utils/oakConfig';
 
 /**
  * 监听指定目录下的所有文件变化
@@ -157,6 +157,7 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
 
     const handleConfigChange = async () => {
         setProjectHome(pathConfig.projectHome);
+        loadConfig();
     };
 
     // 监听oak.config.json文件

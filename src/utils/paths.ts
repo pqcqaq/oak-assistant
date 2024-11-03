@@ -96,10 +96,13 @@ export const isConfigReady = (): boolean => {
 };
 
 export const setProjectHome = (projectHome: string) => {
-    pathConfig.projectHome = projectHome.endsWith('\\')
+    const newHome = projectHome.endsWith('\\')
         ? projectHome.slice(0, -1)
         : projectHome;
-    updateDeounced();
+    if (newHome !== pathConfig.projectHome) {
+        pathConfig.projectHome = newHome;
+        updateDeounced();
+    }
 };
 
 export const isFileInDirectory = (

@@ -6,6 +6,7 @@ import { createProjectProgram } from './ts-utils';
 import { TriggerDef, TriggerInfo } from '../types';
 import fs from 'fs';
 import { debounce, random } from 'lodash';
+import { getLevel } from './oakConfig';
 
 /**
  * 记录主文件当前的trigger程序
@@ -653,7 +654,8 @@ export const checkTrigger = (
                                         c.getStart(),
                                         c.getEnd(),
                                         'trigger.invalidAsync',
-                                        'fn必须是async'
+                                        'fn必须是async',
+                                        getLevel('trigger.onNoAsyncFn')
                                     )
                                 );
                             }
@@ -664,7 +666,8 @@ export const checkTrigger = (
                                     c.getStart(),
                                     c.getEnd(),
                                     'trigger.invalidAsync',
-                                    'fn必须是async'
+                                    'fn必须是async',
+                                    getLevel('trigger.onNoAsyncFn')
                                 )
                             );
                         }
@@ -698,7 +701,8 @@ export const checkTrigger = (
                             child.getStart(),
                             child.getEnd(),
                             'trigger.invalidAsync',
-                            'fn必须是async'
+                            'fn必须是async',
+                            getLevel('trigger.onNoAsyncFn')
                         )
                     );
                 }
@@ -754,7 +758,7 @@ export const checkTrigger = (
                                     child.getEnd(),
                                     'trigger.invalidReturn',
                                     'trigger应该返回执行结果，而不是字面量',
-                                    vscode.DiagnosticSeverity.Warning
+                                    getLevel('trigger.onReturnLiteral')
                                 )
                             );
                         }
@@ -916,7 +920,7 @@ export const checkTrigger = (
                                         child.getEnd(),
                                         'trigger.invalidContextCall',
                                         'context调用应该使用await',
-                                        vscode.DiagnosticSeverity.Warning
+                                        getLevel('trigger.onNoAwaitContext')
                                     )
                                 );
                             }

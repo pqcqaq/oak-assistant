@@ -8,6 +8,7 @@ import { getCachedLocaleItemByKey, getLocalesData } from '../utils/locales';
 import * as vscode from 'vscode';
 import { isLoadingLocale, waitUntilLocaleLoaded } from '../utils/status';
 import fs from 'fs';
+import { getLevel } from '../utils/oakConfig';
 
 // 创建诊断集合
 const diagnosticCollection =
@@ -63,7 +64,7 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                     const diagnostic = new vscode.Diagnostic(
                         range,
                         `locale定义为空: ${key}`,
-                        vscode.DiagnosticSeverity.Warning
+                        getLevel('i18n.onKeyBlank')
                     );
                     // 添加 code 用于区分错误类型
                     diagnostic.code = 'empty_locale';
@@ -79,7 +80,7 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 const diagnostic = new vscode.Diagnostic(
                     range,
                     `找不到对应的locale定义: ${key}`,
-                    vscode.DiagnosticSeverity.Error
+                    getLevel('i18n.onMissingKey')
                 );
                 // 添加 code 用于区分错误类型
                 diagnostic.code = 'missing_locale';

@@ -43,8 +43,12 @@ import {
     deactivateStyleConvert,
 } from './plugins/styleConvert';
 import { initCheckerProgram } from './utils/checkers';
-import { activateCheckerPlugin, deactivateCheckerPlugin } from './plugins/oakCheckers';
+import {
+    activateCheckerPlugin,
+    deactivateCheckerPlugin,
+} from './plugins/oakCheckers';
 import { log } from './utils/logger';
+import { defaultConfig, loadConfig } from './utils/oakConfig';
 
 // 初始化配置
 // 查找工作区的根目录中的oak.config.json文件，排除src和node_modules目录
@@ -67,6 +71,13 @@ const afterPathSet = async () => {
         function: () => Promise<void>;
     }[] = [
         {
+            name: '加载配置信息',
+            description: '加载配置信息',
+            function: async () => {
+                await loadConfig();
+            },
+        },
+        {
             name: '启动worker',
             description: '启动worker线程',
             function: async () => {
@@ -85,14 +96,14 @@ const afterPathSet = async () => {
             name: '扫描组件',
             description: '导入所有组件信息',
             function: async () => {
-                loadComponents();
+                await loadComponents();
             },
         },
         {
             name: '加载I18n信息',
             description: '加载国际化信息',
             function: async () => {
-                preLoadLocales();
+                await preLoadLocales();
             },
         },
         {
@@ -119,8 +130,7 @@ const afterPathSet = async () => {
                     console.log('triggers检查未启用');
                     return;
                 }
-                initTriggerProgram();
-                // startAnaylizeAll(); // 现在只在打开文件的时候检查避免性能损耗
+                await initTriggerProgram();
             },
         },
         // 初始化checker信息
@@ -135,7 +145,7 @@ const afterPathSet = async () => {
                     console.log('checker检查未启用');
                     return;
                 }
-                initCheckerProgram();
+                await initCheckerProgram();
             },
         },
     ];
@@ -246,7 +256,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const rootPath = workspaceFolders[0].uri.fsPath;
             const projectPath = join(rootPath, './');
             // 在根目录下创建oak.config.json文件
-            const content = JSON.stringify({ projectDir: './' }, null, 2);
+            const content = JSON.stringify(defaultConfig, null, 2);
             fs.writeFile(
                 vscode.Uri.file(join(projectPath, 'oak.config.json')),
                 Buffer.from(content)
@@ -255,7 +265,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.window.showInformationMessage(
                     `已将项目主目录设置为: ${projectPath}`
                 );
-                loadPlugin({ projectDir: './' });
+                loadPlugin(defaultConfig);
             });
         }
         return;

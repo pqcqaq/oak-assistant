@@ -9,6 +9,7 @@ import {
     addMethodToMethods,
     getWebComponentPropsData,
 } from '../utils/ts-utils';
+import { getLevel } from '../utils/oakConfig';
 
 // 创建诊断集合
 const diagnosticCollection =
@@ -58,7 +59,7 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 const diagnostic = new vscode.Diagnostic(
                     range,
                     `组件Entity与index.tx定义不一致`,
-                    vscode.DiagnosticSeverity.Error
+                    getLevel('oakComponent.onInvalidEntity')
                 );
                 diagnostic.code = 'invalid_entity';
                 // 详细信息, 提示index.ts中的信息, 这里没有position
@@ -95,7 +96,7 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
             const diagnostic = new vscode.Diagnostic(
                 range,
                 `组件isList与index.tx定义不一致`,
-                vscode.DiagnosticSeverity.Error
+                getLevel('oakComponent.onInvalidIsList')
             );
             diagnostic.code = 'invalid_isList';
             // 详细信息, 提示index.ts中的信息, 这里没有position
@@ -202,7 +203,7 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 const diagnostic = new vscode.Diagnostic(
                     range,
                     `属性${attr.value}未在index.ts中定义`,
-                    vscode.DiagnosticSeverity.Warning
+                    getLevel('oakComponent.onMissingDataAttrs')
                 );
                 diagnostic.code = 'invalid_attr';
                 // 添加元数据
@@ -250,7 +251,7 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 const diagnostic = new vscode.Diagnostic(
                     range,
                     `方法${method.value}未在index.ts中定义`,
-                    vscode.DiagnosticSeverity.Error
+                    getLevel('oakComponent.onMissingMethods')
                 );
                 diagnostic.code = 'invalid_method';
                 // 添加元数据

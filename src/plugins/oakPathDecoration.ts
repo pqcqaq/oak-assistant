@@ -4,6 +4,7 @@ import { join } from 'path';
 import fs from 'fs';
 import { getOakComponentData } from '../utils/components';
 import { onEntityLoaded } from '../utils/status';
+import { getLevel } from '../utils/oakConfig';
 
 let entityName: string | undefined;
 let entityProjections: string[] = [];
@@ -48,7 +49,7 @@ function updateDiagnostics(document: vscode.TextDocument) {
             const diagnostic = new vscode.Diagnostic(
                 range,
                 `实体类：${entityName} 中不存在属性：${projection}`,
-                vscode.DiagnosticSeverity.Error
+                getLevel('oakPath.onInvalidPath')
             );
             diagnostic.code = 'invalid_oak_path';
             diagnostics.push(diagnostic);
