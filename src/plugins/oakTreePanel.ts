@@ -20,11 +20,7 @@ import {
 } from '../utils/checkers';
 
 class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
-    private disposeGlobal: (() => void) | null = null;
-    private disposeComponentSub: (() => void) | null = null;
-    private disposeTriggerSub: (() => void) | null = null;
-    // checker的更新
-    private disposeCheckerSub: (() => void) | null = null;
+    private disposeFns: (() => void)[] = [];
     private showAllEntities: boolean = true; // 控制是否显示全部实体类
 
     // 切换显示全部实体类的方法
@@ -52,19 +48,18 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
     // 初始化方法
     constructor() {
-        this.disposeGlobal = subscribe(() => {
+        this.disposeFns.push(subscribe(() => {
             this.refresh();
-        });
-        this.disposeComponentSub = subscribeAll((name) => {
-            // this.reloadNode(name);
+        }));
+        this.disposeFns.push(subscribeAll((name) => {
             this.refresh();
-        });
-        this.disposeTriggerSub = subscribeTrigger(() => {
+        }));
+        this.disposeFns.push(subscribeTrigger(() => {
             this.refresh();
-        });
-        this.disposeCheckerSub = subscribeChecker(() => {
+        }));
+        this.disposeFns.push(subscribeChecker(() => {
             this.refresh();
-        });
+        }));
     }
 
     getTreeItem(
@@ -153,18 +148,8 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
     // 销毁方法
     dispose() {
-        if (this.disposeGlobal) {
-            this.disposeGlobal();
-        }
-        if (this.disposeComponentSub) {
-            this.disposeComponentSub();
-        }
-        if (this.disposeTriggerSub) {
-            this.disposeTriggerSub();
-        }
-        if (this.disposeCheckerSub) {
-            this.disposeCheckerSub();
-        }
+        this.disposeFns.forEach((fn) => fn());
+        this.disposeFns = [];
     }
 }
 
