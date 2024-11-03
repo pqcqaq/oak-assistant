@@ -21,11 +21,13 @@ import {
 
 class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private disposeFns: (() => void)[] = [];
-    private showAllEntities: boolean = true; // 控制是否显示全部实体类
+    // 控制是否显示全部实体类（默认显示全部）
+    // 1为显示全部，0为仅显示项目中定义的实体类，2为仅显示项目中使用到的实体类
+    private showAllEntities: 0 | 1 | 2 = 1;
 
     // 切换显示全部实体类的方法
     toggleShowAllEntities(): void {
-        this.showAllEntities = !this.showAllEntities;
+        this.showAllEntities = ((this.showAllEntities + 1) % 3) as 0 | 1 | 2;
         this.refresh();
     }
 
@@ -48,18 +50,26 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
     // 初始化方法
     constructor() {
-        this.disposeFns.push(subscribe(() => {
-            this.refresh();
-        }));
-        this.disposeFns.push(subscribeAll((name) => {
-            this.refresh();
-        }));
-        this.disposeFns.push(subscribeTrigger(() => {
-            this.refresh();
-        }));
-        this.disposeFns.push(subscribeChecker(() => {
-            this.refresh();
-        }));
+        this.disposeFns.push(
+            subscribe(() => {
+                this.refresh();
+            })
+        );
+        this.disposeFns.push(
+            subscribeAll((name) => {
+                this.refresh();
+            })
+        );
+        this.disposeFns.push(
+            subscribeTrigger(() => {
+                this.refresh();
+            })
+        );
+        this.disposeFns.push(
+            subscribeChecker(() => {
+                this.refresh();
+            })
+        );
     }
 
     getTreeItem(
@@ -71,41 +81,69 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     getChildren(element?: TreeItem): vscode.ProviderResult<TreeItem[]> {
         // 最顶层
         if (!element) {
-            if (!this.showAllEntities) {
-                const projectEntities = getProjectEntityList();
-                return [
-                    new EntityItem(
-                        `共 ${projectEntities.length} 个实体类`,
-                        vscode.TreeItemCollapsibleState.None
-                    ),
-                    new EntityItem(
-                        '仅显示项目中定义的实体类',
-                        vscode.TreeItemCollapsibleState.None
-                    ),
-                    ...entityConfig.entityNameList
-                        .filter((item) => {
-                            return projectEntities.includes(item);
-                        })
-                        .map((entityName) => {
+            switch (this.showAllEntities) {
+                case 0:
+                    const projectEntities = getProjectEntityList();
+                    return [
+                        new EntityItem(
+                            `共 ${projectEntities.length} 个实体类`,
+                            vscode.TreeItemCollapsibleState.None
+                        ),
+                        new EntityItem(
+                            '仅显示项目中定义的实体类',
+                            vscode.TreeItemCollapsibleState.None
+                        ),
+                        ...entityConfig.entityNameList
+                            .filter((item) => {
+                                return projectEntities.includes(item);
+                            })
+                            .map((entityName) => {
+                                return new EntityItem(
+                                    entityName,
+                                    vscode.TreeItemCollapsibleState.Collapsed
+                                );
+                            }),
+                    ];
+                case 1:
+                    return [
+                        new EntityItem(
+                            `共 ${entityConfig.entityNameList.length} 个实体类`,
+                            vscode.TreeItemCollapsibleState.None
+                        ),
+                        new EntityItem(
+                            '显示全部的实体类',
+                            vscode.TreeItemCollapsibleState.None
+                        ),
+                        ...entityConfig.entityNameList.map((entityName) => {
                             return new EntityItem(
                                 entityName,
                                 vscode.TreeItemCollapsibleState.Collapsed
                             );
                         }),
-                ];
+                    ];
+                case 2:
+                    const usedEntities = getUsedEntityList();
+                    return [
+                        new EntityItem(
+                            `共 ${usedEntities.length} 个实体类`,
+                            vscode.TreeItemCollapsibleState.None
+                        ),
+                        new EntityItem(
+                            '仅显示项目中使用到的实体类',
+                            vscode.TreeItemCollapsibleState.None
+                        ),
+                        ...entityConfig.entityNameList
+                            .filter((item) => {
+                                return usedEntities.includes(item);
+                            })
+                            .map((entityName) => {
+                                return new EntityItem(
+                                    entityName,
+                                    vscode.TreeItemCollapsibleState.Collapsed
+                                );
+                            }),
+                    ];
             }
-            return [
-                new EntityItem(
-                    `共 ${entityConfig.entityNameList.length} 个实体类`,
-                    vscode.TreeItemCollapsibleState.None
-                ),
-                ...entityConfig.entityNameList.map((entityName) => {
-                    return new EntityItem(
-                        entityName,
-                        vscode.TreeItemCollapsibleState.Collapsed
-                    );
-                }),
-            ];
         }
         if (element instanceof EntityItem) {
             const children: TreeItem[] = [];
@@ -151,6 +189,16 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
         this.disposeFns.forEach((fn) => fn());
         this.disposeFns = [];
     }
+}
+
+function getUsedEntityList() {
+    return entityConfig.entityNameList.filter((entityName) => {
+        const componentNums =
+            componentConfig.getEntityComponents(entityName).length;
+        const triggerNums = getTriggerCountByEntity(entityName);
+        const checkerNums = getCheckerCountByEntity(entityName);
+        return componentNums + triggerNums + checkerNums > 0;
+    });
 }
 
 class TreeItem extends vscode.TreeItem {
