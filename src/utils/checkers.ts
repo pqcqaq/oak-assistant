@@ -6,6 +6,7 @@ import { createProjectProgram } from './ts-utils';
 import { CheckerDef, CheckerInfo } from '../types';
 import fs from 'fs';
 import { debounce, random } from 'lodash';
+import { getLevel } from './oakConfig';
 
 /**
  * 记录主文件当前的checker程序
@@ -747,7 +748,7 @@ export const checkChecker = (
                                     child.getEnd(),
                                     'checker.invalidReturn',
                                     'checker应该返回执行链或者结果',
-                                    vscode.DiagnosticSeverity.Warning
+                                    getLevel('checker.onInvalidReturn')
                                 )
                             );
                             // 如果返回值是一个函数调用，继续递归
@@ -951,7 +952,7 @@ const handleVariable = (
                 node.getEnd(),
                 'checker.invalidDestruct',
                 'Checker中的context调用不能是解构赋值',
-                vscode.DiagnosticSeverity.Error
+                getLevel('checker.onInvalidDestructuring')
             )
         );
         return;
@@ -993,7 +994,7 @@ const handleVariable = (
                     node.getEnd(),
                     'checker.invalidPromise',
                     'context调用需要判断是否为Promise',
-                    vscode.DiagnosticSeverity.Error
+                    getLevel("checker.onNeedPromiseCheck")
                 )
             );
         }

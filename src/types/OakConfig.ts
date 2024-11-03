@@ -2,6 +2,15 @@ export type Level = 'ignore' | 'error' | 'warn' | 'info';
 
 export type OakConfiog = {
     projectDir: string;
+    // checker配置
+    checker?: {
+        // 不合法的返回值
+        onInvalidReturn?: Level;
+        // 不能为解构赋值
+        onInvalidDestructuring?: Level;
+        // 需要判断Promise
+        onNeedPromiseCheck?: Level;
+    }
     // 触发器配置
     trigger?: {
         // 返回值为字面量1

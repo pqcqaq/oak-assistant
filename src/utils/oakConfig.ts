@@ -6,6 +6,11 @@ import * as vscode from 'vscode';
 
 export const defaultConfig: OakConfiog = {
     projectDir: './',
+    checker: {
+        onInvalidReturn: "error",
+        onInvalidDestructuring: "error",
+        onNeedPromiseCheck: "error",
+    },
     trigger: {
         onReturnLiteral: 'warn',
         onNoAsyncFn: 'error',
