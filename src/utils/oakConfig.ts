@@ -7,9 +7,9 @@ import * as vscode from 'vscode';
 export const defaultConfig: OakConfiog = {
     projectDir: './',
     checker: {
-        onInvalidReturn: "error",
-        onInvalidDestructuring: "error",
-        onNeedPromiseCheck: "error",
+        onInvalidReturn: 'error',
+        onInvalidDestructuring: 'error',
+        onNeedPromiseCheck: 'error',
     },
     trigger: {
         onReturnLiteral: 'warn',
@@ -102,6 +102,11 @@ export const findValueByKey = (
         }
     }
     return typeof value === 'string' ? value : undefined;
+};
+
+export const notIgnore = (key: string): boolean => {
+    const level = findValueByKey(cachedConfig, key);
+    return level !== 'ignore';
 };
 
 export const getLevel = (

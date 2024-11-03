@@ -6,7 +6,7 @@ import { createProjectProgram } from './ts-utils';
 import { CheckerDef, CheckerInfo } from '../types';
 import fs from 'fs';
 import { debounce, random } from 'lodash';
-import { getLevel } from './oakConfig';
+import { getLevel, notIgnore } from './oakConfig';
 
 /**
  * 记录主文件当前的checker程序
@@ -741,16 +741,17 @@ export const checkChecker = (
                             //         return;
                             //     }
                             // }
-                            diagnostics.push(
-                                createDiagnostic(
-                                    checker.tsInfo.sourceFile,
-                                    child.getStart(),
-                                    child.getEnd(),
-                                    'checker.invalidReturn',
-                                    'checker应该返回执行链或者结果',
-                                    getLevel('checker.onInvalidReturn')
-                                )
-                            );
+                            notIgnore('checker.onInvalidReturn') &&
+                                diagnostics.push(
+                                    createDiagnostic(
+                                        checker.tsInfo.sourceFile,
+                                        child.getStart(),
+                                        child.getEnd(),
+                                        'checker.invalidReturn',
+                                        'checker应该返回执行链或者结果',
+                                        getLevel('checker.onInvalidReturn')
+                                    )
+                                );
                             // 如果返回值是一个函数调用，继续递归
                         } else if (ts.isCallExpression(child.expression)) {
                             ts.forEachChild(child.expression, (c) => {
@@ -945,16 +946,17 @@ const handleVariable = (
         ts.isArrayBindingPattern(node.name) ||
         ts.isObjectBindingPattern(node.name)
     ) {
-        diagnostics.push(
-            createDiagnostic(
-                node.getSourceFile(),
-                node.getStart(),
-                node.getEnd(),
-                'checker.invalidDestruct',
-                'Checker中的context调用不能是解构赋值',
-                getLevel('checker.onInvalidDestructuring')
-            )
-        );
+        notIgnore('checker.onInvalidDestructuring') &&
+            diagnostics.push(
+                createDiagnostic(
+                    node.getSourceFile(),
+                    node.getStart(),
+                    node.getEnd(),
+                    'checker.invalidDestruct',
+                    'Checker中的context调用不能是解构赋值',
+                    getLevel('checker.onInvalidDestructuring')
+                )
+            );
         return;
     }
     // context的父节点是变量声明，需要判断下面有没有identifter instanceof Promise的判断
@@ -987,16 +989,17 @@ const handleVariable = (
             }
         });
         if (!hasPromise) {
-            diagnostics.push(
-                createDiagnostic(
-                    node.getSourceFile(),
-                    node.getStart(),
-                    node.getEnd(),
-                    'checker.invalidPromise',
-                    'context调用需要判断是否为Promise',
-                    getLevel("checker.onNeedPromiseCheck")
-                )
-            );
+            notIgnore('checker.onNeedPromiseCheck') &&
+                diagnostics.push(
+                    createDiagnostic(
+                        node.getSourceFile(),
+                        node.getStart(),
+                        node.getEnd(),
+                        'checker.invalidPromise',
+                        'context调用需要判断是否为Promise',
+                        getLevel('checker.onNeedPromiseCheck')
+                    )
+                );
         }
     };
     walkBlock(block);

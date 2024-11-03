@@ -6,7 +6,7 @@ import { createProjectProgram } from './ts-utils';
 import { TriggerDef, TriggerInfo } from '../types';
 import fs from 'fs';
 import { debounce, random } from 'lodash';
-import { getLevel } from './oakConfig';
+import { getLevel, notIgnore } from './oakConfig';
 
 /**
  * 记录主文件当前的trigger程序
@@ -648,6 +648,20 @@ export const checkTrigger = (
                                 (m) => m.kind === ts.SyntaxKind.AsyncKeyword
                             );
                             if (!isAsync) {
+                                notIgnore('trigger.onNoAsyncFn') &&
+                                    diagnostics.push(
+                                        createDiagnostic(
+                                            trigger.tsInfo.sourceFile,
+                                            c.getStart(),
+                                            c.getEnd(),
+                                            'trigger.invalidAsync',
+                                            'fn必须是async',
+                                            getLevel('trigger.onNoAsyncFn')
+                                        )
+                                    );
+                            }
+                        } else {
+                            notIgnore('trigger.onNoAsyncFn') &&
                                 diagnostics.push(
                                     createDiagnostic(
                                         trigger.tsInfo.sourceFile,
@@ -658,18 +672,6 @@ export const checkTrigger = (
                                         getLevel('trigger.onNoAsyncFn')
                                     )
                                 );
-                            }
-                        } else {
-                            diagnostics.push(
-                                createDiagnostic(
-                                    trigger.tsInfo.sourceFile,
-                                    c.getStart(),
-                                    c.getEnd(),
-                                    'trigger.invalidAsync',
-                                    'fn必须是async',
-                                    getLevel('trigger.onNoAsyncFn')
-                                )
-                            );
                         }
                         fnMeta.block = c.forEachChild((c) => {
                             if (ts.isBlock(c)) {
@@ -695,16 +697,17 @@ export const checkTrigger = (
                     (m) => m.kind === ts.SyntaxKind.AsyncKeyword
                 );
                 if (!async) {
-                    diagnostics.push(
-                        createDiagnostic(
-                            trigger.tsInfo.sourceFile,
-                            child.getStart(),
-                            child.getEnd(),
-                            'trigger.invalidAsync',
-                            'fn必须是async',
-                            getLevel('trigger.onNoAsyncFn')
-                        )
-                    );
+                    notIgnore('trigger.onNoAsyncFn') &&
+                        diagnostics.push(
+                            createDiagnostic(
+                                trigger.tsInfo.sourceFile,
+                                child.getStart(),
+                                child.getEnd(),
+                                'trigger.invalidAsync',
+                                'fn必须是async',
+                                getLevel('trigger.onNoAsyncFn')
+                            )
+                        );
                 }
                 // 检查函数体的内容
                 fnMeta.block = child.body;
@@ -751,16 +754,17 @@ export const checkTrigger = (
                                     return;
                                 }
                             }
-                            diagnostics.push(
-                                createDiagnostic(
-                                    trigger.tsInfo.sourceFile,
-                                    child.getStart(),
-                                    child.getEnd(),
-                                    'trigger.invalidReturn',
-                                    'trigger应该返回执行结果，而不是字面量',
-                                    getLevel('trigger.onReturnLiteral')
-                                )
-                            );
+                            notIgnore('trigger.onReturnLiteral') &&
+                                diagnostics.push(
+                                    createDiagnostic(
+                                        trigger.tsInfo.sourceFile,
+                                        child.getStart(),
+                                        child.getEnd(),
+                                        'trigger.invalidReturn',
+                                        'trigger应该返回执行结果，而不是字面量',
+                                        getLevel('trigger.onReturnLiteral')
+                                    )
+                                );
                         }
                     }
                 }
@@ -913,16 +917,17 @@ export const checkTrigger = (
                                 ) {
                                     return;
                                 }
-                                diagnostics.push(
-                                    createDiagnostic(
-                                        trigger.tsInfo.sourceFile,
-                                        child.getStart(),
-                                        child.getEnd(),
-                                        'trigger.invalidContextCall',
-                                        'context调用应该使用await',
-                                        getLevel('trigger.onNoAwaitContext')
-                                    )
-                                );
+                                notIgnore('trigger.onNoAwaitContext') &&
+                                    diagnostics.push(
+                                        createDiagnostic(
+                                            trigger.tsInfo.sourceFile,
+                                            child.getStart(),
+                                            child.getEnd(),
+                                            'trigger.invalidContextCall',
+                                            'context调用应该使用await',
+                                            getLevel('trigger.onNoAwaitContext')
+                                        )
+                                    );
                             }
                         }
                     }

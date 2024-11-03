@@ -8,7 +8,7 @@ import { getCachedLocaleItemByKey, getLocalesData } from '../utils/locales';
 import * as vscode from 'vscode';
 import { isLoadingLocale, waitUntilLocaleLoaded } from '../utils/status';
 import fs from 'fs';
-import { getLevel } from '../utils/oakConfig';
+import { getLevel, notIgnore } from '../utils/oakConfig';
 
 // 创建诊断集合
 const diagnosticCollection =
@@ -56,6 +56,9 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                     documentLinks.push(documentLink);
                 }
                 if (item.desc === '') {
+                    if (!notIgnore('i18n.onKeyBlank')) {
+                        continue;
+                    }
                     const startPos = document.positionAt(match.index + 2);
                     const endPos = document.positionAt(
                         match.index + match[0].length - 1
@@ -72,6 +75,9 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 }
             } else {
                 // range需要排除掉t(的部分和最后的 ) 部分
+                if (!notIgnore('i18n.onMissingKey')) {
+                    continue;
+                }
                 const startPos = document.positionAt(match.index + 2);
                 const endPos = document.positionAt(
                     match.index + match[0].length - 1

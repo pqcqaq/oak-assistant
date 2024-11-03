@@ -9,7 +9,7 @@ import {
     addMethodToMethods,
     getWebComponentPropsData,
 } from '../utils/ts-utils';
-import { getLevel } from '../utils/oakConfig';
+import { getLevel, notIgnore } from '../utils/oakConfig';
 
 // 创建诊断集合
 const diagnosticCollection =
@@ -53,6 +53,9 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                 diagnostics.push(diagnostic);
             } else {
                 // 进行错误提示
+                if (!notIgnore('oakComponent.onInvalidEntity')) {
+                    return [];
+                }
                 const startPos = document.positionAt(node.entityName.pos.start);
                 const endPos = document.positionAt(node.entityName.pos.end);
                 const range = new vscode.Range(startPos, endPos);
@@ -90,6 +93,9 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
         // 检查isList是否相同
         if (node.isList.value !== componentInfo.isList) {
             // 进行错误提示
+            if (!notIgnore('oakComponent.onInvalidIsList')) {
+                return [];
+            }
             const startPos = document.positionAt(node.isList.pos.start);
             const endPos = document.positionAt(node.isList.pos.end);
             const range = new vscode.Range(startPos, endPos);
@@ -197,6 +203,10 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                         return;
                     }
                 }
+                // 创建错误提示
+                if (!notIgnore('oakComponent.onMissingDataAttrs')) {
+                    return;
+                }
                 const startPos = document.positionAt(attr.pos.start);
                 const endPos = document.positionAt(attr.pos.end);
                 const range = new vscode.Range(startPos, endPos);
@@ -245,6 +255,9 @@ class OakComponentPropsLinkProvider implements vscode.DocumentLinkProvider {
                     ?.map((i) => i.value)
                     .includes(method.value as string)
             ) {
+                if (!notIgnore('oakComponent.onMissingMethods')) {
+                    return;
+                }
                 const startPos = document.positionAt(method.pos.start);
                 const endPos = document.positionAt(method.pos.end);
                 const range = new vscode.Range(startPos, endPos);

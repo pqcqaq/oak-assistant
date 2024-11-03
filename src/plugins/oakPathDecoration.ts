@@ -4,7 +4,7 @@ import { join } from 'path';
 import fs from 'fs';
 import { getOakComponentData } from '../utils/components';
 import { onEntityLoaded } from '../utils/status';
-import { getLevel } from '../utils/oakConfig';
+import { getLevel, notIgnore } from '../utils/oakConfig';
 
 let entityName: string | undefined;
 let entityProjections: string[] = [];
@@ -21,7 +21,6 @@ function updateDiagnostics(document: vscode.TextDocument) {
     let match: RegExpExecArray | null;
 
     while ((match = oakPathRegex.exec(fileText)) !== null) {
-
         if (!entityName) {
             // 提示在非oakComponent中使用oakPath，无法检测
             const startPos = document.positionAt(match.index);
@@ -40,6 +39,10 @@ function updateDiagnostics(document: vscode.TextDocument) {
         const projection = match[1];
 
         if (!entityProjections.includes(projection)) {
+            if (!notIgnore('oakPath.onInvalidPath')) {
+                continue;
+            }
+
             const startPos = document.positionAt(match.index + 16);
             const endPos = document.positionAt(
                 match.index + 16 + projection.length
