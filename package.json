@@ -81,12 +81,12 @@
                 },
                 "oak-assistant.triggerUpdateCount": {
                     "type": "number",
-                    "default": 30,
+                    "default": 255,
                     "description": "触发Trigger重载的最小更新次数"
                 },
                 "oak-assistant.checkerUpdateCount": {
                     "type": "number",
-                    "default": 30,
+                    "default": 255,
                     "description": "触发Trigger重载的最小更新次数"
                 },
                 "oak-assistant.enableTriggerCheck": {
@@ -211,5 +211,5 @@
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
         "publish": "vsce publish --no-dependencies"
     },
-    "version": "0.6.2"
+    "version": "0.6.3"
 }

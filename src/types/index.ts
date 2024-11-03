@@ -172,11 +172,17 @@ export type LocaleData = {
 };
 
 export type NamespaceLocale = {
-    [key: string]: LocaleData;
+    [namespaceName: string]: {
+        zhCNpath: string;
+        locales: LocaleData;
+    };
 };
 
 export type ComponentLocale = {
-    [path: string]: LocaleData;
+    [path: string]: {
+        zhCNpath: string;
+        locales: LocaleData;
+    };
 };
 
 export type LocaleDef = {
@@ -190,4 +196,5 @@ export type LocaleItem = {
     value: string;
     desc: string;
     path: string;
+    zhCnFile: string;
 };

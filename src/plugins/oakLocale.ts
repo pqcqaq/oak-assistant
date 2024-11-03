@@ -1,20 +1,12 @@
 import {
     addKeyToLocale,
     addLocaleToData,
-    getAvailableKeys,
+    getLocaleItem,
 } from './../utils/locales';
 import { join } from 'path';
-import {
-    getCachedLocaleItemByKey,
-    getLocalesData,
-    isKeyExist,
-} from '../utils/locales';
+import { getCachedLocaleItemByKey, getLocalesData } from '../utils/locales';
 import * as vscode from 'vscode';
-import {
-    isLoadingLocale,
-    onEntityLoaded,
-    waitUntilLocaleLoaded,
-} from '../utils/status';
+import { isLoadingLocale, waitUntilLocaleLoaded } from '../utils/status';
 import fs from 'fs';
 
 // 创建诊断集合
@@ -29,12 +21,14 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
         const text = document.getText();
         const tCallRegex = /(?<![a-zA-Z])t\(['"`]([^'"`]*)['"`]\)/g;
         const documentLinks: vscode.DocumentLink[] = [];
+        const diagnostics: vscode.Diagnostic[] = [];
         let match;
 
         if (isLoadingLocale()) {
             await waitUntilLocaleLoaded();
         }
 
+        getLocalesData(join(document.uri.fsPath, '../locales'));
         while ((match = tCallRegex.exec(text)) !== null) {
             const key = match[1];
 
@@ -42,7 +36,8 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 continue;
             }
 
-            if (isKeyExist(key)) {
+            const item = getLocaleItem(key);
+            if (item) {
                 const localePath = getCachedLocaleItemByKey(key);
                 if (localePath && localePath.path) {
                     const startPos = document.positionAt(match.index + 2);
@@ -50,24 +45,49 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                         match.index + match[0].length - 1
                     );
                     const range = new vscode.Range(startPos, endPos);
-
-                    let filePath = join(localePath.path, 'zh_CN.json');
-                    if (!fs.existsSync(filePath)) {
-                        filePath = join(localePath.path, 'zh-CN.json');
-                    }
-
                     const documentLink = new vscode.DocumentLink(
                         range,
-                        vscode.Uri.file(filePath)
+                        vscode.Uri.file(localePath.zhCnFile)
                     );
                     documentLink.tooltip = localePath.desc
                         ? `CN: ${localePath.desc}`
                         : `[未找到中文] 跳转到定义`;
                     documentLinks.push(documentLink);
                 }
+                if (item.desc === '') {
+                    const startPos = document.positionAt(match.index + 2);
+                    const endPos = document.positionAt(
+                        match.index + match[0].length - 1
+                    );
+                    const range = new vscode.Range(startPos, endPos);
+                    const diagnostic = new vscode.Diagnostic(
+                        range,
+                        `locale定义为空: ${key}`,
+                        vscode.DiagnosticSeverity.Warning
+                    );
+                    // 添加 code 用于区分错误类型
+                    diagnostic.code = 'empty_locale';
+                    diagnostics.push(diagnostic);
+                }
+            } else {
+                // range需要排除掉t(的部分和最后的 ) 部分
+                const startPos = document.positionAt(match.index + 2);
+                const endPos = document.positionAt(
+                    match.index + match[0].length - 1
+                );
+                const range = new vscode.Range(startPos, endPos);
+                const diagnostic = new vscode.Diagnostic(
+                    range,
+                    `找不到对应的locale定义: ${key}`,
+                    vscode.DiagnosticSeverity.Error
+                );
+                // 添加 code 用于区分错误类型
+                diagnostic.code = 'missing_locale';
+                diagnostics.push(diagnostic);
             }
         }
 
+        diagnosticCollection.set(document.uri, diagnostics);
         return documentLinks;
     }
 }
@@ -132,74 +152,6 @@ const oakLocalesProvider = vscode.languages.registerCompletionItemProvider(
     '(',
     '`'
 );
-
-// 添加文档变化监听器
-const documentChangeListener = vscode.workspace.onDidChangeTextDocument(
-    (event) => {
-        if (event.document.languageId === 'typescriptreact') {
-            validateDocument(event.document);
-        }
-    }
-);
-
-// 添加文档打开监听器
-const documentOpenListener = vscode.workspace.onDidOpenTextDocument(
-    (document) => {
-        if (document.languageId === 'typescriptreact') {
-            validateDocument(document);
-        }
-    }
-);
-
-// 在切换窗口的时候调用一次getLocalesData
-vscode.window.onDidChangeActiveTextEditor((editor) => {
-    if (editor) {
-        const document = editor.document;
-        if (document.languageId === 'typescriptreact') {
-            getLocalesData(join(document.uri.fsPath, '../locales'));
-            validateDocument(document);
-        }
-    }
-});
-
-async function validateDocument(document: vscode.TextDocument) {
-    const diagnostics: vscode.Diagnostic[] = [];
-    const text = document.getText();
-    // 修改正则表达式以正确匹配 t 函数调用
-    const tCallRegex = /(?<![a-zA-Z])t\(['"`]([^'"`]*)['"`]\)/g;
-    let match;
-
-    if (isLoadingLocale()) {
-        await waitUntilLocaleLoaded();
-    }
-
-    while ((match = tCallRegex.exec(text)) !== null) {
-        const key = match[1];
-
-        if (key.includes('${')) {
-            continue;
-        }
-
-        if (!isKeyExist(key)) {
-            // range需要排除掉t(的部分和最后的 ) 部分
-            const startPos = document.positionAt(match.index + 2);
-            const endPos = document.positionAt(
-                match.index + match[0].length - 1
-            );
-            const range = new vscode.Range(startPos, endPos);
-            const diagnostic = new vscode.Diagnostic(
-                range,
-                `找不到对应的locale定义: ${key}`,
-                vscode.DiagnosticSeverity.Error
-            );
-            // 添加 code 用于区分错误类型
-            diagnostic.code = 'missing_locale';
-            diagnostics.push(diagnostic);
-        }
-    }
-
-    diagnosticCollection.set(document.uri, diagnostics);
-}
 
 const addLocaleActionProvider = vscode.languages.registerCodeActionsProvider(
     'typescriptreact',
@@ -293,8 +245,6 @@ export function activateOakLocale(context: vscode.ExtensionContext) {
         return;
     }
     context.subscriptions.push(oakLocalesProvider);
-    context.subscriptions.push(documentChangeListener);
-    context.subscriptions.push(documentOpenListener);
     context.subscriptions.push(diagnosticCollection);
     context.subscriptions.push(documentLinkProvider);
     context.subscriptions.push(addLocaleActionProvider);
@@ -305,8 +255,6 @@ export function activateOakLocale(context: vscode.ExtensionContext) {
 export function deactivateOakLocale() {
     diagnosticCollection.clear();
     diagnosticCollection.dispose();
-    documentChangeListener.dispose();
-    documentOpenListener.dispose();
     documentLinkProvider.dispose();
     addLocaleActionProvider.dispose();
     addLocaleCommand.dispose();
@@ -329,13 +277,5 @@ vscode.workspace.onDidChangeConfiguration((event) => {
                     );
                 }
             });
-    }
-});
-
-onEntityLoaded(() => {
-    // 第一次加载完先激活一次
-    if (vscode.window.activeTextEditor) {
-        diagnosticCollection.clear();
-        validateDocument(vscode.window.activeTextEditor.document);
     }
 });

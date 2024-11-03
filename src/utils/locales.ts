@@ -39,7 +39,8 @@ const locales: LocaleDef = {
             const norKey = normalizePath(key as string);
             target[norKey] = value;
             cachedLocaleItems.components[norKey] = getLocaleItemsByPath(
-                key as string
+                key as string,
+                target[norKey].zhCNpath
             );
             return true;
         },
@@ -92,11 +93,19 @@ export const getAvailableKeys = (
  * @param path      路径
  * @returns  返回一个LocaleData
  */
-export const getLocalesByPath = (path: string): LocaleData => {
+export const getLocalesByPath = (
+    path: string
+): {
+    path: string;
+    data: LocaleData;
+} => {
     // 在当前目录的zh_CN.json文件或者zh-CN.json文件
     const localePath = join(path);
     if (!fs.existsSync(localePath)) {
-        return {};
+        return {
+            path: localePath,
+            data: {} as LocaleData,
+        };
     }
     // 文件夹存在，查找文件
     const files = glob.sync(`{zh_CN.json,zh-CN.json}`, {
@@ -104,17 +113,26 @@ export const getLocalesByPath = (path: string): LocaleData => {
     });
     // 没有找到中文locale文件, 返回空对象
     if (files.length === 0) {
-        return {};
+        return {
+            path: localePath,
+            data: {} as LocaleData,
+        };
     }
     // 只能有一个定义的中文
     if (files.length !== 1) {
         vscode.window.showErrorMessage(
             `错误：在${localePath}中找到多个中文locale文件`
         );
-        return {};
+        return {
+            path: localePath,
+            data: {} as LocaleData,
+        };
     }
     const localeFile = join(localePath, files[0]);
-    return JSON.parse(fs.readFileSync(localeFile, 'utf-8'));
+    return {
+        path: localeFile,
+        data: JSON.parse(fs.readFileSync(localeFile, 'utf-8')),
+    };
 };
 
 export const findValueByKey = (
@@ -139,7 +157,7 @@ export const findValueByKey = (
  * @param key  key
  * @returns  返回一个string
  */
-const getLocaleItem = (key: string): LocaleItem | undefined => {
+export const getLocaleItem = (key: string): LocaleItem | undefined => {
     // 如果是namespace，则为xxxx::开头
     if (key.includes('::')) {
         // 从cachedLocaleItems中找到对应的值
@@ -179,7 +197,7 @@ const getNamespacedLocaleItems = (
     console.log('更新namespacedItems缓存', namespaceName);
     return {
         [namespaceName]: getAvailableKeys(
-            locales.namespaced[namespaceName],
+            locales.namespaced[namespaceName].locales,
             `${namespaceName}::`
         ).map((key) => {
             return {
@@ -187,10 +205,11 @@ const getNamespacedLocaleItems = (
                 value: key,
                 desc:
                     findValueByKey(
-                        locales.namespaced[namespaceName],
+                        locales.namespaced[namespaceName].locales,
                         key.split('::')[1]
                     ) || '',
                 path: join(pathConfig.localesHome, namespaceName),
+                zhCnFile: locales.namespaced[namespaceName].zhCNpath,
             };
         }),
     };
@@ -219,6 +238,7 @@ const getEntityLocaleItems = (
                             key.split(':')[1]
                         ) || '',
                     path: getEntityLocalePath(key.split(':')[0]),
+                    zhCnFile: join(getEntityLocalePath(name), 'zh_CN.json'),
                 };
             }
         ),
@@ -231,21 +251,19 @@ const getEntityLocaleItems = (
  * @returns  返回一个LocaleItem数组
  * 只能在proxy中使用
  */
-const getLocaleItemsByPath = (path: string): LocaleItem[] => {
+const getLocaleItemsByPath = (path: string, filePath: string): LocaleItem[] => {
     // console.log('更新componentItems缓存', path);
     const norPath = normalizePath(path);
-    return getAvailableKeys(locales.components[norPath]).map((key) => {
+    return getAvailableKeys(locales.components[norPath].locales).map((key) => {
         return {
             label: key,
             value: key,
-            desc: findValueByKey(locales.components[norPath], key) || '',
+            desc:
+                findValueByKey(locales.components[norPath].locales, key) || '',
             path,
+            zhCnFile: filePath,
         };
     });
-};
-
-export const isKeyExist = (key: string): boolean => {
-    return !!getLocaleItem(key);
 };
 
 const isPathCached = (path: string): boolean => {
@@ -254,7 +272,11 @@ const isPathCached = (path: string): boolean => {
 };
 
 const updatePathCached = (path: string) => {
-    locales.components[path] = getLocalesByPath(path);
+    const got = getLocalesByPath(path);
+    locales.components[path] = {
+        locales: got.data || {},
+        zhCNpath: got.path,
+    };
 };
 
 const getCachedComponentItems = (path: string): LocaleItem[] => {
@@ -314,7 +336,10 @@ const setNameSpaceLocales = () => {
     });
     dirs.map((dir) => {
         const localesGet = getLocalesByPath(join(localePath, dir));
-        locales.namespaced[dir] = localesGet;
+        locales.namespaced[dir] = {
+            locales: localesGet.data,
+            zhCNpath: localesGet.path,
+        };
     });
 };
 
@@ -348,7 +373,10 @@ export const preLoadLocales = () => {
 
 export const reloadCachedPathLocale = (path: string) => {
     const norPath = normalizePath(join(path, '..'));
-    locales.components[norPath] = {};
+    locales.components[norPath] = {
+        zhCNpath: '',
+        locales: {},
+    };
     updatePathCached(norPath);
 };
 
@@ -428,7 +456,7 @@ export const addKeyToLocale = (
         // 写入文件
         fs.writeFileSync(localeFilePath, JSON.stringify(localeData, null, 2));
         // 更新缓存
-        locales.namespaced[namespace] = localeData;
+        locales.namespaced[namespace].locales = localeData;
         return {
             path: localeFilePath,
         };
