@@ -12,6 +12,93 @@ oak框架适配性插件，为你的开发助力！
 
 ### 那么你就需要这个插件，来加速Oak项目的开发
 
+
+
+## 配置项
+
+```json
+{
+  "projectDir": "./",
+  "checker": {
+    "onInvalidReturn": "warn",
+    "onInvalidDestructuring": "error",
+    "onNeedPromiseCheck": "error"
+  },
+  "trigger": {
+    "onReturnLiteral": "warn",
+    "onNoAsyncFn": "error",
+    "onNoAwaitContext": "error"
+  },
+  "i18n": {
+    "onMissingKey": "error",
+    "onKeyBlank": "warn"
+  },
+  "oakComponent": {
+    "onInvalidEntity": "error",
+    "onInvalidIsList": "error",
+    "onMissingDataAttrs": "warn",
+    "onMissingMethods": "error"
+  },
+  "oakPath": {
+    "onInvalidPath": "error"
+  }
+}
+```
+
+- 类型：
+
+    ```ts
+    export type Level = 'ignore' | 'error' | 'warn' | 'info';
+    
+    export type OakConfiog = {
+        projectDir: string;
+        // checker配置
+        checker?: {
+            // 不合法的返回值(checker应该返回执行链或者结果)
+            onInvalidReturn?: Level;
+            // 不能为解构赋值(context调用不能解构)
+            onInvalidDestructuring?: Level;
+            // 需要判断Promise(context调用必须判断是否为Promise)
+            onNeedPromiseCheck?: Level;
+        }
+        // 触发器配置
+        trigger?: {
+            // 返回值为字面量1
+            onReturnLiteral?: Level;
+            // fn不是async
+            onNoAsyncFn?: Level;
+            // 没有await context
+            onNoAwaitContext?: Level;
+        };
+        // i18n配置
+        i18n?: {
+            // 缺少key
+            onMissingKey?: Level;
+            // key为空
+            onKeyBlank?: Level;
+        };
+        // oak组件配置
+        oakComponent?: {
+            // entity无效
+            onInvalidEntity?: Level;
+            // isList无效
+            onInvalidIsList?: Level;
+            // 缺少data属性
+            onMissingDataAttrs?: Level;
+            // 缺少方法
+            onMissingMethods?: Level;
+        };
+        // oak路径配置
+        oakPath?: {
+            // 路径无效
+            onInvalidPath?: Level;
+        };
+    };
+    
+    ```
+
+    
+
 ## 功能
 
 1. Panel面板
