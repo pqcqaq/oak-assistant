@@ -193,6 +193,10 @@ class OakTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
 function getUsedEntityList() {
     return entityConfig.entityNameList.filter((entityName) => {
+        const projectEntities = getProjectEntityList();
+        if (projectEntities.includes(entityName)) {
+            return true;
+        }
         const componentNums =
             componentConfig.getEntityComponents(entityName).length;
         const triggerNums = getTriggerCountByEntity(entityName);
