@@ -123,7 +123,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
                             fs.readFileSync(configPath, 'utf-8')
                         );
                     } catch (e) {
-                        console.log('读取配置文件失败', e);
+                        console.log('读取配置文件失败:', configPath, e);
                     }
                 }
                 let formDataAttrs: DocumentValue[] = [];

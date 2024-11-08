@@ -509,6 +509,11 @@ export const updateCheckerByPath = (path: string) => {
     updateCount++;
 
     const norPath = normalizePath(path);
+
+    if(!norPath.startsWith(pathConfig.checkerHome)){
+        return;
+    }
+
     if (!checkerProgram) {
         console.error('checker program not initialized');
         return;
@@ -570,7 +575,7 @@ export const updateCheckerByPath = (path: string) => {
     // 获取更新后的 SourceFile
     const updatedSourceFile = checkerProgram.getSourceFile(norPath);
     if (!updatedSourceFile) {
-        console.error('Updated source file not found');
+        console.error('Updated checker source file not found:', norPath);
         return;
     }
 

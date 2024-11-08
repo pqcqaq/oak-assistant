@@ -16,7 +16,6 @@
 				"${workspaceFolder}/dist/**/*.js"
 			],
 			"preLaunchTask": "${defaultBuildTask}",
-			"cwd": "${fileDirname}"
 		}
 	]
 }

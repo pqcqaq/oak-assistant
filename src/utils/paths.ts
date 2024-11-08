@@ -1,4 +1,9 @@
 import { debounce, random } from 'lodash';
+import os from "os";
+
+// 如果系统是windows，首先采用\\ 否则默认使用/
+
+const delimiter: string = os.platform() === 'win32' ? '\\' : '/';
 
 export const pluginPaths: {
     root: string;
@@ -6,21 +11,21 @@ export const pluginPaths: {
 } = {
     root: __dirname,
     get templates() {
-        return `${this.root}\\templates`;
+        return `${this.root}${delimiter}templates`;
     },
 };
 
 console.log('plugin inited:', pluginPaths);
 
 export const internalPath = {
-    entities: 'src\\entities',
-    triggers: 'src\\triggers',
-    checkers: 'src\\checkers',
-    pages: 'src\\pages',
-    namespaces: 'web\\src\\app\\namespaces',
-    oakAppDomain: 'src\\oak-app-domain',
-    components: 'src\\components',
-    locales: 'src\\locales',
+    entities: `src${delimiter}entities`,
+    triggers: `src${delimiter}triggers`,
+    checkers: `src${delimiter}checkers`,
+    pages: `src${delimiter}pages`,
+    namespaces: `web${delimiter}src${delimiter}app${delimiter}namespaces`,
+    oakAppDomain: `src${delimiter}oak-app-domain`,
+    components: `src${delimiter}components`,
+    locales: `src${delimiter}locales`,
 };
 
 export const pathConfig: {
@@ -36,28 +41,28 @@ export const pathConfig: {
 } = {
     projectHome: '',
     get entityHome() {
-        return `${this.projectHome}\\${internalPath.entities}`;
+        return `${this.projectHome}${delimiter}${internalPath.entities}`;
     },
     get triggerHome() {
-        return `${this.projectHome}\\${internalPath.triggers}`;
+        return `${this.projectHome}${delimiter}${internalPath.triggers}`;
     },
     get checkerHome() {
-        return `${this.projectHome}\\${internalPath.checkers}`;
+        return `${this.projectHome}${delimiter}${internalPath.checkers}`;
     },
     get pagesHome() {
-        return `${this.projectHome}\\${internalPath.pages}`;
+        return `${this.projectHome}${delimiter}${internalPath.pages}`;
     },
     get namespacesHome() {
-        return `${this.projectHome}\\${internalPath.namespaces}`;
+        return `${this.projectHome}${delimiter}${internalPath.namespaces}`;
     },
     get oakAppDomainHome() {
-        return `${this.projectHome}\\${internalPath.oakAppDomain}`;
+        return `${this.projectHome}${delimiter}${internalPath.oakAppDomain}`;
     },
     get componentsHome() {
-        return `${this.projectHome}\\${internalPath.components}`;
+        return `${this.projectHome}${delimiter}${internalPath.components}`;
     },
     get localesHome() {
-        return `${this.projectHome}\\${internalPath.locales}`;
+        return `${this.projectHome}${delimiter}${internalPath.locales}`;
     },
 };
 
@@ -65,7 +70,13 @@ export const pathConfig: {
 const subscribers: Map<number, () => void> = new Map();
 
 const updateDeounced = debounce(() => {
-    subscribers.forEach((callback) => callback());
+    subscribers.forEach((callback) => {
+        try {
+            callback();
+        } catch(e) {
+            console.log("error", e);
+        }
+    });
 }, 100);
 
 export const subscribe = (callback: () => void) => {
@@ -96,7 +107,7 @@ export const isConfigReady = (): boolean => {
 };
 
 export const setProjectHome = (projectHome: string) => {
-    const newHome = projectHome.endsWith('\\')
+    const newHome = (projectHome.endsWith('\\') || projectHome.endsWith('/'))
         ? projectHome.slice(0, -1)
         : projectHome;
     if (newHome !== pathConfig.projectHome) {
@@ -147,8 +158,8 @@ export function normalizePath(path: string): string {
     }
 
     // 拼接规范化后的路径
-    const outPath = normalizedParts.join('\\');
-    return outPath.endsWith('\\') ? outPath.slice(0, -1) : outPath;
+    const outPath = normalizedParts.join(delimiter);
+    return outPath.endsWith(delimiter) ? outPath.slice(0, -1) : outPath;
 }
 
 // 判断一个路径是不是相对路径

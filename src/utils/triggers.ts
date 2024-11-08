@@ -516,6 +516,11 @@ export const updateTriggerByPath = (path: string) => {
     updateCount++;
 
     const norPath = normalizePath(path);
+
+    if(!norPath.startsWith(pathConfig.triggerHome)){
+        return;
+    }
+
     if (!triggerProgram) {
         console.error('trigger program not initialized');
         return;
@@ -577,7 +582,7 @@ export const updateTriggerByPath = (path: string) => {
     // 获取更新后的 SourceFile
     const updatedSourceFile = triggerProgram.getSourceFile(norPath);
     if (!updatedSourceFile) {
-        console.error('Updated source file not found');
+        console.error('Updated trigger source file not found:', norPath);
         return;
     }
 
