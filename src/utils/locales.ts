@@ -15,6 +15,7 @@ import { entityConfig, getEntityLocalePath, subscribeEntity } from './entities';
 import { normalizePath, pathConfig, subscribe as subsPath } from './paths';
 import { setLoadingLocale } from './status';
 import { componentConfig } from './components';
+import assert from 'assert';
 
 const locales: LocaleDef = {
     namespaced: new Proxy({} as NamespaceLocale, {
@@ -465,9 +466,8 @@ export const addKeyToLocale = (
             error: '暂不支持entity的locales编辑',
         };
     }
-    return {
-        error: '这个函数只用于处理namespace的locales',
-    };
+   
+    assert(false, '不应该走到这里');
 };
 
 subscribeEntity('#all', (name) => {
