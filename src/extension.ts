@@ -280,7 +280,7 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
     const projectHome = join(uri.fsPath, '..', config.projectDir);
-    log('projectHome:', projectHome);
+    log('log', 'projectHome:', projectHome);
     // 设置projectHome
     setProjectHome(projectHome);
     // 通知已经启用

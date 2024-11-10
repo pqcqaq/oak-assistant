@@ -69,6 +69,49 @@ const esbuildProblemMatcherPlugin = {
     },
 };
 
+/**
+ * @type {import('esbuild').Plugin}
+ */
+const loggerPlugin = {
+    name: 'logger-plugin',
+    setup(build) {
+        build.onLoad({ filter: /\.ts$/ }, async (args) => {
+            if (
+                ['logger.ts', 'analyzeWorker.ts'].includes(
+                    path.basename(args.path)
+                )
+            ) {
+                return;
+            }
+
+            const contents = await fs.readFile(args.path, 'utf8');
+            const transformed = contents.replace(
+                /(console\.)(log|error|warn)\(/g,
+                (match, p1, p2) => {
+                    const method =
+                        p2 === 'log'
+                            ? 'log'
+                            : p2 === 'error'
+                            ? 'error'
+                            : 'warn';
+
+                    console.log(
+                        `transform: ${path.basename(
+                            args.path
+                        )} ${match} to oakLogger.${method}(`
+                    );
+
+                    return `oakLogger.${method}(`;
+                }
+            );
+
+            // 添加import oakLogger from './oakLogger';
+            const contentsAdd = `import oakLogger from '@/utils/logger';\n${transformed}`;
+            return { contents: contentsAdd, loader: 'ts' };
+        });
+    },
+};
+
 async function main() {
     const ctx = await esbuild.context({
         entryPoints: [
@@ -94,7 +137,12 @@ async function main() {
             /* add to the end of plugins array */
             esbuildProblemMatcherPlugin,
             copyTemplatesPlugin,
+            loggerPlugin,
         ],
+        // 路径别名
+        alias: {
+            '@': path.resolve(__dirname, 'src'),
+        },
     });
     if (watch) {
         await ctx.watch();

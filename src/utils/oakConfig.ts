@@ -79,7 +79,6 @@ export const loadConfig = () => {
     const content = fs.readFileSync(path, 'utf-8');
     const config = JSON.parse(content);
     cachedConfig = deepMergeObject(defaultConfig, config);
-
     console.log('load config:', cachedConfig);
 };
 
