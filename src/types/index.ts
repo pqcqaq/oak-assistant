@@ -31,12 +31,17 @@ export type LocaleTemplate = {};
 
 export type StyleLessTemplate = {};
 
+export type IndexXmlTemplate = {
+    componentName: string;
+};
+
 export type CreateOakComponent = {
     index: IndexTsTemplate;
     webPcTsx: ComponentTemplate;
     webTsx: ComponentTemplate;
     localeZhCN: LocaleTemplate;
     styleLess: StyleLessTemplate;
+    indexXml: IndexXmlTemplate;
 };
 
 type Language = 'zh_CN' | 'en_US';

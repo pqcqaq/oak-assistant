@@ -77,6 +77,8 @@ export const generateTemplate = (
     outPath: string,
     config: CreateComponentConfig
 ) => {
+    const componentName = toUpperFirst(config.folderName);
+
     const data: CreateOakComponent = {
         index: {
             entityName: config.entityName,
@@ -85,17 +87,20 @@ export const generateTemplate = (
             projectionFields: genProjections(config.entityName),
         },
         webPcTsx: {
-            componentName: toUpperFirst(config.folderName),
+            componentName,
             entityName: config.entityName,
             isList: config.isList,
         },
         webTsx: {
-            componentName: toUpperFirst(config.folderName),
+            componentName,
             entityName: config.entityName,
             isList: config.isList,
         },
         localeZhCN: {},
         styleLess: {},
+        indexXml: {
+            componentName,
+        },
     };
     // render文件
     config.renderFile.includes('web.pc.tsx') &&
@@ -104,6 +109,8 @@ export const generateTemplate = (
         outputTemplate('webTsx', data.webTsx, outPath);
     config.renderFile.includes('index.xml') &&
         outputTemplate('indexXml', {}, outPath);
+    config.renderFile.includes('index.xml') &&
+        outputTemplate('indexLess', {}, outPath);
     config.renderFile.includes('render.native.tsx') &&
         outputTemplate('renderNativeTsx', {}, outPath);
     config.renderFile.includes('render.ios.tsx') &&
@@ -116,7 +123,9 @@ export const generateTemplate = (
         outputTemplate('indexJson', {}, outPath);
     // 其他文件
     outputTemplate('localeZhCN', data.localeZhCN, outPath);
-    outputTemplate('styleLess', data.styleLess, outPath);
+    (config.renderFile.includes('web.pc.tsx') ||
+        config.renderFile.includes('web.tsx')) &&
+        outputTemplate('styleLess', data.styleLess, outPath);
     // 因为这里涉及到组件的扫描，index.ts 文件需要在最后生成
     outputTemplate('index', data.index, outPath);
 };
