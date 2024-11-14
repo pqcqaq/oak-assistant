@@ -13,6 +13,7 @@ export const templateNames = {
     webTsx: 'web.tsx',
     localeZhCN: 'locales\\zh_CN.json',
     indexXml: 'index.xml',
+    indexLess: 'index.less',
     renderNativeTsx: 'render.native.tsx',
     renderIosTsx: 'render.ios.tsx',
     renderAndroidTsx: 'render.android.tsx',
@@ -109,9 +110,10 @@ export const generateTemplate = (
         outputTemplate('renderIosTsx', {}, outPath);
     config.renderFile.includes('render.android.tsx') &&
         outputTemplate('renderAndroidTsx', {}, outPath);
-    
+
     // index.json
-    outputTemplate('indexJson', {}, outPath);
+    config.renderFile.includes('index.xml') &&
+        outputTemplate('indexJson', {}, outPath);
     // 其他文件
     outputTemplate('localeZhCN', data.localeZhCN, outPath);
     outputTemplate('styleLess', data.styleLess, outPath);
