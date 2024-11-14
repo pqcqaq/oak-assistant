@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { join } from 'path';
-import { pluginPaths } from './paths';
+import { delimiter, pluginPaths } from './paths';
 import fs from 'fs';
 import { CreateComponentConfig, CreateOakComponent } from '../types';
 import Handlebars from 'handlebars';
@@ -11,7 +11,7 @@ export const templateNames = {
     index: 'index.ts',
     webPcTsx: 'web.pc.tsx',
     webTsx: 'web.tsx',
-    localeZhCN: 'locales\\zh_CN.json',
+    localeZhCN: `locales${delimiter}zh_CN.json`,
     indexXml: 'index.xml',
     indexLess: 'index.less',
     renderNativeTsx: 'render.native.tsx',

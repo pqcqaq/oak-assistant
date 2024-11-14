@@ -3,7 +3,7 @@ import os from "os";
 
 // 如果系统是windows，首先采用\\ 否则默认使用/
 
-const delimiter: string = os.platform() === 'win32' ? '\\' : '/';
+export const delimiter: string = os.platform() === 'win32' ? '\\' : '/';
 
 export const pluginPaths: {
     root: string;
