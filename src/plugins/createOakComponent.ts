@@ -26,8 +26,10 @@ const defaultSteps: ConfigStep[] = [
         description: '请输入组件名称',
         inputType: 'input',
         validate: (value) => {
-            // 合法正则表达式
-            return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(value);
+            // 支持路径分隔符
+            return /^(\.\.\/|\.\/|)([a-zA-Z_$][a-zA-Z0-9_$]*\/)*[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(
+                value
+            );
         },
     },
     {
@@ -144,15 +146,19 @@ const goCreate = async (
         }
     }
 
-    generateTemplate(
-        join(folderPath, createComponentConfig.folderName),
-        createComponentConfig
-    );
+    let outputPath = join(folderPath, createComponentConfig.folderName);
+    // 现在组件名称允许以/分割，合并到组件目录中
+    if (createComponentConfig.folderName.includes('/')) {
+        const splits = createComponentConfig.folderName.split('/');
+        createComponentConfig.folderName = splits[splits.length - 1];
+    }
+
+    generateTemplate(outputPath, createComponentConfig);
     vscode.window.showInformationMessage(
         `创建组件: ${toUpperFirst(createComponentConfig.folderName)} 成功。`
     );
 
-    afterCreateComponent(join(folderPath, createComponentConfig.folderName));
+    afterCreateComponent(outputPath);
 };
 
 const plugin = vscode.commands.registerCommand(
