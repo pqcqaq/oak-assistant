@@ -1,5 +1,9 @@
 export default OakComponent({
+    {{#if isVirtual}}
+    // Virtual Component
+    {{else}}
     entity: '{{entityName}}',
+    {{/if}}
     isList: {{isList}},
     {{#if autoProjection}}
     projection: {

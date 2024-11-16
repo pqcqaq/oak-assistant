@@ -8,6 +8,7 @@ import { join } from 'path';
 import { ComponentsItem } from './oakTreePanel';
 
 type ConfigStep = {
+    skip?: (config: CreateComponentConfig) => boolean;
     name: keyof CreateComponentConfig;
     description: string;
     inputType: 'input' | 'select' | 'confirm';
@@ -19,7 +20,7 @@ type ConfigStep = {
     validate?: (value: string) => boolean;
 };
 
-const withSelectEntity: ConfigStep[] = [
+const defaultSteps: ConfigStep[] = [
     {
         name: 'folderName',
         description: '请输入组件名称',
@@ -27,7 +28,7 @@ const withSelectEntity: ConfigStep[] = [
         validate: (value) => {
             // 合法正则表达式
             return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(value);
-          }
+        },
     },
     {
         name: 'renderFile',
@@ -45,27 +46,28 @@ const withSelectEntity: ConfigStep[] = [
         many: true,
     },
     {
+        // 如果已经选择了实体，则跳过
+        skip: (config) => !!config.entityName,
         name: 'entityName',
         description: '请选择关联实体',
         inputType: 'select',
-        options: () => entityConfig.entityNameList,
+        options: () => ['虚拟组件', ...entityConfig.entityNameList],
     },
     {
+        // 如果选择了虚拟组件，则跳过
+        skip: (config) => config.entityName === '虚拟组件',
         name: 'isList',
         description: '是否为列表',
         inputType: 'confirm',
     },
     {
+        // 如果选择了虚拟组件，则跳过
+        skip: (config) => config.entityName === '虚拟组件',
         name: 'autoProjection',
         description: '是否注入Projection',
         inputType: 'confirm',
     },
 ];
-
-// 从withSelectEntity中排除第二步骤
-const createComponentSteps: ConfigStep[] = withSelectEntity
-    .slice(0, 2)
-    .concat(withSelectEntity.slice(3));
 
 const afterCreateComponent = async (folderPath: string) => {
     console.log('执行创建后操作：folderPath:', folderPath);
@@ -78,6 +80,7 @@ const goCreate = async (
     config?: Partial<CreateComponentConfig>
 ) => {
     const createComponentConfig: CreateComponentConfig = {
+        isVirtual: false,
         folderName: '',
         entityName: '',
         isList: false,
@@ -86,6 +89,9 @@ const goCreate = async (
         ...config,
     };
     for (const step of steps) {
+        if (step.skip && step.skip(createComponentConfig)) {
+            continue;
+        }
         if (step.inputType === 'input') {
             const result = await vscode.window.showInputBox({
                 prompt: step.description,
@@ -155,7 +161,7 @@ const plugin = vscode.commands.registerCommand(
         if (uri instanceof ComponentsItem) {
             const entityName = uri.getEntityName();
             const componentsPath = join(pathConfig.componentsHome, entityName);
-            goCreate(componentsPath, createComponentSteps, {
+            goCreate(componentsPath, defaultSteps, {
                 entityName,
             });
             return;
@@ -179,7 +185,7 @@ const plugin = vscode.commands.registerCommand(
             );
         }
 
-        goCreate(folderPath, withSelectEntity);
+        goCreate(folderPath, defaultSteps);
     }
 );
 

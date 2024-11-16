@@ -77,24 +77,37 @@ export const generateTemplate = (
     outPath: string,
     config: CreateComponentConfig
 ) => {
-    const componentName = toUpperFirst(config.folderName);
+    const realConfig = { ...config };
+
+    // 判断是否为Virtual
+    if (realConfig.entityName === '虚拟组件') {
+        realConfig.isVirtual = true;
+        realConfig.entityName = 'user';
+        realConfig.isList = false;
+        realConfig.autoProjection = false;
+    }
+
+    const componentName = toUpperFirst(realConfig.folderName);
 
     const data: CreateOakComponent = {
         index: {
-            entityName: config.entityName,
-            isList: config.isList,
-            autoProjection: config.autoProjection,
-            projectionFields: genProjections(config.entityName),
+            isVirtual: realConfig.isVirtual,
+            entityName: realConfig.entityName,
+            isList: realConfig.isList,
+            autoProjection: realConfig.autoProjection,
+            projectionFields: genProjections(realConfig.entityName),
         },
         webPcTsx: {
+            isVirtual: realConfig.isVirtual,
             componentName,
-            entityName: config.entityName,
-            isList: config.isList,
+            entityName: realConfig.entityName,
+            isList: realConfig.isList,
         },
         webTsx: {
+            isVirtual: realConfig.isVirtual,
             componentName,
-            entityName: config.entityName,
-            isList: config.isList,
+            entityName: realConfig.entityName,
+            isList: realConfig.isList,
         },
         localeZhCN: {},
         styleLess: {},
@@ -103,28 +116,28 @@ export const generateTemplate = (
         },
     };
     // render文件
-    config.renderFile.includes('web.pc.tsx') &&
+    realConfig.renderFile.includes('web.pc.tsx') &&
         outputTemplate('webPcTsx', data.webPcTsx, outPath);
-    config.renderFile.includes('web.tsx') &&
+    realConfig.renderFile.includes('web.tsx') &&
         outputTemplate('webTsx', data.webTsx, outPath);
-    config.renderFile.includes('index.xml') &&
+    realConfig.renderFile.includes('index.xml') &&
         outputTemplate('indexXml', {}, outPath);
-    config.renderFile.includes('index.xml') &&
+    realConfig.renderFile.includes('index.xml') &&
         outputTemplate('indexLess', {}, outPath);
-    config.renderFile.includes('render.native.tsx') &&
+    realConfig.renderFile.includes('render.native.tsx') &&
         outputTemplate('renderNativeTsx', {}, outPath);
-    config.renderFile.includes('render.ios.tsx') &&
+    realConfig.renderFile.includes('render.ios.tsx') &&
         outputTemplate('renderIosTsx', {}, outPath);
-    config.renderFile.includes('render.android.tsx') &&
+    realConfig.renderFile.includes('render.android.tsx') &&
         outputTemplate('renderAndroidTsx', {}, outPath);
 
     // index.json
-    config.renderFile.includes('index.xml') &&
+    realConfig.renderFile.includes('index.xml') &&
         outputTemplate('indexJson', {}, outPath);
     // 其他文件
     outputTemplate('localeZhCN', data.localeZhCN, outPath);
-    (config.renderFile.includes('web.pc.tsx') ||
-        config.renderFile.includes('web.tsx')) &&
+    (realConfig.renderFile.includes('web.pc.tsx') ||
+        realConfig.renderFile.includes('web.tsx')) &&
         outputTemplate('styleLess', data.styleLess, outPath);
     // 因为这里涉及到组件的扫描，index.ts 文件需要在最后生成
     outputTemplate('index', data.index, outPath);

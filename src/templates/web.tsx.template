@@ -9,16 +9,27 @@ const {{componentName}} = (
         '{{entityName}}',
         {{isList}},
         {
-            {{#if isList}}
-            list: RowWithActions<EntityDict, '{{entityName}}'>[];
+            {{#if isVirtual}}
+                // virtual
             {{else}}
+                {{#if isList}}
+            list: RowWithActions<EntityDict, '{{entityName}}'>[];
+                {{else}}
             item: RowWithActions<EntityDict, '{{entityName}}'>;
+                {{/if}}
             {{/if}}
         }
     >
 ) => {
+    {{#if isVirtual}}
+    const { oakFullpath } = props.data;
+    {{else}}
     const { {{#if isList}}list{{else}}item{{/if}} } = props.data;
+    {{/if}}
 
+    {{#if isVirtual}}
+    return (<> 虚拟组件 </>);
+    {{else}}
     return (
         <>
             {{#if isList}}
@@ -34,6 +45,7 @@ const {{componentName}} = (
             {{/if}}
         </>
     );
+    {{/if}}
 };
 
 export default {{componentName}};

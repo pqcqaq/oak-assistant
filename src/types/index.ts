@@ -7,6 +7,7 @@ import {
 } from 'oak-domain/lib/types';
 
 export type CreateComponentConfig = {
+    isVirtual: boolean;
     folderName: string;
     entityName: string;
     isList: boolean;
@@ -15,6 +16,7 @@ export type CreateComponentConfig = {
 };
 
 export type IndexTsTemplate = {
+    isVirtual: boolean;
     entityName: string;
     isList: boolean;
     autoProjection: boolean;
@@ -22,6 +24,7 @@ export type IndexTsTemplate = {
 };
 
 export type ComponentTemplate = {
+    isVirtual: boolean;
     componentName: string;
     entityName: string;
     isList: boolean;
