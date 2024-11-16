@@ -25,16 +25,9 @@ const withSelectEntity: ConfigStep[] = [
         description: '请输入组件名称',
         inputType: 'input',
         validate: (value) => {
-            // 不能是数字
-            if (/\d+/.test(value)) {
-                return false;
-            }
-            // 不能是中文
-            if (/[\u4e00-\u9fa5]/.test(value)) {
-                return false;
-            }
-            return true;
-        },
+            // 合法正则表达式
+            return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(value);
+          }
     },
     {
         name: 'renderFile',
