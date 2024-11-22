@@ -21,7 +21,6 @@ const tCallRegex =
 const paramRegex =
     /{\s*([a-zA-Z_0-9]+:\s*(['"`][a-zA-Z_0-9]*['"`]|[.a-zA-Z_0-9]+)(|\,)\s*)*}/;
 
-
 class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
     async provideDocumentLinks(
         document: vscode.TextDocument,
@@ -78,13 +77,14 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
                     if (!param) {
                         // 没有参数，判断一下是否需要提示
-                        if (!notIgnore('i18n.onParamMissing')) {
+                        if (
+                            paramsGet.length === 0 ||
+                            !notIgnore('i18n.onParamMissing')
+                        ) {
                             // continue;
                             return;
                         }
-                        const startPos = document.positionAt(
-                            match.index + 2
-                        );
+                        const startPos = document.positionAt(match.index + 2);
                         const endPos = document.positionAt(
                             match.index + match[0].length - 1
                         );
@@ -133,7 +133,6 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                         .split(',')
                         .map((item) => item.split(':')[0].trim())
                         .filter(Boolean);
-
 
                     // 这里需要判断两个情况，一个是paramKeys中的key是否在paramsGet中存在，另一个是paramsGet中的key是否在paramKeys中存在
 
