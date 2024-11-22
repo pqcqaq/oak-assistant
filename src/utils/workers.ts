@@ -9,18 +9,19 @@ export const startWorker = () => {
         worker = new Worker(path.join(__dirname, 'utils', 'analyzeWorker.js'));
         worker.on('exit', (code) => {
             console.log(`worker exit with code ${code}`);
-            if (code !== 0) {
-                vscode.window.showErrorMessage(
-                    'Worker意外退出，Code:' + code,
-                    '正在尝试重新启动.....'
-                );
-                startWorker();
-            }
+            // if (code !== 0) {
+            //     vscode.window.showErrorMessage(
+            //         'Worker意外退出，Code:' + code,
+            //         '正在尝试重新启动.....'
+            //     );
+            //     startWorker();
+            // }
             worker = null;
         });
     } else {
         console.log('worker already started');
     }
+    return worker;
 };
 
 export const waitWorkerReady = async () => {

@@ -8,8 +8,9 @@ import { glob } from 'glob';
 import { pathConfig } from '../utils/paths';
 import { toLowerFirst, toUpperFirst } from '../utils/stringUtils';
 import { EntityDesc } from '../types';
-import { getWorker } from './workers';
+import { getWorker, startWorker } from './workers';
 import { setLoadingEntities } from './status';
+import { Worker } from 'worker_threads';
 
 const projectEntityList: string[] = [];
 
@@ -142,7 +143,14 @@ export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
         return;
     }
 
-    const worker = getWorker();
+    let worker: Worker | null = null;
+    
+    try {
+        worker = getWorker();
+    } catch (error) {
+        worker = startWorker();
+    }
+
     await vscode.window.withProgress(
         {
             location: vscode.ProgressLocation.Notification,

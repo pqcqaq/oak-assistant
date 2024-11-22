@@ -6,6 +6,7 @@ import { EntityDesc, LanguageValue, LocalesDef } from '../types';
 import { EntityShape } from 'oak-domain/lib/types';
 import { EntityDict } from './entities';
 import assert from 'assert';
+import { exit } from 'process';
 
 assert(parentPort, 'parentPort is not defined');
 
@@ -65,6 +66,9 @@ parentPort.on('message', (message) => {
             type: 'result',
             data: result,
         });
+        // 全部执行完成，直接退出
+        parentPort.close();
+        exit(0);
     }
 });
 

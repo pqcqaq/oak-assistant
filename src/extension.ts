@@ -158,19 +158,19 @@ const afterPathSet = async () => {
         },
         async (progress) => {
             progress.report({ message: '开始分析...' });
-            try {
-                for (let i = 0; i < stepList.length; i++) {
-                    const step = stepList[i];
-                    progress.report({
-                        message: step.description,
-                        increment: 100 / stepList.length,
-                    });
+            for (let i = 0; i < stepList.length; i++) {
+                const step = stepList[i];
+                progress.report({
+                    message: step.description,
+                    increment: 100 / stepList.length,
+                });
+                try {
                     await step.function();
+                } catch (error) {
+                    vscode.window.showErrorMessage(`步骤${step.name}出错: ${error}`);
                 }
-                vscode.window.showInformationMessage('分析完成');
-            } catch (error) {
-                vscode.window.showErrorMessage(`分析过程中出错: ${error}`);
             }
+            vscode.window.showInformationMessage('分析完成');
         }
     );
 

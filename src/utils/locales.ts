@@ -130,9 +130,15 @@ export const getLocalesByPath = (
         };
     }
     const localeFile = join(localePath, files[0]);
+    let data: LocaleData = {};
+    try {
+        data = JSON.parse(fs.readFileSync(localeFile, 'utf-8'));
+    } catch (error) {
+        console.error('读取locale文件失败', error);
+    }
     return {
         path: localeFile,
-        data: JSON.parse(fs.readFileSync(localeFile, 'utf-8')),
+        data: data,
     };
 };
 
@@ -474,7 +480,6 @@ export const addKeyToLocale = (
 const paramRegex = /%\{\s*([.a-zA-Z_0-9]+)\s*\}/g;
 
 export const getParamsFromItem = (item: LocaleItem): string[] => {
-
     if (!item.desc) {
         return [];
     }
