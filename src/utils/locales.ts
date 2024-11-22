@@ -470,9 +470,26 @@ export const addKeyToLocale = (
     assert(false, '不应该走到这里');
 };
 
+// 匹配%{}的正则
+const paramRegex = /%\{\s*([.a-zA-Z_0-9]+)\s*\}/g;
+
+export const getParamsFromItem = (item: LocaleItem): string[] => {
+
+    if (!item.desc) {
+        return [];
+    }
+
+    const value = item.desc;
+    const params: string[] = [];
+    let result: RegExpExecArray | null;
+    while ((result = paramRegex.exec(value)) !== null) {
+        params.push(result[1]);
+    }
+    return params;
+};
+
 // 主动定时刷新缓存
 const setRefreshInterval = () => {
-
     let timer: NodeJS.Timeout | null = null;
 
     if (timer) {
@@ -481,7 +498,7 @@ const setRefreshInterval = () => {
 
     const refresh = () => {
         console.log('定时主动刷新组件locales缓存');
-        
+
         const componentsPath = componentConfig.getAllComponents().map((c) => {
             return c.path;
         });
@@ -491,7 +508,9 @@ const setRefreshInterval = () => {
     };
 
     // 获取配置项
-    const config = vscode.workspace.getConfiguration('oak-assistant').get('localesRefreshInterval');
+    const config = vscode.workspace
+        .getConfiguration('oak-assistant')
+        .get('localesRefreshInterval');
 
     assert(typeof config === 'number', '配置项必须是数字');
 

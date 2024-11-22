@@ -251,9 +251,15 @@ function readLocales(localesDir: string): LocalesDef {
     language.forEach((lang) => {
         const localeFile = join(localesDir, `${lang}.json`);
         if (fs.existsSync(localeFile)) {
-            locales[lang] = JSON.parse(
-                fs.readFileSync(localeFile, 'utf-8')
-            ) as LanguageValue;
+            try {
+                locales[lang] = JSON.parse(
+                    fs.readFileSync(localeFile, 'utf-8')
+                ) as LanguageValue;
+            } catch (e) {
+                // vscode.window.showWarningMessage(
+                //     `解析语言文件 ${localeFile} 失败: ${e.message}`
+                // );
+            }
         }
     });
     return locales;

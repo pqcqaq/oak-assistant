@@ -26,6 +26,12 @@ export type OakConfiog = {
         onMissingKey?: Level;
         // key为空
         onKeyBlank?: Level;
+        // 无法解读的param
+        onParamError?: Level;
+        // 缺少param
+        onParamMissing?: Level;
+        // 多余的param
+        onParamRedundant?: Level;
     };
     // oak组件配置
     oakComponent?: {

@@ -19,6 +19,9 @@ export const defaultConfig: OakConfiog = {
     i18n: {
         onMissingKey: 'error',
         onKeyBlank: 'warn',
+        onParamError: 'warn',
+        onParamMissing: 'error',
+        onParamRedundant: 'warn',
     },
     oakComponent: {
         onInvalidEntity: 'error',

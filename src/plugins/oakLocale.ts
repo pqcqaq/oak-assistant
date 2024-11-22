@@ -2,6 +2,7 @@ import {
     addKeyToLocale,
     addLocaleToData,
     getLocaleItem,
+    getParamsFromItem,
 } from './../utils/locales';
 import { join } from 'path';
 import { getCachedLocaleItemByKey, getLocalesData } from '../utils/locales';
@@ -14,13 +15,20 @@ import { getLevel, notIgnore } from '../utils/oakConfig';
 const diagnosticCollection =
     vscode.languages.createDiagnosticCollection('oakLocales');
 
+const tCallRegex =
+    /(?<![a-zA-Z])t\([\s]*['"`]([^'"`]*)['"`]\s*(\s*|\,\s*({\s*([a-zA-Z_0-9]+:\s*(['"`][a-zA-Z_0-9]*['"`]|[.a-zA-Z_0-9]+)(|\,)\s*)*}|[.a-zA-Z_0-9]+))\s*\)/g;
+
+const paramRegex =
+    /{\s*([a-zA-Z_0-9]+:\s*(['"`][a-zA-Z_0-9]*['"`]|[.a-zA-Z_0-9]+)(|\,)\s*)*}/;
+
+
 class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
     async provideDocumentLinks(
         document: vscode.TextDocument,
         token: vscode.CancellationToken
     ): Promise<vscode.DocumentLink[]> {
         const text = document.getText();
-        const tCallRegex = /(?<![a-zA-Z])t\([\s]*['"`]([^'"`]*)['"`][\s]*(|,[\s]*{\s*([a-zA-Z_0-9]+:\s*['"`][a-zA-Z_0-9]*['"`](|,)\s*)*})\s*\)/g;
+
         const documentLinks: vscode.DocumentLink[] = [];
         const diagnostics: vscode.Diagnostic[] = [];
 
@@ -28,17 +36,18 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
             await waitUntilLocaleLoaded();
         }
 
-        const match = tCallRegex.exec(text);
+        let match = tCallRegex.exec(text);
         if (!match) {
             return [];
         }
-        getLocalesData(join(document.uri.fsPath, '../locales'));
-        while (match !== null) {
+
+        const handler = (match: RegExpExecArray) => {
             const key = match[1];
 
             if (key.includes('${')) {
                 // 忽略动态key
-                continue;
+                // continue;
+                return;
             }
 
             const item = getLocaleItem(key);
@@ -47,7 +56,7 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 if (localePath && localePath.path) {
                     const startPos = document.positionAt(match.index + 2);
                     const endPos = document.positionAt(
-                        match.index + match[0].length - 1
+                        match.index + match[1].length + 4
                     );
                     const range = new vscode.Range(startPos, endPos);
                     const documentLink = new vscode.DocumentLink(
@@ -58,10 +67,130 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                         ? `CN: ${localePath.desc}`
                         : `[未找到中文] 跳转到定义`;
                     documentLinks.push(documentLink);
+
+                    // 这边是正常使用i18n的情况，还需要判断param的参数
+                    const param = match[2];
+                    // 理想情况，是一个object，类似这样：
+                    // t("hello", { key: 'value' } )
+                    // t("hello", { key: item.name } )
+                    // t("hello", { key: 'value', key2: 'value' })
+                    const paramsGet = getParamsFromItem(item);
+
+                    if (!param) {
+                        // 没有参数，判断一下是否需要提示
+                        if (!notIgnore('i18n.onParamMissing')) {
+                            // continue;
+                            return;
+                        }
+                        const startPos = document.positionAt(
+                            match.index + 2
+                        );
+                        const endPos = document.positionAt(
+                            match.index + match[0].length - 1
+                        );
+                        const range = new vscode.Range(startPos, endPos);
+                        const diagnostic = new vscode.Diagnostic(
+                            range,
+                            `需要参数: ${paramsGet.join(', ')}`,
+                            getLevel('i18n.onParamMissing')
+                        );
+                        // 添加 code 用于区分错误类型
+                        diagnostic.code = 'missing_param';
+                        diagnostics.push(diagnostic);
+                        return;
+                    }
+
+                    // 把key都匹配出来
+                    const paramMatch = param.match(paramRegex);
+                    // 如果不匹配，提示无法解读的参数，对这个参数标黄
+                    if (!paramMatch) {
+                        if (!notIgnore('i18n.onParamError')) {
+                            // continue;
+                            return;
+                        }
+                        const startPos = document.positionAt(
+                            match.index + match[1].length + 5
+                        );
+                        const endPos = document.positionAt(
+                            match.index + match[0].length
+                        );
+                        const range = new vscode.Range(startPos, endPos);
+                        const diagnostic = new vscode.Diagnostic(
+                            range,
+                            `无法解读的参数: ${param}`,
+                            getLevel('i18n.onParamError')
+                        );
+                        // 添加 code 用于区分错误类型
+                        diagnostic.code = 'param_error';
+                        diagnostics.push(diagnostic);
+                        // continue;
+                        return;
+                    }
+
+                    // 这里是已经匹配上了的情况，判断一下key是否在locale的属性中存在%{xxx}的定义
+                    const paramKeys = paramMatch[0]
+                        .replace(/{|}/g, '')
+                        .split(',')
+                        .map((item) => item.split(':')[0].trim())
+                        .filter(Boolean);
+
+
+                    // 这里需要判断两个情况，一个是paramKeys中的key是否在paramsGet中存在，另一个是paramsGet中的key是否在paramKeys中存在
+
+                    // 遍历paramKeys，判断是否在paramsGet中存在
+                    paramsGet.forEach((key) => {
+                        if (!paramKeys.includes(key)) {
+                            if (!notIgnore('i18n.onParamMissing')) {
+                                // continue;
+                                return;
+                            }
+                            const startPos = document.positionAt(
+                                match.index + match[1].length + 5
+                            );
+                            const endPos = document.positionAt(
+                                match.index + match[0].length
+                            );
+                            const range = new vscode.Range(startPos, endPos);
+                            const diagnostic = new vscode.Diagnostic(
+                                range,
+                                `缺少参数定义: ${key}`,
+                                getLevel('i18n.onParamMissing')
+                            );
+                            // 添加 code 用于区分错误类型
+                            diagnostic.code = 'missing_param';
+                            diagnostics.push(diagnostic);
+                        }
+                    });
+
+                    // 遍历paramsGet，判断是否在paramKeys中存在
+                    paramKeys.forEach((key) => {
+                        if (!paramsGet.includes(key)) {
+                            if (!notIgnore('i18n.onParamRedundant')) {
+                                // continue;
+                                return;
+                            }
+                            const startPos = document.positionAt(
+                                match.index + match[1].length + 5
+                            );
+                            const endPos = document.positionAt(
+                                match.index + match[0].length
+                            );
+                            const range = new vscode.Range(startPos, endPos);
+                            const diagnostic = new vscode.Diagnostic(
+                                range,
+                                `多余的参数定义: ${key}`,
+                                getLevel('i18n.onParamRedundant')
+                            );
+                            // 添加 code 用于区分错误类型
+                            diagnostic.code = 'redundant_param';
+                            diagnostics.push(diagnostic);
+                        }
+                    });
                 }
                 if (item.desc === '') {
                     if (!notIgnore('i18n.onKeyBlank')) {
-                        continue;
+                        // continue;
+                        return;
                     }
                     const startPos = document.positionAt(match.index + 2);
                     const endPos = document.positionAt(
@@ -80,7 +209,8 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
             } else {
                 // range需要排除掉t(的部分和最后的 ) 部分
                 if (!notIgnore('i18n.onMissingKey')) {
-                    continue;
+                    // continue;
+                    return;
                 }
                 const startPos = document.positionAt(match.index + 2);
                 const endPos = document.positionAt(
@@ -96,6 +226,14 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 diagnostic.code = 'missing_locale';
                 diagnostics.push(diagnostic);
             }
+        };
+
+        getLocalesData(join(document.uri.fsPath, '../locales'));
+
+        handler(match);
+
+        while ((match = tCallRegex.exec(text)) !== null) {
+            handler(match);
         }
 
         diagnosticCollection.set(document.uri, diagnostics);
