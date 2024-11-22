@@ -20,7 +20,7 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
         token: vscode.CancellationToken
     ): Promise<vscode.DocumentLink[]> {
         const text = document.getText();
-        const tCallRegex = /(?<![a-zA-Z])t\(['"`]([^'"`]*)['"`]\)/g;
+        const tCallRegex = /(?<![a-zA-Z])t\([\s]*['"`]([^'"`]*)['"`][\s]*\)/g;
         const documentLinks: vscode.DocumentLink[] = [];
         const diagnostics: vscode.Diagnostic[] = [];
 
