@@ -480,6 +480,8 @@ const setRefreshInterval = () => {
     }
 
     const refresh = () => {
+        console.log('定时主动刷新组件locales缓存');
+        
         const componentsPath = componentConfig.getAllComponents().map((c) => {
             return c.path;
         });
