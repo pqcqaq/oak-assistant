@@ -466,8 +466,42 @@ export const addKeyToLocale = (
             error: '暂不支持entity的locales编辑',
         };
     }
-   
+
     assert(false, '不应该走到这里');
+};
+
+// 主动定时刷新缓存
+const setRefreshInterval = () => {
+
+    let timer: NodeJS.Timeout | null = null;
+
+    if (timer) {
+        clearInterval(timer);
+    }
+
+    const refresh = () => {
+        const componentsPath = componentConfig.getAllComponents().map((c) => {
+            return c.path;
+        });
+        componentsPath.forEach((path) => {
+            updatePathCached(path);
+        });
+    };
+
+    // 获取配置项
+    const config = vscode.workspace.getConfiguration('oak-assistant').get('localesRefreshInterval');
+
+    assert(typeof config === 'number', '配置项必须是数字');
+
+    // 如果配置项小于1000，则不刷新
+    if (config < 1000) {
+        return;
+    }
+
+    console.log('设置i18n刷新定时器', config);
+
+    // 设置定时器
+    timer = setInterval(refresh, config);
 };
 
 subscribeEntity('#all', (name) => {
@@ -478,3 +512,5 @@ subscribeEntity('#all', (name) => {
 subsPath(() => {
     setNameSpaceLocales();
 });
+
+setRefreshInterval();
