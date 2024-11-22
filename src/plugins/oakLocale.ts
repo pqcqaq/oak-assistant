@@ -16,10 +16,10 @@ const diagnosticCollection =
     vscode.languages.createDiagnosticCollection('oakLocales');
 
 const tCallRegex =
-    /(?<![a-zA-Z])t\([\s]*['"`]([^'"`]*)['"`]\s*(\s*|\,\s*({\s*([a-zA-Z_0-9]+:\s*(['"`][a-zA-Z_0-9]*['"`]|[.a-zA-Z_0-9]+)(|\,)\s*)*}|[.a-zA-Z_0-9]+))\s*\)/g;
+    /(?<![a-zA-Z])t\([\s]*['"`]([^'"`]*)['"`]\s*(\s*|\,\s*({\s*([a-zA-Z_0-9]+:\s*(['"`][a-zA-Z_0-9]*['"`]|[?.a-zA-Z_0-9]+)(|\,)\s*)*}|[.a-zA-Z_0-9]+))\s*\)/g;
 
 const paramRegex =
-    /{\s*([a-zA-Z_0-9]+:\s*(['"`][a-zA-Z_0-9]*['"`]|[.a-zA-Z_0-9]+)(|\,)\s*)*}/;
+    /{\s*([a-zA-Z_0-9]+:\s*(['"`][a-zA-Z_0-9]*['"`]|[?.a-zA-Z_0-9]+)(|\,)\s*)*}/;
 
 class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
     async provideDocumentLinks(
