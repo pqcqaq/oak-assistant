@@ -216,5 +216,5 @@
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
         "publish": "vsce publish --no-dependencies"
     },
-    "version": "0.6.13"
+    "version": "0.6.14"
 }
