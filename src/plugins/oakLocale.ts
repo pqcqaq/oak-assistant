@@ -23,17 +23,21 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
         const tCallRegex = /(?<![a-zA-Z])t\(['"`]([^'"`]*)['"`]\)/g;
         const documentLinks: vscode.DocumentLink[] = [];
         const diagnostics: vscode.Diagnostic[] = [];
-        let match;
 
         if (isLoadingLocale()) {
             await waitUntilLocaleLoaded();
         }
 
+        const match = tCallRegex.exec(text);
+        if (!match) {
+            return [];
+        }
         getLocalesData(join(document.uri.fsPath, '../locales'));
-        while ((match = tCallRegex.exec(text)) !== null) {
+        while (match !== null) {
             const key = match[1];
 
             if (key.includes('${')) {
+                // 忽略动态key
                 continue;
             }
 
