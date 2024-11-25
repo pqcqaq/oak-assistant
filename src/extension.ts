@@ -258,7 +258,8 @@ export async function activate(context: vscode.ExtensionContext) {
         const value = await vscode.window.showInformationMessage(
             '未找到oak.config.json文件，是否以当前工作区根目录为项目主目录，创建配置并启用Oak-Assistant插件？',
             '是',
-            '否'
+            '否',
+            "不再提示"
         );
         if (value === '是') {
             const rootPath = workspaceFolders[0].uri.fsPath;
@@ -275,6 +276,8 @@ export async function activate(context: vscode.ExtensionContext) {
                 );
                 loadPlugin(defaultConfig);
             });
+        } else if (value === '不再提示') {
+            vscode.workspace.getConfiguration('oak-assistant').update('showNewProjectTip', false, vscode.ConfigurationTarget.Global);
         }
         return;
     }
