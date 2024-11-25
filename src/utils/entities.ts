@@ -138,13 +138,44 @@ export const getProjectionList = (entityName: string) => {
  */
 let isAnalyzing = false;
 
-export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
+export const analyzeOakAppDomain = async (
+    oakAppDomainPath: string,
+    forceUpdate: boolean
+) => {
     if (isAnalyzing) {
         return;
     }
 
+    // 先尝试读取缓存
+    const cacheFile = join(pathConfig.cachePath, 'oakEntity.json');
+    const enableCache = vscode.workspace
+        .getConfiguration('oak-assistant')
+        .get('cacheEntityAnalyze');
+
+    if (enableCache) {
+        if (fs.existsSync(cacheFile)) {
+            try {
+                const context = fs.readFileSync(cacheFile, 'utf-8');
+                const entityDict = JSON.parse(context);
+                // 更新 entityDictCache
+                Object.keys(entityDict).forEach((key) => {
+                    entityDictCache[key] = entityDict[key];
+                });
+                isAnalyzing = false;
+                setLoadingEntities(false);
+                syncProjectEntityList();
+                console.log('从缓存加载成功');
+                return;
+            } catch (e) {
+                console.error('尝试从缓存读取失败');
+            }
+        } else {
+            console.log('缓存不存在，开始分析');
+        }
+    }
+
     let worker: Worker | null = null;
-    
+
     try {
         worker = getWorker();
     } catch (error) {
@@ -178,6 +209,16 @@ export const analyzeOakAppDomain = async (oakAppDomainPath: string) => {
                             Object.keys(entityDict).forEach((key) => {
                                 entityDictCache[key] = entityDict[key];
                             });
+                            if (enableCache) {
+                                // 写入缓存
+                                fs.writeFile(
+                                    cacheFile,
+                                    JSON.stringify(entityDict),
+                                    (err) => {
+                                        console.error(err);
+                                    }
+                                );
+                            }
                         }
                         isAnalyzing = false;
                         setLoadingEntities(false);
@@ -269,4 +310,14 @@ export const genProjections = (name: string): string[] => {
             return '';
         })
         .filter((attr) => !!attr);
+};
+
+// 注册命令oak-assistant.refreshEntity
+export const registerRefreshEntityCommand = () => {
+    return vscode.commands.registerCommand(
+        'oak-assistant.refreshEntity',
+        () => {
+            analyzeOakAppDomain(pathConfig.oakAppDomainHome, true);
+        }
+    );
 };

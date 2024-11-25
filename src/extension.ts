@@ -4,6 +4,7 @@ import {
     pathConfig,
     subscribe,
     normalizePath,
+    mkdirsSync,
 } from './utils/paths';
 import { join } from 'path';
 import checkPagesAndNamespace from './plugins/checkPagesAndNamespace';
@@ -12,7 +13,10 @@ import {
     activateOakComponent,
     disposeOakComponent,
 } from './plugins/createOakComponent';
-import { analyzeOakAppDomain } from './utils/entities';
+import {
+    analyzeOakAppDomain,
+    registerRefreshEntityCommand,
+} from './utils/entities';
 import { createOakTreePanel } from './plugins/oakTreePanel';
 import { setLoadingEntities } from './utils/status';
 import { treePanelCommands } from './plugins/treePanelCommands';
@@ -86,10 +90,21 @@ const afterPathSet = async () => {
             },
         },
         {
+            name: '创建缓存目录',
+            description: '创建缓存目录',
+            function: async () => {
+                try {
+                    mkdirsSync(pathConfig.cachePath);
+                } catch (e) {
+                    console.error('创建缓存目录失败');
+                }
+            },
+        },
+        {
             name: '解析 Entity',
             description: '解析项目中的 Entity 结构',
             function: async () => {
-                await analyzeOakAppDomain(pathConfig.oakAppDomainHome);
+                await analyzeOakAppDomain(pathConfig.oakAppDomainHome, false);
             },
         },
         {
@@ -167,7 +182,9 @@ const afterPathSet = async () => {
                 try {
                     await step.function();
                 } catch (error) {
-                    vscode.window.showErrorMessage(`步骤${step.name}出错: ${error}`);
+                    vscode.window.showErrorMessage(
+                        `步骤${step.name}出错: ${error}`
+                    );
                 }
             }
             vscode.window.showInformationMessage('分析完成');
@@ -223,6 +240,7 @@ export async function activate(context: vscode.ExtensionContext) {
             );
             createFileWatcher(context);
             activateStyleConvert(context);
+            registerRefreshEntityCommand();
         } catch (error) {
             console.error('激活插件时出错:', error);
         }
@@ -247,9 +265,11 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         // 显示新项目提示
-        const showTip = vscode.workspace.getConfiguration('oak-assistant').get('showNewProjectTip');
-        
-        if (!showTip) { 
+        const showTip = vscode.workspace
+            .getConfiguration('oak-assistant')
+            .get('showNewProjectTip');
+
+        if (!showTip) {
             console.log('未找到oak.config.json文件，并且未开启新项目提示');
             return;
         }
@@ -259,7 +279,7 @@ export async function activate(context: vscode.ExtensionContext) {
             '未找到oak.config.json文件，是否以当前工作区根目录为项目主目录，创建配置并启用Oak-Assistant插件？',
             '是',
             '否',
-            "不再提示"
+            '不再提示'
         );
         if (value === '是') {
             const rootPath = workspaceFolders[0].uri.fsPath;
@@ -277,7 +297,13 @@ export async function activate(context: vscode.ExtensionContext) {
                 loadPlugin(defaultConfig);
             });
         } else if (value === '不再提示') {
-            vscode.workspace.getConfiguration('oak-assistant').update('showNewProjectTip', false, vscode.ConfigurationTarget.Global);
+            vscode.workspace
+                .getConfiguration('oak-assistant')
+                .update(
+                    'showNewProjectTip',
+                    false,
+                    vscode.ConfigurationTarget.Global
+                );
         }
         return;
     }

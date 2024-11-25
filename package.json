@@ -24,6 +24,10 @@
                 "title": "创建OAK组件"
             },
             {
+                "command": "oak-assistant.refreshEntity",
+                "title": "重新扫描实体信息"
+            },
+            {
                 "command": "oak-entities.jumpToDefinition",
                 "group": "navigation",
                 "title": "跳转到entity定义",
@@ -108,6 +112,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "是否显示新项目提示"
+                },
+                "oak-assistant.cacheEntityAnalyze": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "缓存分析的entity"
                 }
             }
         },

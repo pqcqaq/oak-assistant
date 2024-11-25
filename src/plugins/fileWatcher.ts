@@ -132,7 +132,7 @@ export function createFileWatcher(context: vscode.ExtensionContext) {
 
     // 监控如果Storage.ts发生变化，则重新同步entities
     const handleStorageChange = async () => {
-        analyzeOakAppDomain(pathConfig.oakAppDomainHome);
+        analyzeOakAppDomain(pathConfig.oakAppDomainHome, true);
     };
 
     let disposeStorageWatcher: (() => void) | null = null;
