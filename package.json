@@ -103,6 +103,11 @@
                     "type": "number",
                     "default": 300000,
                     "description": "组件的国际化文件主动刷新间隔(小于1000表示不主动刷新)"
+                },
+                "oak-assistant.showNewProjectTip": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "是否显示新项目提示"
                 }
             }
         },

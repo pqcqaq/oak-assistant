@@ -246,6 +246,14 @@ export async function activate(context: vscode.ExtensionContext) {
             return;
         }
 
+        // 显示新项目提示
+        const showTip = vscode.workspace.getConfiguration('oak-assistant').get('showNewProjectTip');
+        
+        if (!showTip) { 
+            console.log('未找到oak.config.json文件，并且未开启新项目提示');
+            return;
+        }
+
         // 弹出提示消息，询问是否以根目录为工作区
         const value = await vscode.window.showInformationMessage(
             '未找到oak.config.json文件，是否以当前工作区根目录为项目主目录，创建配置并启用Oak-Assistant插件？',
