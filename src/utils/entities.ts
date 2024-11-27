@@ -314,10 +314,19 @@ export const genProjections = (name: string): string[] => {
 
 // 注册命令oak-assistant.refreshEntity
 export const registerRefreshEntityCommand = () => {
-    return vscode.commands.registerCommand(
+    const command = vscode.commands.registerCommand(
         'oak-assistant.refreshEntity',
         () => {
             analyzeOakAppDomain(pathConfig.oakAppDomainHome, true);
         }
     );
+
+    return {
+        dispose() {
+            command.dispose();
+        },
+        activate(context: vscode.ExtensionContext) {
+            context.subscriptions.push(command);
+        },
+    };
 };

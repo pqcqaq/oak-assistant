@@ -28,6 +28,7 @@ export const internalPath = {
     oakAppDomain: `src${delimiter}oak-app-domain`,
     components: `src${delimiter}components`,
     locales: `src${delimiter}locales`,
+    aspects: `src${delimiter}aspects`,
     // 插件的缓存文件目录
     cachePath: `node_modules${delimiter}aaaaaoakPcache`,
 };
@@ -42,6 +43,7 @@ export const pathConfig: {
     get oakAppDomainHome(): string;
     get componentsHome(): string;
     get localesHome(): string;
+    get aspectsHome(): string;
     get cachePath(): string;
 } = {
     projectHome: '',
@@ -68,6 +70,9 @@ export const pathConfig: {
     },
     get localesHome() {
         return `${this.projectHome}${delimiter}${internalPath.locales}`;
+    },
+    get aspectsHome() {
+        return `${this.projectHome}${delimiter}${internalPath.aspects}`;
     },
     get cachePath() {
         return `${this.projectHome}${delimiter}${internalPath.cachePath}`;

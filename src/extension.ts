@@ -212,6 +212,7 @@ const commonCommands = createCommonPlugin();
 
 const checkPagesAndNamespacePlugin = checkPagesAndNamespace();
 const createOakTreePanelPlugin = createOakTreePanel();
+const refreshEntityCommand = registerRefreshEntityCommand();
 
 export async function activate(context: vscode.ExtensionContext) {
     const loadPlugin = (config: OakConfiog) => {
@@ -240,7 +241,7 @@ export async function activate(context: vscode.ExtensionContext) {
             );
             createFileWatcher(context);
             activateStyleConvert(context);
-            registerRefreshEntityCommand();
+            refreshEntityCommand.activate(context);
         } catch (error) {
             console.error('激活插件时出错:', error);
         }
@@ -347,4 +348,5 @@ export function deactivate() {
     deactivateOakComponentPropsLinkProvider();
     stopWorker();
     deactivateStyleConvert();
+    refreshEntityCommand.dispose();
 }
