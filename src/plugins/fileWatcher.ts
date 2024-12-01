@@ -15,6 +15,7 @@ import {
 } from '../utils/components';
 import { reloadCachedPathLocale } from '../utils/locales';
 import { loadConfig } from '../utils/oakConfig';
+import fs from 'fs';
 
 /**
  * 监听指定目录下的所有文件变化
@@ -34,9 +35,13 @@ function watchDirectory(
         ? directoryPath
         : path.resolve(directoryPath);
 
+    // 如果传入的是文件路径,则获取其父文件夹路径
+    const isDirectory = fs.lstatSync(absolutePath).isDirectory();
+    const watchPath = isDirectory ? absolutePath : path.dirname(absolutePath);
+    const watchPattern = isDirectory ? pattern : path.basename(absolutePath);
     // 创建一个文件系统观察器
     const watcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(absolutePath, pattern)
+        new vscode.RelativePattern(watchPath, watchPattern)
     );
 
     const fileEvents = [
@@ -59,7 +64,9 @@ function watchDirectory(
 
     // 将观察器本身添加到订阅中，以确保它在扩展停用时被正确处理
     context.subscriptions.push(watcher);
-    console.log(`Watching directory: ${absolutePath}`);
+    console.log(
+        `Watching ${isDirectory ? 'directory' : 'file'}: ${absolutePath}`
+    );
 
     // 返回一个取消全部订阅的函数
     return () => {

@@ -4,10 +4,18 @@ import * as vscode from 'vscode';
 export const logger = vscode.window.createOutputChannel('oak-assistant');
 
 // 输出日志
-export const log = (level: 'log' | 'warn' | 'error' = 'log', ...message: any[]) => {
+export const log = (
+    level: 'log' | 'warn' | 'error' = 'log',
+    ...message: any[]
+) => {
     // 将日志信息输出到频道。需要判断类型
     const msg: string[] = message.map((msg) => {
-        if (typeof msg === 'object') {
+        if (msg instanceof Error) {
+            return JSON.stringify({
+                message: msg.message,
+                stack: msg.stack,
+            });
+        } else if (typeof msg === 'object') {
             return JSON.stringify(msg, null, 2);
         } else if (Array.isArray(msg)) {
             return msg.join(' ');
@@ -21,7 +29,7 @@ export const log = (level: 'log' | 'warn' | 'error' = 'log', ...message: any[]) 
         // error: '\x1b[31m[ERROR] \x1b[0m' // 红色
         log: '[INFO] ',
         warn: '[WARN] ',
-        error: '[ERROR] '
+        error: '[ERROR] ',
     }[level];
     logger.appendLine(`${prefix}${msg.join(' ')}`);
 };

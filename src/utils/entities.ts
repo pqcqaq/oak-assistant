@@ -152,22 +152,41 @@ export const analyzeOakAppDomain = async (
         .getConfiguration('oak-assistant')
         .get('cacheEntityAnalyze');
 
-    if (enableCache) {
+    if (!forceUpdate && enableCache) {
         if (fs.existsSync(cacheFile)) {
             try {
+                const domainIndexFilePath = join(
+                    pathConfig.oakAppDomainHome,
+                    'index.ts'
+                );
+                // 如果文件不存在，显示未找到实体定义信息，并返回
+                if (!fs.existsSync(domainIndexFilePath)) {
+                    vscode.window.showErrorMessage('未找到实体定义信息');
+                    return;
+                }
+                // 获取文件的修改时间
+                const domainIndexFileStat = fs.statSync(domainIndexFilePath);
+                // 缓存文件的修改时间
+                const cacheFileStat = fs.statSync(cacheFile);
+                // 若缓存文件的修改时间晚于实体定义文件的修改时间，则直接从缓存加载
+                if (cacheFileStat.mtimeMs < domainIndexFileStat.mtimeMs) {
+                    throw new Error('缓存文件已过期');
+                }
                 const context = fs.readFileSync(cacheFile, 'utf-8');
                 const entityDict = JSON.parse(context);
                 // 更新 entityDictCache
                 Object.keys(entityDict).forEach((key) => {
                     entityDictCache[key] = entityDict[key];
                 });
-                isAnalyzing = false;
-                setLoadingEntities(false);
-                syncProjectEntityList();
+
                 console.log('从缓存加载成功');
                 return;
             } catch (e) {
-                console.error('尝试从缓存读取失败');
+                console.error('尝试从缓存读取失败', e);
+            } finally {
+                isAnalyzing = false;
+                setLoadingEntities(false);
+                syncProjectEntityList();
             }
         } else {
             console.log('缓存不存在，开始分析');
