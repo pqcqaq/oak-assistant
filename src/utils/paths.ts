@@ -1,5 +1,7 @@
 import { debounce, random } from 'lodash';
-import os from "os";
+import os from 'os';
+import fs from 'fs';
+import { join } from 'path';
 
 // 如果系统是windows，首先采用\\ 否则默认使用/
 
@@ -26,6 +28,9 @@ export const internalPath = {
     oakAppDomain: `src${delimiter}oak-app-domain`,
     components: `src${delimiter}components`,
     locales: `src${delimiter}locales`,
+    aspects: `src${delimiter}aspects`,
+    // 插件的缓存文件目录
+    cachePath: `node_modules${delimiter}aaaaaoakPcache`,
 };
 
 export const pathConfig: {
@@ -38,6 +43,8 @@ export const pathConfig: {
     get oakAppDomainHome(): string;
     get componentsHome(): string;
     get localesHome(): string;
+    get aspectsHome(): string;
+    get cachePath(): string;
 } = {
     projectHome: '',
     get entityHome() {
@@ -64,6 +71,12 @@ export const pathConfig: {
     get localesHome() {
         return `${this.projectHome}${delimiter}${internalPath.locales}`;
     },
+    get aspectsHome() {
+        return `${this.projectHome}${delimiter}${internalPath.aspects}`;
+    },
+    get cachePath() {
+        return `${this.projectHome}${delimiter}${internalPath.cachePath}`;
+    },
 };
 
 // 发布订阅模式
@@ -73,8 +86,8 @@ const updateDeounced = debounce(() => {
     subscribers.forEach((callback) => {
         try {
             callback();
-        } catch(e) {
-            console.log("error", e);
+        } catch (e) {
+            console.log('error', e);
         }
     });
 }, 100);
@@ -107,9 +120,10 @@ export const isConfigReady = (): boolean => {
 };
 
 export const setProjectHome = (projectHome: string) => {
-    const newHome = (projectHome.endsWith('\\') || projectHome.endsWith('/'))
-        ? projectHome.slice(0, -1)
-        : projectHome;
+    const newHome =
+        projectHome.endsWith('\\') || projectHome.endsWith('/')
+            ? projectHome.slice(0, -1)
+            : projectHome;
     if (newHome !== pathConfig.projectHome) {
         pathConfig.projectHome = newHome;
         updateDeounced();
@@ -166,3 +180,17 @@ export function normalizePath(path: string): string {
 export function isRelativePath(path: string): boolean {
     return path.startsWith('.') || path.startsWith('..');
 }
+
+/**
+ * 递归创建文件夹
+ */
+export const mkdirsSync = (dirname: string) => {
+    if (fs.existsSync(dirname)) {
+        return true;
+    } else {
+        if (mkdirsSync(join(dirname, '..'))) {
+            fs.mkdirSync(dirname);
+            return true;
+        }
+    }
+};

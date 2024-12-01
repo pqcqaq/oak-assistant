@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { join } from 'path';
-import { delimiter, pluginPaths } from './paths';
+import { delimiter, mkdirsSync, pluginPaths } from './paths';
 import fs from 'fs';
 import { CreateComponentConfig, CreateOakComponent } from '../types';
 import Handlebars from 'handlebars';
@@ -38,20 +38,6 @@ export function getTemplateContent(name: TemplateName): string {
     const template = fs.readFileSync(templatePath, 'utf-8');
     return template;
 }
-
-/**
- * 递归创建文件夹
- */
-export const mkdirsSync = (dirname: string) => {
-    if (fs.existsSync(dirname)) {
-        return true;
-    } else {
-        if (mkdirsSync(join(dirname, '..'))) {
-            fs.mkdirSync(dirname);
-            return true;
-        }
-    }
-};
 
 export const outputTemplate = (
     name: TemplateName,
