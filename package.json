@@ -115,7 +115,7 @@
                 },
                 "oak-assistant.cacheEntityAnalyze": {
                     "type": "boolean",
-                    "default": false,
+                    "default": true,
                     "description": "缓存分析的entity"
                 }
             }
@@ -230,5 +230,5 @@
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
         "publish": "vsce publish --no-dependencies"
     },
-    "version": "0.6.17"
+    "version": "0.6.18"
 }
