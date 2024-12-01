@@ -12,6 +12,7 @@ export default OakComponent({
         {{/each}}
     },
     {{/if}}
+    filters: [],
     formData({ data }) {
         return {
             {{#if isList}}
@@ -21,4 +22,5 @@ export default OakComponent({
             {{/if}}
         };
     },
+    properties:{}
 });
