@@ -53,10 +53,11 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
             if (item) {
                 const localePath = getCachedLocaleItemByKey(key);
                 if (localePath && localePath.path) {
-                    const startPos = document.positionAt(match.index + 2);
-                    const endPos = document.positionAt(
-                        match.index + match[1].length + 4
-                    );
+                    const group1Start =
+                        match.index + match[0].indexOf(match[1]);
+                    const group1End = group1Start + match[1].length;
+                    const startPos = document.positionAt(group1Start);
+                    const endPos = document.positionAt(group1End);
                     const range = new vscode.Range(startPos, endPos);
                     const documentLink = new vscode.DocumentLink(
                         range,
