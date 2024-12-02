@@ -81,20 +81,23 @@ const afterPathSet = async () => {
                 await loadConfig();
             },
         },
-        {
-            name: '启动worker',
-            description: '启动worker线程',
-            function: async () => {
-                startWorker();
-                await waitWorkerReady();
-            },
-        },
+        // {
+        //     name: '启动worker',
+        //     description: '启动worker线程',
+        //     function: async () => {
+        //         startWorker();
+        //         await waitWorkerReady();
+        //     },
+        // },
         {
             name: '创建缓存目录',
             description: '创建缓存目录',
             function: async () => {
                 try {
                     mkdirsSync(pathConfig.cachePath);
+                    mkdirsSync(
+                        join(pathConfig.cachePath, 'oakStorageCompileCache')
+                    );
                 } catch (e) {
                     console.error('创建缓存目录失败');
                 }

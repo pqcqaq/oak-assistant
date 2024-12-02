@@ -5,12 +5,15 @@ import fs from 'fs';
 import { debounce } from 'lodash';
 import { random } from 'lodash';
 import { glob } from 'glob';
-import { pathConfig } from '../utils/paths';
+import { mkdirsSync, pathConfig } from '../utils/paths';
 import { toLowerFirst, toUpperFirst } from '../utils/stringUtils';
 import { EntityDesc } from '../types';
-import { getWorker, startWorker } from './workers';
+// import { getWorker, startWorker } from './workers';
 import { setLoadingEntities } from './status';
-import { Worker } from 'worker_threads';
+// import { Worker } from 'worker_threads';
+import { createProjectProgram } from './ts-utils';
+import assert from 'assert';
+import ts from 'typescript';
 
 const projectEntityList: string[] = [];
 
@@ -133,6 +136,44 @@ export const getProjectionList = (entityName: string) => {
     return [];
 };
 
+function getProjectionListFromSchema(
+    filePath: string,
+    program: ts.Program
+): string[] {
+    const sourceFile = program.getSourceFile(filePath);
+    if (!sourceFile) {
+        // vscode.window.showWarningMessage(`无法解析文件: ${filePath}`);
+        return [];
+    }
+
+    let projectionList: string[] = [];
+
+    ts.forEachChild(sourceFile, (node) => {
+        if (
+            ts.isTypeAliasDeclaration(node) &&
+            node.name.text === 'Projection'
+        ) {
+            if (ts.isIntersectionTypeNode(node.type)) {
+                // 我们只关心交叉类型的第一个成员
+                const firstMember = node.type.types[0];
+                if (ts.isTypeLiteralNode(firstMember)) {
+                    projectionList = firstMember.members
+                        .map((member) => {
+                            if (ts.isPropertySignature(member) && member.name) {
+                                return member.name
+                                    .getText(sourceFile)
+                                    .replace(/[?:]$/, '');
+                            }
+                            return '';
+                        })
+                        .filter(Boolean);
+                }
+            }
+        }
+    });
+    return projectionList;
+}
+
 /**
  * 分析 oak-app-domain 项目中的 Entity 定义，防止同时多次分析
  */
@@ -193,13 +234,13 @@ export const analyzeOakAppDomain = async (
         }
     }
 
-    let worker: Worker | null = null;
+    // let worker: Worker | null = null;
 
-    try {
-        worker = getWorker();
-    } catch (error) {
-        worker = startWorker();
-    }
+    // try {
+    //     worker = getWorker();
+    // } catch (error) {
+    //     worker = startWorker();
+    // }
 
     await vscode.window.withProgress(
         {
@@ -207,59 +248,147 @@ export const analyzeOakAppDomain = async (
             title: '分析Entity定义',
             cancellable: false,
         },
-        () => {
+        async () => {
             setLoadingEntities(true);
-            return new Promise<void>((resolve, reject) => {
-                isAnalyzing = true;
+            isAnalyzing = true;
+            try {
+                // return new Promise<void>((resolve, reject) => {
+                // 现在改为直接读取编译之后的文件
+                const StorageFilePath = join(
+                    pathConfig.cachePath,
+                    'oakStorageCompileCache',
+                    'Storage.js'
+                );
 
-                // 发送消息开始分析
-                worker.removeAllListeners('message');
-                worker.removeAllListeners('error');
+                // 文件是否存在
+                if (!fs.existsSync(StorageFilePath)) {
+                    compileStorageFile();
+                }
 
-                worker.on('message', (message) => {
-                    if (message.type === 'result') {
-                        const error = message.data.error;
-                        const entityDict = message.data.entityDict;
-                        if (error) {
-                            vscode.window.showErrorMessage(error);
-                        } else {
-                            console.log('收到entityDict');
-                            // 更新 entityDictCache
-                            Object.keys(entityDict).forEach((key) => {
-                                entityDictCache[key] = entityDict[key];
-                            });
-                            if (enableCache) {
-                                // 写入缓存
-                                fs.writeFile(
-                                    cacheFile,
-                                    JSON.stringify(entityDict),
-                                    (err) => {
-                                        console.error(err);
-                                    }
-                                );
-                            }
-                        }
-                        isAnalyzing = false;
-                        setLoadingEntities(false);
-                        console.log(
-                            '分析完成, 耗时:',
-                            performance.now() - startTime
-                        );
-                        resolve();
-                    }
-                });
+                // 如果还是不存在，应该是编译失败
+                if (!fs.existsSync(StorageFilePath)) {
+                    vscode.window.showErrorMessage('Storage文件编译失败');
+                    return;
+                }
 
-                worker.on('error', (error) => {
-                    vscode.window.showErrorMessage(
-                        `分析过程中发生错误: ${error.message}`
+                const { storageSchema } = require(StorageFilePath);
+
+                assert(
+                    storageSchema && storageSchema instanceof Object,
+                    'storageSchema 未找到'
+                );
+
+                const storagePath = join(
+                    pathConfig.oakAppDomainHome,
+                    'Storage.ts'
+                );
+                const StorageProgram = createProjectProgram(storagePath);
+
+                Object.keys(storageSchema).forEach((key) => {
+                    console.log('处理entity数据:', key);
+                    // 合并locales
+                    const localesPath = getEntityLocalePath(key);
+                    const content = fs.readFileSync(
+                        join(localesPath, 'zh_CN.json'),
+                        'utf-8'
                     );
-                    isAnalyzing = false;
-                    reject(error);
+                    const locales = JSON.parse(content);
+                    Object.assign(storageSchema[key], {
+                        locales: {
+                            zh_CN: locales,
+                        },
+                    });
+
+                    // 查找并合并projectionList
+                    const EntityName = toUpperFirst(key);
+                    const EntityDescPath = join(
+                        pathConfig.oakAppDomainHome,
+                        EntityName,
+                        'Schema.ts'
+                    );
+
+                    const list = getProjectionListFromSchema(
+                        EntityDescPath,
+                        StorageProgram
+                    );
+                    Object.assign(storageSchema[key], { projectionList: list });
                 });
 
-                const startTime = performance.now();
-                worker.postMessage({ type: 'analyze', oakAppDomainPath });
-            });
+                // 更新 entityDictCache
+                Object.keys(storageSchema).forEach((key) => {
+                    entityDictCache[key] = storageSchema[key];
+                });
+                if (enableCache) {
+                    // 写入缓存
+                    fs.writeFile(
+                        cacheFile,
+                        JSON.stringify(storageSchema),
+                        (err) => {
+                            console.error(err);
+                        }
+                    );
+                }
+            } catch (error) {
+                console.log('分析过程中发生错误:', error);
+                vscode.window.showErrorMessage(`分析过程中发生错误`);
+            } finally {
+                isAnalyzing = false;
+                setLoadingEntities(false);
+                syncProjectEntityList();
+            }
+
+            // resolve();
+
+            // isAnalyzing = true;
+
+            // 发送消息开始分析
+            // worker.removeAllListeners('message');
+            // worker.removeAllListeners('error');
+
+            // worker.on('message', (message) => {
+            //     if (message.type === 'result') {
+            //         const error = message.data.error;
+            //         const entityDict = message.data.entityDict;
+            //         if (error) {
+            //             vscode.window.showErrorMessage(error);
+            //         } else {
+            //             console.log('收到entityDict');
+            //             // 更新 entityDictCache
+            //             Object.keys(entityDict).forEach((key) => {
+            //                 entityDictCache[key] = entityDict[key];
+            //             });
+            //             if (enableCache) {
+            //                 // 写入缓存
+            //                 fs.writeFile(
+            //                     cacheFile,
+            //                     JSON.stringify(entityDict),
+            //                     (err) => {
+            //                         console.error(err);
+            //                     }
+            //                 );
+            //             }
+            //         }
+            //         isAnalyzing = false;
+            //         setLoadingEntities(false);
+            //         console.log(
+            //             '分析完成, 耗时:',
+            //             performance.now() - startTime
+            //         );
+            //         resolve();
+            //     }
+            // });
+
+            // worker.on('error', (error) => {
+            //     vscode.window.showErrorMessage(
+            //         `分析过程中发生错误: ${error.message}`
+            //     );
+            //     isAnalyzing = false;
+            //     reject(error);
+            // });
+
+            // const startTime = performance.now();
+            // worker.postMessage({ type: 'analyze', oakAppDomainPath });
+            // });
         }
     );
 
@@ -313,6 +442,20 @@ export const getEntityLocalePath = (entityName: string) => {
         toUpperFirst(entityName),
         'locales'
     );
+};
+
+const compileStorageFile = () => {
+    const cachePath = join(pathConfig.cachePath, 'oakStorageCompileCache');
+    const storagePath = join(pathConfig.oakAppDomainHome, 'Storage.ts');
+    const program = createProjectProgram(storagePath);
+    // 编译后保存到缓存目录
+    program.emit(undefined, (fileName, data) => {
+        const filePath = fileName.split('oak-app-domain')[1];
+        console.log('filePath:', filePath);
+        const outputPath = join(cachePath, filePath);
+        mkdirsSync(path.dirname(outputPath));
+        fs.writeFileSync(outputPath, data);
+    });
 };
 
 export const genProjections = (name: string): string[] => {
