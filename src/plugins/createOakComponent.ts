@@ -146,6 +146,22 @@ const goCreate = async (
         }
     }
 
+    // 如果缺数据，退出
+    if (
+        !createComponentConfig.folderName ||
+        !createComponentConfig.renderFile
+    ) {
+        return;
+    }
+
+    // 如果不是虚拟组件，需要选择实体
+    if (
+        createComponentConfig.entityName !== '虚拟组件' &&
+        (!createComponentConfig.isList || createComponentConfig.autoProjection)
+    ) {
+        return;
+    }
+
     let outputPath = join(folderPath, createComponentConfig.folderName);
     // 现在组件名称允许以/分割，合并到组件目录中
     if (createComponentConfig.folderName.includes('/')) {

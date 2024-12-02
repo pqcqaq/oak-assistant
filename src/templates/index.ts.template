@@ -13,6 +13,8 @@ export default OakComponent({
     },
     {{/if}}
     filters: [],
+    {{#if isVirtual}}
+    {{else}}
     formData({ data }) {
         return {
             {{#if isList}}
@@ -22,5 +24,6 @@ export default OakComponent({
             {{/if}}
         };
     },
+    {{/if}}
     properties:{}
 });
