@@ -6,6 +6,7 @@ import { toUpperFirst } from '../utils/stringUtils';
 import { generateTemplate } from '../utils/template';
 import { join } from 'path';
 import { ComponentsItem } from './oakTreePanel';
+import fs from 'fs';
 
 type ConfigStep = {
     skip?: (config: CreateComponentConfig) => boolean;
@@ -149,7 +150,8 @@ const goCreate = async (
     // 如果缺数据，退出
     if (
         !createComponentConfig.folderName ||
-        !createComponentConfig.renderFile
+        !createComponentConfig.renderFile.length ||
+        !createComponentConfig.entityName
     ) {
         return;
     }
@@ -157,7 +159,8 @@ const goCreate = async (
     // 如果不是虚拟组件，需要选择实体
     if (
         createComponentConfig.entityName !== '虚拟组件' &&
-        (!createComponentConfig.isList || createComponentConfig.autoProjection)
+        (createComponentConfig.isList === undefined ||
+            createComponentConfig.autoProjection === undefined)
     ) {
         return;
     }
@@ -167,6 +170,14 @@ const goCreate = async (
     if (createComponentConfig.folderName.includes('/')) {
         const splits = createComponentConfig.folderName.split('/');
         createComponentConfig.folderName = splits[splits.length - 1];
+    }
+
+    // 如果路径已经存在，发出警告
+    if (fs.existsSync(outputPath)) {
+        vscode.window.showWarningMessage(
+            `组件: ${toUpperFirst(createComponentConfig.folderName)} 已经存在。`
+        );
+        return;
     }
 
     generateTemplate(outputPath, createComponentConfig);
