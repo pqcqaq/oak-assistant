@@ -330,7 +330,9 @@ export const analyzeOakAppDomain = async (
                 }
             } catch (error) {
                 console.log('分析过程中发生错误:', error);
+                // 删除缓存的目录，便于下一次分析
                 vscode.window.showErrorMessage(`分析过程中发生错误`);
+                fs.unlinkSync(pathConfig.cachePath);
             } finally {
                 isAnalyzing = false;
                 setLoadingEntities(false);
