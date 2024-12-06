@@ -216,6 +216,7 @@ const plugin = vscode.commands.registerCommand(
             vscode.window.showWarningMessage(
                 '选择的文件夹不在 pages或components 目录下，无法创建 OAK 组件。'
             );
+            return;
         }
 
         goCreate(folderPath, defaultSteps);

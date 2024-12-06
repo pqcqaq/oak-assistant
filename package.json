@@ -125,7 +125,7 @@
                 {
                     "command": "oak-assistant.create-oak-component",
                     "group": "navigation",
-                    "when": "explorerResourceIsFolder"
+                    "when": "explorerResourceIsFolder && (resourcePath =~ /.*components/ || resourcePath =~ /.*pages/)"
                 }
             ],
             "view/item/context": [
