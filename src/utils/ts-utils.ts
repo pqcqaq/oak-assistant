@@ -721,6 +721,40 @@ export const createProjectProgram = (filePath: string) => {
     return program;
 };
 
+export const resolveModulePath = (
+    importModule: string,
+    file?: string
+): [sourceFile: ts.SourceFile, path: string] => {
+    const programPath = file || join(pathConfig.oakAppDomainHome, 'index.ts');
+    const program = createProjectProgram(programPath);
+    // 创建编译器主机
+    const compilerHost = ts.createCompilerHost(program.getCompilerOptions());
+
+    // 解析模块
+    const resolvedModule = ts.resolveModuleName(
+        importModule,
+        programPath,
+        program.getCompilerOptions(),
+        compilerHost
+    );
+
+    if (!resolvedModule.resolvedModule) {
+        throw new Error(`Could not resolve module: ${importModule}`);
+    }
+
+    // 获取源文件
+    const sourceFile = program.getSourceFile(
+        resolvedModule.resolvedModule.resolvedFileName
+    );
+    if (!sourceFile) {
+        throw new Error(
+            `Could not find source file for module: ${importModule}`
+        );
+    }
+
+    return [sourceFile, resolvedModule.resolvedModule.resolvedFileName];
+};
+
 // 判断类型是否是 Promise
 export function isPromiseType(
     type: ts.Type,

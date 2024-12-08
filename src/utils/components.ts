@@ -16,6 +16,7 @@ import {
     getAttrsFromFormData,
     getAttrsFromMethods,
     getAttrsFromProperties,
+    resolveModulePath,
 } from './ts-utils';
 
 // attrs preset，在isList为false的时候，默认有一个oakId的属性，注释先写在这里，具体在下面处理，怕自己忘了
@@ -66,187 +67,265 @@ export const subscribeAll = (callback: (name: string) => void) => {
 export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
     const componentList: EntityComponentDef[] = [];
 
-    function visitNode(node: ts.Node, path: string) {
+    function handleComponentArg(node: ts.CallExpression, path: string) {
+        const args = node.arguments;
+        if (args.length === 1 && ts.isObjectLiteralExpression(args[0])) {
+            const properties = args[0].properties;
+            const entity = properties.find(
+                (prop) =>
+                    ts.isPropertyAssignment(prop) &&
+                    prop.name.getText() === 'entity'
+            );
+            const isList = properties.find(
+                (prop) =>
+                    ts.isPropertyAssignment(prop) &&
+                    prop.name.getText() === 'isList'
+            );
+
+            const formData = properties.find((prop) => {
+                return (
+                    (ts.isPropertyAssignment(prop) ||
+                        ts.isMethodDeclaration(prop)) &&
+                    ts.isIdentifier(prop.name) &&
+                    prop.name.text === 'formData'
+                );
+            }) as ts.MethodDeclaration | ts.PropertyAssignment | undefined;
+
+            const method = properties.find(
+                (prop) =>
+                    ts.isPropertyAssignment(prop) &&
+                    prop.name.getText() === 'methods'
+            );
+
+            const property = properties.find(
+                (prop) =>
+                    ts.isPropertyAssignment(prop) &&
+                    prop.name.getText() === 'properties'
+            );
+
+            const datas = properties.find(
+                (prop) =>
+                    ts.isPropertyAssignment(prop) &&
+                    prop.name.getText() === 'data'
+            );
+
+            let mpConfig: MPConfig | undefined;
+
+            const configPath = join(path, '../index.json');
+
+            if (fs.existsSync(configPath)) {
+                try {
+                    mpConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+                } catch (e) {
+                    console.log('读取配置文件失败:', configPath, e);
+                }
+            }
+            let formDataAttrs: DocumentValue[] = [];
+            let methodNames: DocumentValue[] = [];
+            let propertiesAttrs: DocumentValue[] = [];
+            let datasAttrs: DocumentValue[] = [];
+            // 获取formData下的block 下的 returnStatement 下的ObjectLiteralExpression 下的properties
+            if (formData) {
+                formDataAttrs = getAttrsFromFormData(formData);
+            }
+
+            if (method) {
+                methodNames = getAttrsFromMethods(method);
+            }
+
+            if (property) {
+                propertiesAttrs = getAttrsFromProperties(property);
+            }
+
+            if (datas) {
+                datasAttrs = getAttrsFromDatas(datas);
+            }
+
+            if (entity && isList) {
+                if (
+                    ts.isShorthandPropertyAssignment(entity) ||
+                    ts.isShorthandPropertyAssignment(isList)
+                ) {
+                    console.log('ShorthandPropertyAssignment 还不支持');
+                    return;
+                }
+                if (
+                    ts.isSpreadAssignment(entity) ||
+                    ts.isSpreadAssignment(isList)
+                ) {
+                    console.log('SpreadAssignment 还不支持');
+                    return;
+                }
+                // MethodDeclaration
+                if (
+                    ts.isMethodDeclaration(entity) ||
+                    ts.isMethodDeclaration(isList)
+                ) {
+                    console.log('MethodDeclaration 还不支持');
+                    return;
+                }
+                //GetAccessorDeclaration
+                if (
+                    ts.isGetAccessorDeclaration(entity) ||
+                    ts.isGetAccessorDeclaration(isList)
+                ) {
+                    console.log('GetAccessorDeclaration 还不支持');
+                    return;
+                }
+                // SetAccessorDeclaration
+                if (
+                    ts.isSetAccessorDeclaration(entity) ||
+                    ts.isSetAccessorDeclaration(isList)
+                ) {
+                    console.log('SetAccessorDeclaration 还不支持');
+                    return;
+                }
+                const listed = isList.initializer.getText() === 'true';
+                if (!listed) {
+                    // 如果不是列表，那么默认有一个oakId属性
+                    formDataAttrs.push({
+                        value: 'oakId',
+                        pos: {
+                            start: 0,
+                            end: 0,
+                        },
+                    });
+                }
+                // 这里的path是整个文件夹的路径
+                componentList.push({
+                    path: join(path, '..'),
+                    entityName: entity.initializer.getText().slice(1, -1),
+                    isList: listed,
+                    components: [],
+                    formDataAttrs: formDataAttrs.length
+                        ? formDataAttrs
+                        : undefined,
+                    methodNames: methodNames.length ? methodNames : undefined,
+                    propertiesAttrs: propertiesAttrs.length
+                        ? propertiesAttrs
+                        : undefined,
+                    datas: datasAttrs.length ? datasAttrs : undefined,
+                    mpConfig,
+                });
+            } else {
+                // 是一个Virtual虚拟节点，没有entity和isList
+                componentList.push({
+                    path: join(path, '..'),
+                    entityName: '',
+                    isList: false,
+                    components: [],
+                    formDataAttrs: formDataAttrs.length
+                        ? formDataAttrs
+                        : undefined,
+                    methodNames: methodNames.length ? methodNames : undefined,
+                    propertiesAttrs: propertiesAttrs.length
+                        ? propertiesAttrs
+                        : undefined,
+                    datas: datasAttrs.length ? datasAttrs : undefined,
+                    mpConfig,
+                });
+            }
+        }
+    }
+
+    function visitNode(source: ts.SourceFile, node: ts.Node, path: string) {
+        // 如果是export default OakComponent()的形式
         if (
-            ts.isCallExpression(node) &&
+            ts.isExportAssignment(node) &&
+            ts.isCallExpression(node.expression) &&
+            ts.isIdentifier(node.expression.expression) &&
+            node.expression.expression.text === 'OakComponent'
+        ) {
+            handleComponentArg(node.expression, path);
+            return;
+        }
+
+        // 如果是export default OakComponent，并且OakComponent是import的
+        if (
+            ts.isExportAssignment(node) &&
+            node.expression &&
             ts.isIdentifier(node.expression) &&
             node.expression.text === 'OakComponent'
         ) {
-            const args = node.arguments;
-            if (args.length === 1 && ts.isObjectLiteralExpression(args[0])) {
-                const properties = args[0].properties;
-                const entity = properties.find(
-                    (prop) =>
-                        ts.isPropertyAssignment(prop) &&
-                        prop.name.getText() === 'entity'
-                );
-                const isList = properties.find(
-                    (prop) =>
-                        ts.isPropertyAssignment(prop) &&
-                        prop.name.getText() === 'isList'
-                );
-
-                const formData = properties.find((prop) => {
-                    return (
-                        (ts.isPropertyAssignment(prop) ||
-                            ts.isMethodDeclaration(prop)) &&
-                        ts.isIdentifier(prop.name) &&
-                        prop.name.text === 'formData'
-                    );
-                }) as ts.MethodDeclaration | ts.PropertyAssignment | undefined;
-
-                const method = properties.find(
-                    (prop) =>
-                        ts.isPropertyAssignment(prop) &&
-                        prop.name.getText() === 'methods'
-                );
-
-                const property = properties.find(
-                    (prop) =>
-                        ts.isPropertyAssignment(prop) &&
-                        prop.name.getText() === 'properties'
-                );
-
-                const datas = properties.find(
-                    (prop) =>
-                        ts.isPropertyAssignment(prop) &&
-                        prop.name.getText() === 'data'
-                );
-
-                let mpConfig: MPConfig | undefined;
-
-                const configPath = join(path, '../index.json');
-
-                if (fs.existsSync(configPath)) {
-                    try {
-                        mpConfig = JSON.parse(
-                            fs.readFileSync(configPath, 'utf-8')
-                        );
-                    } catch (e) {
-                        console.log('读取配置文件失败:', configPath, e);
-                    }
-                }
-                let formDataAttrs: DocumentValue[] = [];
-                let methodNames: DocumentValue[] = [];
-                let propertiesAttrs: DocumentValue[] = [];
-                let datasAttrs: DocumentValue[] = [];
-                // 获取formData下的block 下的 returnStatement 下的ObjectLiteralExpression 下的properties
-                if (formData) {
-                    formDataAttrs = getAttrsFromFormData(formData);
-                }
-
-                if (method) {
-                    methodNames = getAttrsFromMethods(method);
-                }
-
-                if (property) {
-                    propertiesAttrs = getAttrsFromProperties(property);
-                }
-
-                if (datas) {
-                    datasAttrs = getAttrsFromDatas(datas);
-                }
-
-                if (entity && isList) {
+            // 尝试在sourceFile中找到OakComponent的import
+            const importStatement = source.statements.find((statement) => {
+                if (ts.isImportDeclaration(statement)) {
+                    // importClause.Identifier === OakComponent
                     if (
-                        ts.isShorthandPropertyAssignment(entity) ||
-                        ts.isShorthandPropertyAssignment(isList)
+                        statement.importClause &&
+                        statement.importClause.name?.text === 'OakComponent'
                     ) {
-                        console.log('ShorthandPropertyAssignment 还不支持');
-                        return;
+                        return true;
                     }
-                    if (
-                        ts.isSpreadAssignment(entity) ||
-                        ts.isSpreadAssignment(isList)
-                    ) {
-                        console.log('SpreadAssignment 还不支持');
-                        return;
-                    }
-                    // MethodDeclaration
-                    if (
-                        ts.isMethodDeclaration(entity) ||
-                        ts.isMethodDeclaration(isList)
-                    ) {
-                        console.log('MethodDeclaration 还不支持');
-                        return;
-                    }
-                    //GetAccessorDeclaration
-                    if (
-                        ts.isGetAccessorDeclaration(entity) ||
-                        ts.isGetAccessorDeclaration(isList)
-                    ) {
-                        console.log('GetAccessorDeclaration 还不支持');
-                        return;
-                    }
-                    // SetAccessorDeclaration
-                    if (
-                        ts.isSetAccessorDeclaration(entity) ||
-                        ts.isSetAccessorDeclaration(isList)
-                    ) {
-                        console.log('SetAccessorDeclaration 还不支持');
-                        return;
-                    }
-                    const listed = isList.initializer.getText() === 'true';
-                    if (!listed) {
-                        // 如果不是列表，那么默认有一个oakId属性
-                        formDataAttrs.push({
-                            value: 'oakId',
-                            pos: {
-                                start: 0,
-                                end: 0,
-                            },
-                        });
-                    }
-                    // 这里的path是整个文件夹的路径
-                    componentList.push({
-                        path: join(path, '..'),
-                        entityName: entity.initializer.getText().slice(1, -1),
-                        isList: listed,
-                        components: [],
-                        formDataAttrs: formDataAttrs.length
-                            ? formDataAttrs
-                            : undefined,
-                        methodNames: methodNames.length
-                            ? methodNames
-                            : undefined,
-                        propertiesAttrs: propertiesAttrs.length
-                            ? propertiesAttrs
-                            : undefined,
-                        datas: datasAttrs.length ? datasAttrs : undefined,
-                        mpConfig,
-                    });
-                } else {
-                    // 是一个Virtual虚拟节点，没有entity和isList
-                    componentList.push({
-                        path: join(path, '..'),
-                        entityName: '',
-                        isList: false,
-                        components: [],
-                        formDataAttrs: formDataAttrs.length
-                            ? formDataAttrs
-                            : undefined,
-                        methodNames: methodNames.length
-                            ? methodNames
-                            : undefined,
-                        propertiesAttrs: propertiesAttrs.length
-                            ? propertiesAttrs
-                            : undefined,
-                        datas: datasAttrs.length ? datasAttrs : undefined,
-                        mpConfig,
-                    });
                 }
+                return false;
+            }) as ts.ImportDeclaration | undefined;
+
+            if (!importStatement) {
+                return;
             }
+
+            const moduleSpecifier = importStatement.moduleSpecifier;
+            if (!ts.isStringLiteral(moduleSpecifier)) {
+                return;
+            }
+
+            const modulePath = moduleSpecifier.text;
+            // 如果是相对路径
+            if (isRelativePath(modulePath)) {
+                const moduleDir = join(path, '..', modulePath, 'index.ts');
+                const modulePathNor = normalizePath(moduleDir);
+                const moduleSource = ts.createSourceFile(
+                    moduleDir,
+                    fs.readFileSync(modulePathNor, 'utf-8'),
+                    ts.ScriptTarget.ES2015,
+                    true
+                );
+                ts.forEachChild(moduleSource, (node) => {
+                    visitNode(moduleSource, node, path);
+                });
+            }
+            // 如果是模块导入
+            else {
+                const [sourceFile, filePath] = resolveModulePath(modulePath, path);
+                if (!sourceFile) {
+                    return;
+                }
+                // 如果文件名是.d.ts结尾
+                if (filePath.endsWith('.d.ts')) {
+                    // 在模块中，需要去查找js文件进行解析
+                    const jsFilePath = filePath.replace('.d.ts', '.js');
+                    if (!fs.existsSync(jsFilePath)) {
+                        return;
+                    }
+                    const sourceFile = ts.createSourceFile(
+                        jsFilePath,
+                        fs.readFileSync(jsFilePath, 'utf-8'),
+                        ts.ScriptTarget.ES2015,
+                        true
+                    );
+                    ts.forEachChild(sourceFile, (node) => {
+                        visitNode(sourceFile, node, path);
+                    });
+                    return;
+                }
+                ts.forEachChild(sourceFile, (node) => {
+                    visitNode(sourceFile, node, path);
+                });
+                return;
+            }
+            return;
         }
 
         ts.forEachChild(node, (node) => {
-            visitNode(node, path);
+            visitNode(source, node, path);
         });
     }
 
     scanPath.forEach((dirPath) => {
         const files = glob.sync(`${dirPath}/**/index.ts`);
         // 保证路径是绝对路径
-        const absoluteFiles = files.map(filePath => path.resolve(filePath));
+        const absoluteFiles = files.map((filePath) => path.resolve(filePath));
         absoluteFiles.forEach((filePath) => {
             // 因为涉及到路径的比较，所以需要规范化路径
             const normalizedPath = normalizePath(filePath);
@@ -258,7 +337,7 @@ export const scanComponents = (scanPath: string[]): EntityComponentDef[] => {
             );
 
             ts.forEachChild(sourceFile, (node) => {
-                visitNode(node, normalizedPath);
+                visitNode(sourceFile, node, normalizedPath);
             });
         });
     });
