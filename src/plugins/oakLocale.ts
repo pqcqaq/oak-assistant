@@ -16,10 +16,10 @@ const diagnosticCollection =
     vscode.languages.createDiagnosticCollection('oakLocales');
 
 const tCallRegex =
-    /(?<![a-zA-Z])t\([\s]*['"`]([^'"`]*)['"`]\s*(\s*|\,\s*({\s*([a-zA-Z_0-9]+:\s*(['"`].*?['"`]|[?.a-zA-Z_0-9\s\|]+)(|\,)\s*)*}|[.a-zA-Z_0-9]+))\s*\)/g;
+    /(?<![a-zA-Z])t\([\s]*['"`]([^'"`]*)['"`]\s*(\s*|\,\s*({\s*([a-zA-Z_0-9]+:\s*(['"`].*?['"`]|[?!.,a-zA-Z_0-9\s\|]+)(|\,)\s*)*}|[.a-zA-Z_0-9]+))\s*\)/g;
 
 const paramRegex =
-    /{\s*([a-zA-Z_0-9]+:\s*(['"`].*?['"`]|[?.a-zA-Z_0-9\s\|]+)(|\,)\s*)*}/;
+    /{\s*([a-zA-Z_0-9]+:\s*(['"`].*?['"`]|[?!.,a-zA-Z_0-9\s\|]+)(|\,)\s*)*}/;
 
 class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
     async provideDocumentLinks(
@@ -40,6 +40,10 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
             return [];
         }
 
+        const localePath = join(document.uri.fsPath, '../locales');
+
+        getLocalesData(localePath);
+
         const handler = (match: RegExpExecArray) => {
             const key = match[1];
 
@@ -49,10 +53,9 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 return;
             }
 
-            const item = getLocaleItem(key);
+            const item = getLocaleItem(key, join(localePath, '../'));
             if (item) {
-                const localePath = getCachedLocaleItemByKey(key);
-                if (localePath && localePath.path) {
+                if (item && item.path) {
                     const group1Start =
                         match.index + match[0].indexOf(match[1]);
                     const group1End = group1Start + match[1].length;
@@ -61,10 +64,10 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
                     const range = new vscode.Range(startPos, endPos);
                     const documentLink = new vscode.DocumentLink(
                         range,
-                        vscode.Uri.file(localePath.zhCnFile)
+                        vscode.Uri.file(item.zhCnFile)
                     );
-                    documentLink.tooltip = localePath.desc
-                        ? `CN: ${localePath.desc}`
+                    documentLink.tooltip = item.desc
+                        ? `CN: ${item.desc}`
                         : `[未找到中文] 跳转到定义`;
                     documentLinks.push(documentLink);
 
@@ -228,7 +231,8 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
             }
         };
 
-        getLocalesData(join(document.uri.fsPath, '../locales'));
+        // component path
+        console.log('component path ', document.uri.fsPath);
 
         handler(match);
 

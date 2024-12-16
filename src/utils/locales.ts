@@ -95,13 +95,14 @@ export const getAvailableKeys = (
  * @returns  返回一个LocaleData
  */
 export const getLocalesByPath = (
-    path: string
+    path: string,
+    isComponentPath?: boolean
 ): {
     path: string;
     data: LocaleData;
 } => {
     // 在当前目录的zh_CN.json文件或者zh-CN.json文件
-    const localePath = join(path);
+    const localePath = isComponentPath ? join(path, 'locales') : join(path);
     if (!fs.existsSync(localePath)) {
         return {
             path: localePath,
@@ -134,7 +135,7 @@ export const getLocalesByPath = (
     try {
         data = JSON.parse(fs.readFileSync(localeFile, 'utf-8'));
     } catch (error) {
-        console.error('读取locale文件失败', error);
+        console.error('读取locale文件失败', localePath, error);
     }
     return {
         path: localeFile,
@@ -164,7 +165,10 @@ export const findValueByKey = (
  * @param key  key
  * @returns  返回一个string
  */
-export const getLocaleItem = (key: string): LocaleItem | undefined => {
+export const getLocaleItem = (
+    key: string,
+    path: string
+): LocaleItem | undefined => {
     // 如果是namespace，则为xxxx::开头
     if (key.includes('::')) {
         // 从cachedLocaleItems中找到对应的值
@@ -183,11 +187,13 @@ export const getLocaleItem = (key: string): LocaleItem | undefined => {
             });
     }
     // 如果是component，则为路径开头
-    return Object.values(cachedLocaleItems.components)
-        .flat()
-        .find((item) => {
-            return item.value === key;
-        });
+    if (!path) {
+        return undefined;
+    }
+    const norPath = normalizePath(path);
+    return cachedLocaleItems.components[norPath].find((item) => {
+        return item.value === key;
+    });
 };
 
 /**
@@ -279,7 +285,8 @@ const isPathCached = (path: string): boolean => {
 };
 
 const updatePathCached = (path: string) => {
-    const got = getLocalesByPath(path);
+    const got = getLocalesByPath(path, true);
+
     locales.components[path] = {
         locales: got.data || {},
         zhCNpath: got.path,
@@ -319,13 +326,13 @@ export const getLocalesData = (
         ...Object.values(cachedLocaleItems.namespaced),
     ];
 
-    setLoadingLocale(false);
-
     if (prefix) {
         return items.flatMap((item) => {
             return item.filter((i) => i.value.startsWith(prefix));
         });
     }
+
+    setLoadingLocale(false);
 
     return items.flat();
 };
@@ -387,10 +394,12 @@ export const reloadCachedPathLocale = (path: string) => {
     updatePathCached(norPath);
 };
 
+// 这个函数有问题，如果是相同的key，会被覆盖
 export const getCachedLocaleItemByKey = (
-    key: string
+    key: string,
+    path: string
 ): LocaleItem | undefined => {
-    return getLocaleItem(key);
+    return getLocaleItem(key, path);
 };
 
 export const addLocaleToData = (
