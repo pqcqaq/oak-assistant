@@ -321,7 +321,7 @@ export const getLocalesData = (
     }
 
     const items = [
-        getCachedComponentItems(path),
+        getCachedComponentItems(join(path, 'locales')),
         ...Object.values(cachedLocaleItems.entities),
         ...Object.values(cachedLocaleItems.namespaced),
     ];
@@ -519,6 +519,9 @@ const setRefreshInterval = () => {
         componentsPath.forEach((path) => {
             updatePathCached(path);
         });
+
+        //刷新完成后的缓存内容：
+        // console.log('刷新完成后的缓存内容', cachedLocaleItems);
     };
 
     // 获取配置项

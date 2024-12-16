@@ -42,7 +42,7 @@ class LocaleDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
         const localePath = join(document.uri.fsPath, '../locales');
 
-        getLocalesData(localePath);
+        getLocalesData(join(document.uri.fsPath, '..'));
 
         const handler = (match: RegExpExecArray) => {
             const key = match[1];
