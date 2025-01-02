@@ -190,7 +190,7 @@
         "@types/mocha": "^10.0.8",
         "@types/node": "20.x",
         "@types/node-schedule": "^2.1.7",
-        "@types/vscode": "^1.94.0",
+        "@types/vscode": "^1.80.0",
         "@typescript-eslint/eslint-plugin": "^8.7.0",
         "@typescript-eslint/parser": "^8.7.0",
         "@vscode/test-cli": "^0.0.10",
@@ -204,7 +204,7 @@
     },
     "displayName": "oak-assistant",
     "engines": {
-        "vscode": "^1.94.0"
+        "vscode": "^1.80.0"
     },
     "icon": "assets/oak_tree.png",
     "main": "./dist/extension.js",
@@ -230,5 +230,5 @@
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
         "publish": "vsce publish --no-dependencies"
     },
-    "version": "1.0.5"
+    "version": "1.0.6"
 }
